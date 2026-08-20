@@ -14,12 +14,36 @@ import { syncResearch } from './lib/researchSync.js';
 import { markSyncResultCompletions } from './lib/researchCompletion.js';
 import { fetchBlsCpiNews, fetchNewsIntelligence } from './lib/newsIntelligence.js';
 import {
+  isExactMissingOptionalModuleError,
+  validateQuantStrategyExports,
+} from './lib/validateQuantStrategy.js';
+
+const quantStrategyModuleUrl = new URL('./lib/quantStrategy.js', import.meta.url).href;
+let quantStrategy;
+try {
+  quantStrategy = await import('./lib/quantStrategy.js');
+} catch (error) {
+  if (!isExactMissingOptionalModuleError(error, quantStrategyModuleUrl)) throw error;
+  const unavailable = () => {
+    throw new Error('Quant strategy module is unavailable in this checkout');
+  };
+  quantStrategy = {
+    getQuantExperiments: unavailable,
+    getQuantOverview: unavailable,
+    runQuantBacktest: unavailable,
+    runQuantHistoryBackfill: unavailable,
+    runQuantIteration: unavailable,
+  };
+  console.warn('[quant] server/lib/quantStrategy.js is missing; quant endpoints are unavailable');
+}
+validateQuantStrategyExports(quantStrategy);
+const {
   getQuantExperiments,
   getQuantOverview,
   runQuantBacktest,
   runQuantHistoryBackfill,
   runQuantIteration,
-} from './lib/quantStrategy.js';
+} = quantStrategy;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -2497,7 +2521,7 @@ app.use('/api/research', researchRouter);
 app.use('/api/calendar', calendarRouter);
 
 // 研究报告（cninfo/earnings）的原始文件 xlsx/pdf 静态服务
-const REPORTS_DIR = path.join(__dirname, 'public/reports');
+const REPORTS_DIR = process.env.RESEARCH_REPORTS_DIR || path.join(__dirname, 'public/reports');
 if (!fs.existsSync(REPORTS_DIR)) fs.mkdirSync(REPORTS_DIR, { recursive: true });
 app.use('/reports', express.static(REPORTS_DIR));
 
@@ -3274,7 +3298,9 @@ app.listen(PORT, HOST, () => {
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
 `);
-  startDailyResearchAutoSync();
-  startNewsAutoRefresh();
-  priceTracking.startAutoRefresh();
+  if (process.env.DISABLE_BACKGROUND_JOBS !== '1') {
+    startDailyResearchAutoSync();
+    startNewsAutoRefresh();
+    priceTracking.startAutoRefresh();
+  }
 });

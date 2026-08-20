@@ -11,6 +11,13 @@ import { FundDashboard, FundSwitcher, AddFundModal, ContributionModal } from '..
 import MarketTemperature from '../../components/Fund/MarketTemperature';
 import { type Position } from '../../types/fund';
 import { searchStocks } from '../../data/stocks';
+import {
+  applyTargetWeightQuote,
+  calculatePortfolioMarketValue,
+  DEFAULT_PORTFOLIO_MARKET,
+  getTargetWeightRebalanceCapital,
+  hasUninitializedTargetWeightPositions,
+} from '../../data/usSectorFunds';
 import type { SorterResult, SortOrder } from 'antd/es/table/interface';
 
 const { useForm } = Form;
@@ -289,7 +296,7 @@ const PortfolioPanel: React.FC = () => {
   const [contributionModalOpen, setContributionModalOpen] = useState(false);
   const [navDateRange, setNavDateRange] = useState<[string | null, string | null]>([null, null]);
   const [marketTemperatureRefreshKey, setMarketTemperatureRefreshKey] = useState(0);
-  const [marketFilter, setMarketFilter] = useState<'a' | 'hk' | 'us' | 'jp' | 'kr'>('a');
+  const [marketFilter, setMarketFilter] = useState<'a' | 'hk' | 'us' | 'jp' | 'kr'>(DEFAULT_PORTFOLIO_MARKET);
   const [positionSortState, setPositionSortState] = useState<PositionSortState>({ key: null, order: null });
   const positionSortKey = positionSortState.key;
   const positionSortOrder = positionSortState.order;
@@ -477,15 +484,17 @@ const PortfolioPanel: React.FC = () => {
       if (!res.success || !res.prices) return fundSnapshot;
 
       const today = res.tradeDate!;
+      const rebalanceCapital = getTargetWeightRebalanceCapital(
+        fundSnapshot.positions,
+        res.prices,
+        fundSnapshot.initialCapital,
+      );
       const newPositions = fundSnapshot.positions.map((p) => {
         const pd = res.prices![p.code];
         if (!pd) return p;
-        return { ...p, currentPrice: pd.currentPrice, prevClose: pd.prevClose };
+        return applyTargetWeightQuote(p, pd, rebalanceCapital ?? Number.NaN);
       });
-      const totalMV = newPositions.reduce((sum, p) => {
-        const pd = res.prices![p.code];
-        return sum + p.shares * (pd ? pd.currentPrice : (p.currentPrice ?? p.avgCost));
-      }, 0);
+      const totalMV = calculatePortfolioMarketValue(newPositions);
       const activePositions = fundSnapshot.positions.filter((p) => Number(p.shares) > 0);
       const freshQuoteCount = activePositions.filter((p) => {
         const pd = res.prices![p.code];
@@ -493,6 +502,7 @@ const PortfolioPanel: React.FC = () => {
       }).length;
       const hasReliableNAV = activePositions.length > 0 &&
         freshQuoteCount >= Math.max(1, Math.ceil(activePositions.length * 0.8)) &&
+        !hasUninitializedTargetWeightPositions(newPositions) &&
         Number.isFinite(totalMV) && totalMV > 0;
       const nav = fundSnapshot.initialCapital > 0 ? totalMV / fundSnapshot.initialCapital : 1;
       const exists = fundSnapshot.navHistory.some((n) => n.date === today);
@@ -531,18 +541,19 @@ const PortfolioPanel: React.FC = () => {
           if (f.id !== fundId) return f;
 
           // 更新所有持仓价格
+          const rebalanceCapital = getTargetWeightRebalanceCapital(
+            f.positions,
+            res.prices!,
+            f.initialCapital,
+          );
           const newPositions = f.positions.map((p) => {
             const pd = res.prices![p.code];
             if (!pd) return p;
-            return { ...p, currentPrice: pd.currentPrice, prevClose: pd.prevClose };
+            return applyTargetWeightQuote(p, pd, rebalanceCapital ?? Number.NaN);
           });
 
           // 计算总市值（用最新价格）
-          const totalMV = newPositions.reduce((sum, p) => {
-            const pd = res.prices![p.code];
-            const price = pd ? pd.currentPrice : (p.currentPrice ?? p.avgCost);
-            return sum + p.shares * price;
-          }, 0);
+          const totalMV = calculatePortfolioMarketValue(newPositions);
           const activePositions = f.positions.filter((p) => Number(p.shares) > 0);
           const freshQuoteCount = activePositions.filter((p) => {
             const pd = res.prices![p.code];
@@ -550,6 +561,7 @@ const PortfolioPanel: React.FC = () => {
           }).length;
           const hasReliableNAV = activePositions.length > 0 &&
             freshQuoteCount >= Math.max(1, Math.ceil(activePositions.length * 0.8)) &&
+            !hasUninitializedTargetWeightPositions(newPositions) &&
             Number.isFinite(totalMV) && totalMV > 0;
           const shouldRecordNAV = needsNAVRecord && hasReliableNAV;
           const nav = f.initialCapital > 0 ? totalMV / f.initialCapital : 1;

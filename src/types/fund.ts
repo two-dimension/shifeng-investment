@@ -5,6 +5,7 @@ export interface Position {
   avgCost: number;
   currentPrice?: number; // 当前价（用于计算市值和盈亏）
   prevClose?: number;    // 昨日收盘价（用于计算今日涨跌）
+  targetWeight?: number; // 预设子集的目标权重（百分比）
 }
 
 export interface NAVRecord {

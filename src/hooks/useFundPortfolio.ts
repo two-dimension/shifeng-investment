@@ -1,39 +1,44 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { type Fund, type Position, type NAVRecord } from '../types/fund';
 import { API_BASE } from '../config/api';
+import {
+  classifyFundSet,
+  createUSSectorPresetFunds,
+  migrateLegacyDefaultFunds,
+  shouldPreferLocalFundSource,
+  type FundSetSource,
+} from '../data/usSectorFunds';
 
 const STORAGE_KEY = 'shifeng_funds';
 const SAVED_AT_KEY = 'shifeng_funds_saved_at';
 
-const DEFAULT_FUNDS: Fund[] = [
-  {
-    id: 'fund_1',
-    name: '锋行成长1号',
-    market: 'a',
-    initialCapital: 1000000,
-    positions: [
-      { code: '600519', name: '贵州茅台', shares: 100, avgCost: 1680.00, currentPrice: 1680.00 },
-      { code: '000858', name: '五粮液', shares: 2000, avgCost: 145.00, currentPrice: 145.00 },
-      { code: '600036', name: '招商银行', shares: 5000, avgCost: 35.80, currentPrice: 35.80 },
-      { code: '000001', name: '平安银行', shares: 5000, avgCost: 12.50, currentPrice: 12.50 },
-    ],
-    navHistory: [],
-    createdAt: new Date().toISOString(),
-  },
-];
+const DEFAULT_FUNDS: Fund[] = createUSSectorPresetFunds();
 
 function generateId(): string {
   return `fund_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function loadFunds(): Fund[] {
+function loadFundsSnapshot(): { funds: Fund[]; source: FundSetSource } {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        const source = classifyFundSet(parsed);
+        const migrated = migrateLegacyDefaultFunds(parsed);
+        if (migrated !== parsed) saveFunds(migrated);
+        return { funds: migrated, source };
+      }
+    }
   } catch {
     // ignore
   }
-  return DEFAULT_FUNDS;
+  saveFunds(DEFAULT_FUNDS);
+  return { funds: DEFAULT_FUNDS, source: 'missing' };
+}
+
+function loadFunds(): Fund[] {
+  return loadFundsSnapshot().funds;
 }
 
 function saveFunds(funds: Fund[]) {
@@ -76,13 +81,25 @@ async function syncFundsToBackend(funds: Fund[]): Promise<boolean> {
 }
 
 // Load funds from backend server
-async function loadFundsFromBackend(): Promise<{ funds: Fund[]; lastUpdated: string | null } | null> {
+async function loadFundsFromBackend(): Promise<{
+  funds: Fund[];
+  lastUpdated: string | null;
+  needsMigrationSync: boolean;
+  source: FundSetSource;
+} | null> {
   try {
     const response = await fetch(`${API_BASE}/api/funds`);
     if (response.ok) {
       const data = await response.json();
       if (data.funds && Array.isArray(data.funds)) {
-        return { funds: data.funds, lastUpdated: data.lastUpdated ?? null };
+        const source = classifyFundSet(data.funds);
+        const migrated = migrateLegacyDefaultFunds(data.funds);
+        return {
+          funds: migrated,
+          lastUpdated: data.lastUpdated ?? null,
+          needsMigrationSync: migrated !== data.funds,
+          source,
+        };
       }
     } else {
       console.error(`[loadFundsFromBackend] HTTP ${response.status} ${response.statusText}`);
@@ -139,15 +156,20 @@ export function useFundPortfolio(): UseFundPortfolioReturn {
     if (initialized) return;
     setInitialized(true);
 
-    const localFunds = loadFunds();
-    const localCount = localFunds.length;
+    const initialLocalFunds = loadFunds();
+    const initialLocalCount = initialLocalFunds.length;
     setSyncStatus((prev) => ({
       ...prev,
-      localCount,
+      localCount: initialLocalCount,
       backendReachable: false,
     }));
 
     loadFundsFromBackend().then((backendData) => {
+      // Re-read after the request so edits made while GET was pending are never resolved
+      // against a stale mount-time snapshot.
+      const localSnapshot = loadFundsSnapshot();
+      const localFunds = localSnapshot.funds;
+      const localCount = localFunds.length;
       if (!backendData) {
         // Backend unavailable, keep local state as the only source
         setSyncStatus({
@@ -167,9 +189,15 @@ export function useFundPortfolio(): UseFundPortfolioReturn {
       const backendTime = backendData?.lastUpdated ? new Date(backendData.lastUpdated).getTime() : 0;
       const localTime = getLocalSavedAt();
       const backendCount = backendFunds?.length || 0;
+      const shouldUseLocal = shouldPreferLocalFundSource({
+        localSource: localSnapshot.source,
+        localTime,
+        backendSource: backendData.source,
+        backendTime,
+      });
 
       if (backendFunds && backendFunds.length > 0) {
-        if (localTime > backendTime && localFunds.length > 0) {
+        if (shouldUseLocal && localFunds.length > 0) {
           // localStorage has unsynced changes — use local and re-push to backend
           console.warn('[useFundPortfolio] localStorage is newer than backend, re-syncing', { localTime, backendTime });
           setFunds(localFunds);
@@ -199,6 +227,15 @@ export function useFundPortfolio(): UseFundPortfolioReturn {
             source: 'backend',
             backendReachable: true,
           });
+          if (backendData.needsMigrationSync) {
+            syncFundsToBackend(backendFunds).then((ok) => {
+              setSyncStatus((prev) => ({
+                ...prev,
+                backendReachable: ok,
+                backendCount: ok ? backendFunds.length : prev.backendCount,
+              }));
+            });
+          }
         }
       } else if (localFunds.length > 0) {
         // backend empty — use localStorage, try to push to backend
