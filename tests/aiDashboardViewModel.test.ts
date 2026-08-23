@@ -18,7 +18,7 @@ test('benchmark formatter respects metric units and missing values', () => {
   assert.equal(formatBenchmarkValue({ value: 0.72 }, { unit: 'percent' }), '72.0%');
   assert.equal(formatBenchmarkValue({ value: 1200 }, { unit: 'elo' }), '1,200');
   assert.equal(formatBenchmarkValue({ value: 4 }, { unit: 'rank' }), '#4');
-  assert.equal(formatBenchmarkValue({ value: 71.234 }, { unit: 'index' }), '71.2');
+  assert.equal(formatBenchmarkValue({ value: 71.234 }, { unit: 'index' }), '71.2%');
   assert.equal(formatBenchmarkValue(null, { unit: 'index' }), '—');
 });
 

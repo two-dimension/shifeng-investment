@@ -204,4 +204,8 @@
     flex-direction: column;
     gap: 5px !important;
   }
+
+  .ai-source-row .ant-space-item {
+    white-space: nowrap;
+  }
 }

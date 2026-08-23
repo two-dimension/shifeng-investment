@@ -27,13 +27,14 @@ const feishuModels = [{
   vendor: 'Fable',
   model: 'Fable 5',
   releasedAt: '2026-08-01',
-  scores: { Legacy: { value: 99, direction: 'higher', metric: '旧口径' } },
+  scores: { Legacy: { value: 0.99, direction: 'higher', metric: '旧口径' } },
   sourceLabel: '飞书模型基准测试',
 }];
 
 test('canonical model selection ignores route variants and keeps an unevaluated latest text model', () => {
   assert.equal(canonicalModelSlug('openai/gpt-new:free'), 'openai/gpt-new');
   assert.equal(vendorLabel('meta-llama/llama-new'), 'Meta');
+  assert.equal(vendorLabel('meta/muse-new'), 'Meta');
 
   const selected = selectLatestCatalogModels(catalog, benchmarkRows, feishuModels);
 
@@ -75,6 +76,7 @@ test('normalizes all OpenRouter benchmark source shapes without merging unlike m
   assert.ok(normalized.metrics.some((metric) => metric.key === 'design-arena:models:dataviz:rank' && metric.direction === 'lower'));
   assert.ok(normalized.metrics.some((metric) => metric.key === 'openrouter:gpqa_diamond:accuracy' && metric.unit === 'percent'));
   assert.ok(normalized.metrics.some((metric) => metric.key === 'openrouter:gpqa_diamond:avg_cost_per_task' && metric.direction === 'lower'));
+  assert.ok(normalized.metrics.some((metric) => metric.key === 'feishu:Legacy' && metric.unit === 'percent'));
 
   const openAi = normalized.models.find((model) => model.vendor === 'OpenAI');
   assert.deepEqual(openAi.scores['openrouter:gpqa_diamond:accuracy'], {

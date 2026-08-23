@@ -4,6 +4,7 @@ export interface SourceStatus {
   status: SourceStatusCode;
   stale: boolean;
   asOf?: string | null;
+  syncedAt?: string | null;
   url?: string;
   message?: string;
 }
@@ -185,6 +186,7 @@ export interface AiDashboardSnapshot {
       metrics: number;
     };
     attributions: Array<{ source: string; label: string; url?: string }>;
+    feishuFallbackModels?: BenchmarkModel[];
   };
   computeRental: ComputeRentalQuote[];
   debtFinancing: DebtFinancing[];

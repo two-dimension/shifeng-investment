@@ -75,5 +75,6 @@ export function formatBenchmarkValue(
   if (metric.unit === 'elo') return Math.round(score.value).toLocaleString('en-US');
   if (metric.unit === 'rank') return `#${Math.round(score.value)}`;
   if (metric.unit === 'usd') return formatUsd(score.value, score.value < 0.01 ? 4 : 2);
+  if (metric.unit === 'index') return `${score.value.toFixed(1)}%`;
   return Number.isInteger(score.value) ? score.value.toLocaleString('en-US') : score.value.toFixed(1);
 }

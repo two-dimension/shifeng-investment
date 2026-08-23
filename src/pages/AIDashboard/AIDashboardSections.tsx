@@ -508,7 +508,7 @@ function legacyMetricDefinition(key: string, models: BenchmarkModel[]): Benchmar
     key,
     label: key,
     group: '飞书历史口径',
-    unit: score?.metric || 'number',
+    unit: score && Number.isFinite(score.value) && Math.abs(score.value) <= 1 ? 'percent' : (score?.metric || 'number'),
     direction: score?.direction === 'lower' ? 'lower' : 'higher',
     source: score?.source || 'feishu',
     sourceUrl: score?.sourceUrl,

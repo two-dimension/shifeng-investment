@@ -7,6 +7,7 @@ import {
   createAiDashboardService,
   createAiDashboardServiceFromEnv,
   createOpenRouterClient,
+  startAiDashboardAutoRefresh,
 } from './aiDashboardService.js';
 
 test('refresh writes a normalized snapshot and preserves last-good OpenRouter data when that source fails', async (t) => {
@@ -249,10 +250,11 @@ test('benchmark refresh respects 15-minute freshness while force bypasses it', a
   const service = createAiDashboardService({
     dataFile: path.join(dir, 'snapshot.json'),
     openRouterClient: benchmarkClientFixture({ onFetch: () => { calls += 1; } }),
-    now: () => new Date('2026-08-23T00:05:00.000Z'),
+    now: () => new Date('2026-08-24T00:05:00.000Z'),
   });
 
-  await service.refresh({ sources: ['benchmarks'], force: true });
+  const first = await service.refresh({ sources: ['benchmarks'], force: true });
+  assert.equal(first.sources.benchmarks.syncedAt, '2026-08-24T00:05:00.000Z');
   await service.refresh({ sources: ['benchmarks'] });
   assert.equal(calls, 2);
   await service.refresh({ sources: ['benchmarks'], force: true });
@@ -317,6 +319,37 @@ test('failed or empty online benchmark refresh preserves last-good and marks it 
   assert.equal(snapshot.benchmarks.models[0].model, 'Last Good');
   assert.equal(snapshot.sources.benchmarks.status, 'error');
   assert.equal(snapshot.sources.benchmarks.stale, true);
+});
+
+test('online benchmark refresh keeps Feishu-only tracked vendors across later refreshes', async (t) => {
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-benchmark-feishu-fallback-'));
+  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
+  const dataFile = path.join(dir, 'snapshot.json');
+  const feishuModels = [{
+    vendor: 'Fable', model: 'Fable 5', releasedAt: '2026-08-01',
+    scores: { Legacy: { value: 99, direction: 'higher', metric: '分' } },
+  }];
+  await fs.promises.writeFile(dataFile, JSON.stringify({
+    schemaVersion: 1,
+    generatedAt: '2026-08-22T00:00:00.000Z',
+    benchmarks: {
+      models: feishuModels,
+      metrics: [], winners: {}, asOf: '2026-08-22T00:00:00.000Z', sourceMode: 'feishu',
+      coverage: { vendors: 1, evaluatedVendors: 1, metrics: 1 }, attributions: [],
+      feishuFallbackModels: feishuModels,
+    },
+  }), 'utf8');
+  const service = createAiDashboardService({
+    dataFile,
+    openRouterClient: benchmarkClientFixture(),
+    now: () => new Date('2026-08-23T00:05:00.000Z'),
+  });
+
+  const first = await service.refresh({ sources: ['benchmarks'], force: true });
+  const second = await service.refresh({ sources: ['benchmarks'], force: true });
+
+  assert.deepEqual(first.benchmarks.models.map((model) => model.vendor), ['Fable', 'OpenAI']);
+  assert.deepEqual(second.benchmarks.models.map((model) => model.vendor), ['Fable', 'OpenAI']);
 });
 
 test('overlapping source refreshes are serialized without dropping the daily OpenRouter run', async (t) => {
@@ -461,4 +494,45 @@ test('OpenRouter metadata must end on the requested latest complete UTC day', as
 
   assert.equal(snapshot.sources.openRouter.status, 'error');
   assert.equal(snapshot.openRouter.weekTotalTokens, '123');
+});
+
+test('auto refresh schedules Benchmark independently and clears every timer', async () => {
+  const timeouts = [];
+  const intervals = [];
+  const clearedTimeouts = [];
+  const clearedIntervals = [];
+  const calls = [];
+  const service = {
+    async refresh(options) { calls.push(options); return {}; },
+  };
+  const stop = startAiDashboardAutoRefresh(service, {
+    setTimeoutImpl(callback, ms) {
+      const id = { type: 'timeout', index: timeouts.length };
+      timeouts.push({ callback, ms, id });
+      return id;
+    },
+    setIntervalImpl(callback, ms) {
+      const id = { type: 'interval', index: intervals.length };
+      intervals.push({ callback, ms, id });
+      return id;
+    },
+    clearTimeoutImpl(id) { clearedTimeouts.push(id); },
+    clearIntervalImpl(id) { clearedIntervals.push(id); },
+  });
+
+  assert.equal(timeouts.length, 1);
+  assert.equal(timeouts[0].ms, 5_000);
+  assert.deepEqual(intervals.map((timer) => timer.ms), [60 * 60 * 1000, 24 * 60 * 60 * 1000, 24 * 60 * 60 * 1000]);
+  await timeouts[0].callback();
+  for (const timer of intervals) await timer.callback();
+  assert.deepEqual(calls, [
+    { sources: ['feishu', 'openRouter', 'benchmarks'] },
+    { sources: ['feishu'] },
+    { sources: ['openRouter'] },
+    { sources: ['benchmarks'] },
+  ]);
+
+  stop();
+  assert.deepEqual(clearedTimeouts, [timeouts[0].id]);
+  assert.deepEqual(clearedIntervals, intervals.map((timer) => timer.id));
 });

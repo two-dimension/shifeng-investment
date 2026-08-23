@@ -68,6 +68,7 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
         status: 'authorization_required',
         stale: true,
         asOf: null,
+        syncedAt: null,
         url: OPENROUTER_BENCHMARKS_URL,
         message: '需配置 OPENROUTER_API_KEY',
       },
@@ -90,6 +91,7 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
       sourceMode: 'none',
       coverage: { vendors: 0, evaluatedVendors: 0, metrics: 0 },
       attributions: [],
+      feishuFallbackModels: [],
     },
     computeRental: [],
     debtFinancing: [],
@@ -125,7 +127,9 @@ function legacyBenchmarkSlice(models) {
         key,
         label: key,
         group: '飞书历史口径',
-        unit: score?.metric || 'number',
+        unit: Number.isFinite(Number(score?.value)) && Math.abs(Number(score.value)) <= 1
+          ? 'percent'
+          : (score?.metric || 'number'),
         direction: score?.direction === 'lower' ? 'lower' : 'higher',
         source: 'feishu',
         sourceUrl: FEISHU_SOURCE_URL,
@@ -139,6 +143,7 @@ function legacyBenchmarkSlice(models) {
       metrics: metricNames.length,
     },
     attributions: [{ source: 'feishu', label: '飞书模型基准测试', url: FEISHU_SOURCE_URL }],
+    feishuFallbackModels: models || [],
   };
 }
 
@@ -205,9 +210,9 @@ function feishuSlice(normalized, nowDate, previous) {
   }
   if (pricingChanged) slice.modelPricing = modelPricing;
   if (available.has('模型基准测试') && available.has('API模型token价格&发布日期&优化方向')) {
-    if (previous.benchmarks?.sourceMode !== 'openrouter') {
-      slice.benchmarks = legacyBenchmarkSlice(normalized.benchmarkModels);
-    }
+    slice.benchmarks = previous.benchmarks?.sourceMode === 'openrouter'
+      ? { ...previous.benchmarks, feishuFallbackModels: normalized.benchmarkModels }
+      : legacyBenchmarkSlice(normalized.benchmarkModels);
   }
   if (available.has('海外算力租赁价格追踪')) slice.computeRental = enrichComputeRental(normalized.computeRental);
   if (available.has('债务融资')) {
@@ -424,6 +429,7 @@ export function createAiDashboardService({
             throw new Error('OpenRouter Benchmark 返回空数据，已保留上一版');
           }
           const feishuModels = feishuResult?.value?.benchmarkModels
+            || next.benchmarks?.feishuFallbackModels
             || (next.benchmarks?.sourceMode === 'feishu' ? next.benchmarks.models : []);
           const normalized = normalizeOnlineBenchmarks({
             catalog: catalogPayload.data,
@@ -431,11 +437,12 @@ export function createAiDashboardService({
             feishuModels,
           });
           if (normalized.models.length === 0) throw new Error('OpenRouter Benchmark 无可匹配模型，已保留上一版');
-          next.benchmarks = normalized;
+          next.benchmarks = { ...normalized, feishuFallbackModels: feishuModels };
           next.sources.benchmarks = {
             status: 'ready',
             stale: false,
             asOf: normalized.asOf || generatedAt,
+            syncedAt: generatedAt,
             url: OPENROUTER_BENCHMARKS_URL,
             message: `Benchmark 同步成功：${normalized.coverage.evaluatedVendors}/${normalized.coverage.vendors} 个厂商有评测数据`,
           };
@@ -466,7 +473,7 @@ export function createAiDashboardService({
       const enqueue = async () => {
         if (benchmarkOnly && !options.force) {
           const snapshot = await getSnapshot();
-          const syncedAt = Date.parse(snapshot.sources.benchmarks?.asOf || '');
+          const syncedAt = Date.parse(snapshot.sources.benchmarks?.syncedAt || snapshot.sources.benchmarks?.asOf || '');
           if (snapshot.sources.benchmarks?.status === 'ready'
             && snapshot.benchmarks?.sourceMode === 'openrouter'
             && Number.isFinite(syncedAt)
@@ -533,17 +540,24 @@ export function createAiDashboardServiceFromEnv({
   return createAiDashboardService({ dataFile, feishuClient, openRouterClient, openRouterPublicClient, now });
 }
 
-export function startAiDashboardAutoRefresh(service) {
+export function startAiDashboardAutoRefresh(service, {
+  setTimeoutImpl = setTimeout,
+  setIntervalImpl = setInterval,
+  clearTimeoutImpl = clearTimeout,
+  clearIntervalImpl = clearInterval,
+} = {}) {
   const run = (sources) => service.refresh({ sources }).catch((error) => {
     console.error(`[ai-dashboard] automatic refresh failed: ${error.message}`);
   });
-  const initial = setTimeout(() => run(['feishu', 'openRouter']), 5_000);
-  const feishuInterval = setInterval(() => run(['feishu']), HOUR_MS);
-  const openRouterInterval = setInterval(() => run(['openRouter']), DAY_MS);
-  console.log('[ai-dashboard] scheduled Feishu hourly and OpenRouter daily');
+  const initial = setTimeoutImpl(() => run(['feishu', 'openRouter', 'benchmarks']), 5_000);
+  const feishuInterval = setIntervalImpl(() => run(['feishu']), HOUR_MS);
+  const openRouterInterval = setIntervalImpl(() => run(['openRouter']), DAY_MS);
+  const benchmarkInterval = setIntervalImpl(() => run(['benchmarks']), DAY_MS);
+  console.log('[ai-dashboard] scheduled Feishu hourly, OpenRouter rankings daily, and Benchmarks daily');
   return () => {
-    clearTimeout(initial);
-    clearInterval(feishuInterval);
-    clearInterval(openRouterInterval);
+    clearTimeoutImpl(initial);
+    clearIntervalImpl(feishuInterval);
+    clearIntervalImpl(openRouterInterval);
+    clearIntervalImpl(benchmarkInterval);
   };
 }
