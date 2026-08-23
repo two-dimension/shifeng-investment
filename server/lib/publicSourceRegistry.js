@@ -74,13 +74,13 @@ const DAY_MS = 86_400_000;
 
 export const PUBLIC_SOURCE_REGISTRY = validatePublicSourceRegistry([
   {
-    id: 'anthropic-news', slice: 'growth', entity: 'Anthropic',
-    entryUrl: 'https://www.anthropic.com/news', allowedHosts: ['www.anthropic.com'],
+    id: 'anthropic-run-rate', slice: 'growth', entity: 'Anthropic',
+    entryUrl: 'https://www.anthropic.com/news/series-h', allowedHosts: ['www.anthropic.com'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
   },
   {
-    id: 'openai-news', slice: 'growth', entity: 'OpenAI',
-    entryUrl: 'https://openai.com/news/', allowedHosts: ['openai.com'],
+    id: 'openai-arr-history', slice: 'growth', entity: 'OpenAI',
+    entryUrl: 'https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/', allowedHosts: ['openai.com'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
   },
   {

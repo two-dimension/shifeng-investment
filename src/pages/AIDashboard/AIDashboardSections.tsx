@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import {
   Alert,
@@ -9,7 +9,6 @@ import {
   Flex,
   Grid,
   Row,
-  Select,
   Space,
   Statistic,
   Table,
@@ -24,12 +23,14 @@ import {
   ArrowUpOutlined,
   BankOutlined,
   LineChartOutlined,
+  QuestionCircleOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useTheme } from '../../hooks/useTheme';
 import type {
   AiDashboardSnapshot,
   ArrCompanyMetric,
+  ArrPoint,
   BenchmarkMetricDefinition,
   BenchmarkModel,
   CdsCompanyMetric,
@@ -38,10 +39,13 @@ import type {
 } from './types';
 import {
   formatBenchmarkValue,
+  formatArrDelta,
   formatCacheHitRange,
   formatMultiple,
   formatTokenCount,
+  formatTokenDelta,
   formatUsd,
+  methodologyTooltip,
 } from './viewModel';
 
 const { Text, Title, Paragraph } = Typography;
@@ -80,6 +84,29 @@ function ChartCard({ title, extra, children, className = '' }: React.PropsWithCh
 
 function NoData({ description = '暂无可展示数据' }: { description?: string }) {
   return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={description} />;
+}
+
+function MetricHelp({ point }: { point: ArrPoint | null | undefined }) {
+  if (!point?.provenance) return null;
+  return (
+    <Tooltip title={(
+      <Flex vertical gap={3}>
+        {methodologyTooltip(point.provenance).map((line) => <span key={line}>{line}</span>)}
+        <a href={point.provenance.sourceUrl} target="_blank" rel="noreferrer">查看原始来源</a>
+      </Flex>
+    )}>
+      <QuestionCircleOutlined aria-label="查看数据口径" />
+    </Tooltip>
+  );
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 function useChartPalette() {
@@ -227,51 +254,81 @@ function CdsRiskSection({ data }: DashboardProps) {
   );
 }
 
-function ArrChart({ metric, height = 320 }: { metric: ArrCompanyMetric | null; height?: number }) {
+function CombinedArrChart({ metrics, height = 360 }: { metrics: ArrCompanyMetric[]; height?: number }) {
   const palette = useChartPalette();
   const screens = Grid.useBreakpoint();
   const compact = !screens.sm;
   const option = useMemo(() => {
-    if (!metric) return {};
-    const months = [...new Set([...metric.actualPoints, ...metric.forecastPoints].map((point) => point.month))].sort();
-    const actualByMonth = new Map(metric.actualPoints.map((point) => [point.month, point.value]));
-    const forecastByMonth = new Map(metric.forecastPoints.map((point) => [point.month, point.value]));
+    const selected = metrics.filter((metric) => ['Anthropic', 'OpenAI'].includes(metric.company));
+    const months = [...new Set(selected.flatMap((metric) => metric.actualPoints.map((point) => point.month)))].sort();
+    const colors = [palette.blue, palette.orange, palette.cyan, palette.red];
     return {
       animationDuration: 350,
-      color: [palette.blue, palette.orange],
-      tooltip: { trigger: 'axis' },
-      legend: { top: 0, textStyle: { color: palette.text }, data: ['实测 ARR', '月底预测'] },
-      grid: { left: compact ? 42 : 64, right: compact ? 8 : 24, top: 44, bottom: 42 },
+      tooltip: {
+        trigger: 'axis',
+        formatter: (params: Array<{
+          marker: string;
+          seriesName: string;
+          data?: { value: number; point: ArrPoint } | null;
+        }>) => {
+          const month = params.find((item) => item.data)?.data?.point.month || '';
+          const rows = params.filter((item) => item.data).map((item) => {
+            const point = item.data!.point;
+            const change = formatArrDelta(point.momAbsolute, point.momPercent);
+            const note = point.provenance?.commentary || point.commentary || point.note;
+            const period = point.comparisonLabel
+              ? `${point.consecutiveMonth ? '月环比' : '相邻观测变化'}：${escapeHtml(point.comparisonLabel)}`
+              : '首次观测';
+            const sourceLink = point.sourceUrl?.startsWith('https://')
+              ? `<a href="${escapeHtml(point.sourceUrl)}" target="_blank" rel="noreferrer">原始来源</a>`
+              : '';
+            return [
+              `${item.marker}<b>${escapeHtml(item.seriesName)}</b>`,
+              `ARR：${escapeHtml(compactNumber(point.value))} 亿美元`,
+              `${period} · ${escapeHtml(change)}`,
+              `口径：${escapeHtml(point.methodology || point.provenance?.methodology || '未标注')}`,
+              note ? `点评：${escapeHtml(note)}` : '',
+              sourceLink,
+            ].filter(Boolean).join('<br/>');
+          });
+          return [`<b>${escapeHtml(month)}</b>`, ...rows].join('<br/><br/>');
+        },
+      },
+      legend: { top: 0, type: 'scroll', textStyle: { color: palette.text } },
+      grid: { left: compact ? 42 : 64, right: compact ? 8 : 24, top: 58, bottom: 42 },
       xAxis: { type: 'category', data: months, axisLabel: { color: palette.text, fontSize: compact ? 9 : 12 }, axisLine: { lineStyle: { color: palette.line } } },
       yAxis: { type: 'value', name: compact ? '' : '亿美元', nameTextStyle: { color: palette.text }, axisLabel: { color: palette.text, fontSize: compact ? 9 : 12 }, splitLine: { lineStyle: { color: palette.line } } },
-      series: [
-        {
-          name: '实测 ARR',
+      series: selected.map((metric, index) => {
+        const byMonth = new Map(metric.actualPoints.map((point) => [point.month, point]));
+        const color = colors[index % colors.length];
+        return {
+          name: `${metric.company} · ${metric.sourceLabel}${metric.seriesKind === 'estimate' ? '（估算）' : '（官方）'}`,
           type: 'line',
           smooth: true,
           symbolSize: 7,
-          data: months.map((month) => actualByMonth.get(month) ?? null),
+          connectNulls: true,
+          data: months.map((month) => {
+            const point = byMonth.get(month);
+            return point ? { value: point.value, point } : null;
+          }),
+          itemStyle: { color },
+          lineStyle: { color, width: 2.5, type: metric.seriesKind === 'estimate' ? 'dashed' : 'solid' },
           label: {
             show: true,
             position: 'top',
             color: palette.text,
-            formatter: (params: { dataIndex: number }) => {
-              const point = metric.actualPoints.find((item) => item.month === months[params.dataIndex]);
+            formatter: (params: { data?: { point: ArrPoint } | null }) => {
+              const point = params.data?.point;
               return point?.momAbsolute === null || point?.momAbsolute === undefined ? '' : `${point.momAbsolute >= 0 ? '+' : ''}${compactNumber(point.momAbsolute)}`;
             },
           },
-        },
-        {
-          name: '月底预测',
-          type: 'line',
-          symbol: 'emptyCircle',
-          lineStyle: { type: 'dashed', width: 2 },
-          data: months.map((month) => forecastByMonth.get(month) ?? null),
-        },
-      ],
+        };
+      }),
     };
-  }, [compact, metric, palette]);
-  if (!metric) return <NoData description="暂无 ARR 数据" />;
+  }, [compact, metrics, palette]);
+  if (!metrics.some((metric) => ['Anthropic', 'OpenAI'].includes(metric.company) && metric.actualPoints.length > 0)) {
+    return <NoData description="暂无 Anthropic / OpenAI ARR 数据" />;
+  }
   return <ReactECharts option={option} style={{ height }} notMerge />;
 }
 
@@ -312,14 +369,93 @@ function OpenRouterHistoryChart({ data }: { data: AiDashboardSnapshot['openRoute
   const screens = Grid.useBreakpoint();
   const compact = !screens.sm;
   const option = useMemo(() => ({
-    tooltip: { trigger: 'axis', valueFormatter: (value: number) => formatTokenCount(String(Math.round(value))) },
-    grid: { left: compact ? 45 : 72, right: compact ? 8 : 24, top: 28, bottom: 42 },
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: Array<{ seriesName: string; marker: string; data: number | null; dataIndex: number }>) => {
+        const point = data.history[params[0]?.dataIndex];
+        if (!point) return '';
+        return [
+          `<b>${escapeHtml(point.startDate)} → ${escapeHtml(point.endDate)}</b>`,
+          `周 Token：${escapeHtml(formatTokenCount(point.totalTokens))}`,
+          `周环比：${escapeHtml(formatTokenDelta(point.weekOverWeekAbsolute, point.weekOverWeekPercent))}`,
+        ].join('<br/>');
+      },
+    },
+    legend: { top: 0, textStyle: { color: palette.text } },
+    grid: { left: compact ? 45 : 72, right: compact ? 45 : 72, top: 42, bottom: 42 },
     xAxis: { type: 'category', data: data.history.map((item) => item.endDate), axisLabel: { color: palette.text, rotate: 30, fontSize: compact ? 8 : 12 }, axisLine: { lineStyle: { color: palette.line } } },
-    yAxis: { type: 'value', axisLabel: { color: palette.text, fontSize: compact ? 8 : 12, formatter: (value: number) => formatTokenCount(String(Math.round(value))) }, splitLine: { lineStyle: { color: palette.line } } },
-    series: [{ type: 'line', smooth: true, symbolSize: 7, areaStyle: { opacity: 0.08 }, data: data.history.map((item) => safeTokenNumber(item.totalTokens)), itemStyle: { color: palette.cyan }, lineStyle: { width: 3, color: palette.cyan } }],
+    yAxis: [
+      { type: 'value', axisLabel: { color: palette.text, fontSize: compact ? 8 : 12, formatter: (value: number) => formatTokenCount(String(Math.round(value))) }, splitLine: { lineStyle: { color: palette.line } } },
+      { type: 'value', axisLabel: { color: palette.text, fontSize: compact ? 8 : 12, formatter: (value: number) => formatTokenCount(String(Math.round(value))) }, splitLine: { show: false } },
+    ],
+    series: [
+      { name: '周 Token 总量', type: 'line', smooth: true, symbolSize: 7, areaStyle: { opacity: 0.08 }, data: data.history.map((item) => safeTokenNumber(item.totalTokens)), itemStyle: { color: palette.cyan }, lineStyle: { width: 3, color: palette.cyan } },
+      { name: '周环比增量', type: 'bar', yAxisIndex: 1, data: data.history.map((item) => item.weekOverWeekAbsolute === null ? null : safeTokenNumber(item.weekOverWeekAbsolute)), itemStyle: { color: palette.orange, opacity: 0.72 } },
+    ],
   }), [compact, data.history, palette]);
   if (data.history.length === 0) return <NoData description="暂无 12 周历史" />;
   return <ReactECharts option={option} style={{ height: 320 }} notMerge />;
+}
+
+function ParrHistoryChart({ valuations }: { valuations: AiDashboardSnapshot['arrAndValuation']['valuations'] }) {
+  const palette = useChartPalette();
+  const screens = Grid.useBreakpoint();
+  const compact = !screens.sm;
+  const { comparable, dates, groups } = useMemo(() => {
+    const filtered = valuations.filter((row) => ['Anthropic', 'OpenAI'].includes(row.company) && row.parrLow !== null && row.parrHigh !== null);
+    const resolvedGroups = new Map<string, typeof filtered>();
+    for (const row of filtered) {
+      const key = `${row.company} · ${row.arrSourceLabel || row.arrSeriesKind || 'ARR'}`;
+      resolvedGroups.set(key, [...(resolvedGroups.get(key) || []), row]);
+    }
+    return {
+      comparable: filtered,
+      dates: [...new Set(filtered.map((row) => row.asOf))].sort(),
+      groups: resolvedGroups,
+    };
+  }, [valuations]);
+  const option = useMemo(() => ({
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: Array<{ marker: string; seriesName: string; data?: { value: number; row: typeof comparable[number] } | null }>) => {
+        const date = params.find((item) => item.data)?.data?.row.asOf || '';
+        const rows = params.filter((item) => item.data).map((item) => {
+          const row = item.data!.row;
+          return [
+            `${item.marker}<b>${escapeHtml(item.seriesName)}</b>`,
+            `P/ARR：${escapeHtml(formatMultiple(row.parrLow, row.parrHigh))}`,
+            `估值：${escapeHtml(compactNumber(row.valuationLow))}${row.valuationHigh !== row.valuationLow ? `–${escapeHtml(compactNumber(row.valuationHigh))}` : ''} 亿美元`,
+            `匹配 ARR：${escapeHtml(compactNumber(row.arrValue || 0))} 亿美元（${escapeHtml(dateLabel(row.arrAsOf))}）`,
+            `计算式：估值 ÷ ${escapeHtml(row.arrSourceLabel || 'ARR')} ARR`,
+            row.note ? `点评：${escapeHtml(row.note)}` : '',
+          ].filter(Boolean).join('<br/>');
+        });
+        return [`<b>${escapeHtml(date)}</b>`, ...rows].join('<br/><br/>');
+      },
+    },
+    legend: { top: 0, type: 'scroll', textStyle: { color: palette.text } },
+    grid: { left: compact ? 42 : 60, right: compact ? 8 : 24, top: 48, bottom: 42 },
+    xAxis: { type: 'category', data: dates, axisLabel: { color: palette.text, rotate: 30, fontSize: compact ? 8 : 12 }, axisLine: { lineStyle: { color: palette.line } } },
+    yAxis: { type: 'value', name: compact ? '' : 'P/ARR（x）', axisLabel: { color: palette.text, formatter: (value: number) => `${value.toFixed(0)}x` }, splitLine: { lineStyle: { color: palette.line } } },
+    series: [...groups.entries()].map(([name, rows], index) => {
+      const byDate = new Map(rows.map((row) => [row.asOf, row]));
+      const color = [palette.blue, palette.orange, palette.cyan, palette.red][index % 4];
+      return {
+        name,
+        type: 'line',
+        connectNulls: true,
+        symbolSize: 7,
+        data: dates.map((date) => {
+          const row = byDate.get(date);
+          return row ? { value: ((row.parrLow || 0) + (row.parrHigh || 0)) / 2, row } : null;
+        }),
+        itemStyle: { color },
+        lineStyle: { color, width: 2.5, type: rows[0]?.arrSeriesKind === 'estimate' ? 'dashed' : 'solid' },
+      };
+    }),
+  }), [compact, dates, groups, palette]);
+  if (comparable.length === 0) return <NoData description="暂无 Anthropic / OpenAI P/ARR 历史" />;
+  return <ReactECharts option={option} style={{ height: 340 }} notMerge />;
 }
 
 function latestArrCompany(data: AiDashboardSnapshot) {
@@ -328,6 +464,7 @@ function latestArrCompany(data: AiDashboardSnapshot) {
 
 export function OverviewSection({ data }: DashboardProps) {
   const arr = latestArrCompany(data);
+  const arrPoint = arr?.latestActual;
   const debt = data.debtFinancing[0];
   const valuation = data.arrAndValuation.valuations[0];
   return (
@@ -335,14 +472,20 @@ export function OverviewSection({ data }: DashboardProps) {
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} xl={6}>
           <Card className="ai-kpi-card">
-            <Statistic title={`最新 ARR${arr ? ` · ${arr.company}` : ''}`} value={arr?.latestActual?.value ?? '—'} suffix={arr ? '亿美元' : undefined} precision={arr ? 2 : undefined} prefix={<LineChartOutlined />} />
-            <Text type="secondary">三月斜率：{arr?.slope3m === null || arr?.slope3m === undefined ? '不足三期' : `${compactNumber(arr.slope3m)} 亿美元/月`}</Text>
+            <Statistic
+              title={<Space size={6}><span>{`最新 ARR${arr ? ` · ${arr.company}` : ''}`}</span><MetricHelp point={arrPoint} /></Space>}
+              value={arrPoint?.value ?? '—'}
+              suffix={arr ? '亿美元' : undefined}
+              precision={arr ? 2 : undefined}
+              prefix={<LineChartOutlined />}
+            />
+            <Text type="secondary">{arrPoint ? `${arr.sourceLabel} · ${formatArrDelta(arrPoint.momAbsolute, arrPoint.momPercent)}` : '暂无环比观测'}</Text>
           </Card>
         </Col>
         <Col xs={24} sm={12} xl={6}>
           <Card className="ai-kpi-card">
-            <Statistic title="OpenRouter 周 Token" value={formatTokenCount(data.openRouter.weekTotalTokens)} prefix={<ThunderboltOutlined />} />
-            <Text type="secondary">{data.openRouter.weekTotalTokens === null ? '全平台合计需 Data API 授权' : `${dateLabel(data.openRouter.startDate)} 至 ${dateLabel(data.openRouter.endDate)} · 完整 UTC 日`}</Text>
+            <Statistic title="OpenRouter 周环比 Token" value={formatTokenDelta(data.openRouter.weekOverWeekAbsolute, data.openRouter.weekOverWeekPercent)} prefix={<ThunderboltOutlined />} />
+            <Text type="secondary">{data.openRouter.weekTotalTokens === null ? '平台周环比需 Data API 授权' : `本周总量 ${formatTokenCount(data.openRouter.weekTotalTokens)} · 两个完整 UTC 周`}</Text>
           </Card>
         </Col>
         <Col xs={24} sm={12} xl={6}>
@@ -360,8 +503,8 @@ export function OverviewSection({ data }: DashboardProps) {
       </Row>
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={12}>
-          <ChartCard title="ARR 斜率与实测值" extra={arr?.stale ? <Tag color="warning">超过 18 天未更新</Tag> : <Tag color="success">实测有效</Tag>}>
-            <ArrChart metric={arr} height={340} />
+          <ChartCard title="Anthropic 与 OpenAI ARR · 官方 / 估算分列" extra={arr?.stale ? <Tag color="warning">部分观测超过 18 天</Tag> : <Tag color="success">观测有效</Tag>}>
+            <CombinedArrChart metrics={data.arrAndValuation.companies} height={340} />
           </ChartCard>
         </Col>
         <Col xs={24} xl={12}>
@@ -397,7 +540,7 @@ export function OverviewSection({ data }: DashboardProps) {
 function ValuationTable({ data, compact = false }: { data: AiDashboardSnapshot['arrAndValuation']['valuations']; compact?: boolean }) {
   return (
     <Table
-      rowKey={(row) => `${row.company}-${row.asOf}`}
+      rowKey={(row) => `${row.company}-${row.asOf}-${row.arrSourceLabel || row.arrSeriesKind || 'arr'}`}
       size="small"
       pagination={compact ? false : { pageSize: 10 }}
       scroll={{ x: 820 }}
@@ -409,6 +552,7 @@ function ValuationTable({ data, compact = false }: { data: AiDashboardSnapshot['
         { title: '估值（亿美元）', width: 140, render: (_, row) => row.valuationLow === row.valuationHigh ? compactNumber(row.valuationLow) : `${compactNumber(row.valuationLow)}–${compactNumber(row.valuationHigh)}` },
         { title: '匹配 ARR', width: 115, render: (_, row) => row.arrValue === null ? '—' : compactNumber(row.arrValue) },
         { title: 'ARR 日期', dataIndex: 'arrAsOf', width: 112, render: dateLabel },
+        { title: 'ARR 口径', width: 145, render: (_, row) => row.arrSourceLabel ? `${row.arrSourceLabel}${row.arrSeriesKind === 'estimate' ? '（估算）' : '（官方）'}` : '—' },
         { title: 'P/ARR', width: 110, render: (_, row) => <Text strong>{formatMultiple(row.parrLow, row.parrHigh)}</Text> },
         { title: '点评', dataIndex: 'note', ellipsis: { showTitle: false }, render: (value) => <Tooltip title={value}><span>{value || '—'}</span></Tooltip> },
       ]}
@@ -417,44 +561,56 @@ function ValuationTable({ data, compact = false }: { data: AiDashboardSnapshot['
 }
 
 export function ArrValuationSection({ data }: DashboardProps) {
-  const [company, setCompany] = useState(data.arrAndValuation.companies[0]?.company);
-  const metric = data.arrAndValuation.companies.find((item) => item.company === company) || data.arrAndValuation.companies[0] || null;
+  const metrics = data.arrAndValuation.companies.filter((item) => ['Anthropic', 'OpenAI'].includes(item.company));
+  const latestPoints = metrics.map((metric) => ({ metric, point: metric.latestActual })).filter((item) => item.point);
+  const detailRows = metrics.flatMap((metric) => metric.actualPoints.map((point) => ({ ...point, seriesId: metric.seriesId })))
+    .toSorted((left, right) => right.observedAt.localeCompare(left.observedAt));
   return (
     <div className="ai-section-stack">
-      <ChartCard
-        title="ARR 实测、月度绝对增长与三月斜率"
-        extra={data.arrAndValuation.companies.length > 0 ? <Select value={metric?.company} style={{ minWidth: 170 }} options={data.arrAndValuation.companies.map((item) => ({ value: item.company, label: item.company }))} onChange={setCompany} /> : undefined}
-      >
+      <ChartCard title="Anthropic 与 OpenAI ARR · 官方披露和 Yipit 估算不合并">
         <Row gutter={[20, 12]}>
-          <Col xs={24} lg={18}><ArrChart metric={metric} height={370} /></Col>
+          <Col xs={24} lg={18}><CombinedArrChart metrics={metrics} height={390} /></Col>
           <Col xs={24} lg={6}>
             <Flex vertical gap={14} className="ai-arr-aside">
-              <Statistic title="最新实测 ARR" value={metric?.latestActual?.value ?? '—'} precision={metric ? 2 : undefined} suffix={metric ? '亿美元' : undefined} />
-              <Statistic title="最近三实测月斜率" value={metric?.slope3m ?? '—'} precision={metric?.slope3m !== null ? 2 : undefined} suffix={metric?.slope3m !== null ? '亿美元/月' : undefined} />
-              {metric?.stale && <Alert type="warning" showIcon title="Yipit 更新提醒" description="最新实测值已超过 18 天。" />}
-              <Paragraph type="secondary">月底预测仅用虚线展示，不参与绝对环比、斜率或 P/ARR 计算。</Paragraph>
+              {latestPoints.map(({ metric, point }) => (
+                <Card size="small" key={metric.seriesId}>
+                  <Statistic
+                    title={<Space size={6}><span>{metric.company} · {metric.seriesKind === 'estimate' ? '估算' : '官方'}</span><MetricHelp point={point} /></Space>}
+                    value={point?.value ?? '—'}
+                    precision={2}
+                    suffix="亿美元"
+                  />
+                  <Text type="secondary">{metric.sourceLabel} · {formatArrDelta(point?.momAbsolute, point?.momPercent)}</Text>
+                </Card>
+              ))}
+              {metrics.some((metric) => metric.stale) && <Alert type="warning" showIcon title="更新提醒" description="部分 ARR 观测已超过 18 天，请查看各点来源日期。" />}
+              <Paragraph type="secondary">实线为公司官方披露，虚线为估算。非连续月份明确标为“相邻观测变化”，不伪称单月环比。</Paragraph>
             </Flex>
           </Col>
         </Row>
       </ChartCard>
-      <ChartCard title="月度 ARR 明细" extra={<Text type="secondary">仅显示绝对增长，不提供环比百分比或同比</Text>}>
+      <ChartCard title="ARR 观测明细" extra={<Text type="secondary">环比同时显示绝对增量和百分比</Text>}>
         <Table
           size="small"
-          rowKey={(row) => `${row.company}-${row.month}`}
+          rowKey={(row) => `${row.seriesId}-${row.month}`}
           pagination={false}
-          scroll={{ x: 760 }}
+          scroll={{ x: 1080 }}
           locale={{ emptyText: <NoData description="暂无 ARR 实测数据" /> }}
-          dataSource={metric?.actualPoints || []}
+          dataSource={detailRows}
           columns={[
+            { title: '公司', dataIndex: 'company', width: 110, fixed: 'left' },
+            { title: '口径', dataIndex: 'seriesKind', width: 90, render: (value) => value === 'estimate' ? <Tag color="orange">估算</Tag> : <Tag color="blue">官方</Tag> },
             { title: '月份', dataIndex: 'month', width: 110 },
             { title: '实测 ARR（亿美元）', dataIndex: 'value', width: 165, render: compactNumber },
-            { title: '月度绝对增长（亿美元）', dataIndex: 'momAbsolute', width: 205, render: (value: number | null) => value === null ? '—' : <Text className={value >= 0 ? 'ai-change-up' : 'ai-change-down'}>{value >= 0 ? '+' : ''}{compactNumber(value)}</Text> },
+            { title: '环比变化', width: 205, render: (_, row) => <Text className={(row.momAbsolute || 0) >= 0 ? 'ai-change-up' : 'ai-change-down'}>{formatArrDelta(row.momAbsolute, row.momPercent)}</Text> },
+            { title: '比较区间', dataIndex: 'comparisonLabel', width: 210, render: (value, row) => value ? `${value}${row.consecutiveMonth ? '' : ' · 非连续观测'}` : '首次观测' },
             { title: '实测日期', dataIndex: 'observedAt', width: 112 },
             { title: '来源', dataIndex: 'sourceLabel', width: 110 },
-            { title: 'Yipit 点评', dataIndex: 'note', render: (value) => value || '—' },
+            { title: '口径 / 点评', render: (_, row) => <Tooltip title={row.provenance?.commentary || row.commentary || row.note}><span>{row.methodology || row.provenance?.methodology || '—'}</span></Tooltip> },
           ]}
         />
       </ChartCard>
+      <ChartCard title="Anthropic 与 OpenAI P/ARR 完整历史"><ParrHistoryChart valuations={data.arrAndValuation.valuations} /></ChartCard>
       <ChartCard title="估值与 P/ARR"><ValuationTable data={data.arrAndValuation.valuations} /></ChartCard>
     </div>
   );
@@ -468,12 +624,20 @@ export function OpenRouterSection({ data }: DashboardProps) {
         showIcon
         title="口径说明"
         description={data.openRouter.weekTotalTokens === null
-          ? '当前展示 OpenRouter 公开榜单的最近七日 Top 10（页面显示值为约数）。全平台总量与 12 周趋势需 Data API 授权；不等同于全行业使用量、请求次数或模型质量。'
-          : '这里展示 OpenRouter 最近七个完整 UTC 日的公开 Token 流量（保留 other 计入平台总量），不等同于全行业使用量、请求次数或模型质量。'}
+          ? '当前仅展示 OpenRouter 公开榜单 Top 10（页面显示值为约数）。平台周环比需 Data API 授权；不等同于全行业使用量、请求次数或模型质量。'
+          : '周环比使用最近两个完整 UTC 七日窗口，核心指标为 Token 绝对增减；保留 other 计入平台总量，不等同于全行业使用量、请求次数或模型质量。'}
       />
       <Row gutter={[16, 16]}>
+        <Col xs={24} md={12}>
+          <Card className="ai-kpi-card"><Statistic title="平台周环比 Token 增量" value={formatTokenDelta(data.openRouter.weekOverWeekAbsolute, data.openRouter.weekOverWeekPercent)} /></Card>
+        </Col>
+        <Col xs={24} md={12}>
+          <Card className="ai-kpi-card"><Statistic title="本周 Token 总量（辅助）" value={formatTokenCount(data.openRouter.weekTotalTokens)} /><Text type="secondary">{data.openRouter.weekTotalTokens === null ? '平台周环比需 Data API 授权' : `${dateLabel(data.openRouter.startDate)} → ${dateLabel(data.openRouter.endDate)}`}</Text></Card>
+        </Col>
+      </Row>
+      <Row gutter={[16, 16]}>
         <Col xs={24} xl={14}><ChartCard title="Top 10 模型 · 周 Token"><OpenRouterTopChart data={data.openRouter} height={430} /></ChartCard></Col>
-        <Col xs={24} xl={10}><ChartCard title="平台周 Token 总量 · 12 周"><OpenRouterHistoryChart data={data.openRouter} /></ChartCard></Col>
+        <Col xs={24} xl={10}><ChartCard title="平台周 Token 总量与周环比增量"><OpenRouterHistoryChart data={data.openRouter} /></ChartCard></Col>
       </Row>
       <ChartCard title="周排名表" extra={<Text type="secondary">{data.openRouter.weekTotalTokens === null ? '平台合计待 Data API 授权' : `平台合计 ${formatTokenCount(data.openRouter.weekTotalTokens)}`}</Text>}>
         <Table

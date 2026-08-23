@@ -344,8 +344,8 @@ test('overlapping public-slice refreshes are serialized without dropping OpenRou
       async fetchRankings() {
         openRouterCalls += 1;
         return {
-          data: Array.from({ length: 7 }, (_, index) => ({
-            date: `2026-08-${String(13 + index).padStart(2, '0')}`,
+          data: Array.from({ length: 14 }, (_, index) => ({
+            date: `2026-08-${String(6 + index).padStart(2, '0')}`,
             model_permaslug: 'vendor/model',
             total_tokens: '6',
           })),
@@ -366,6 +366,7 @@ test('overlapping public-slice refreshes are serialized without dropping OpenRou
   assert.equal(snapshot.sources.growth.status, 'ready');
   assert.equal(snapshot.sources.openRouter.status, 'ready');
   assert.equal(snapshot.openRouter.weekTotalTokens, '42');
+  assert.equal(snapshot.openRouter.weekOverWeekAbsolute, '0');
 });
 
 test('incomplete OpenRouter responses preserve the last-good week', async (t) => {

@@ -71,6 +71,9 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
       startDate: null,
       endDate: null,
       weekTotalTokens: null,
+      priorWeekTotalTokens: null,
+      weekOverWeekAbsolute: null,
+      weekOverWeekPercent: null,
       topModels: [],
       history: [],
       attribution: 'Source: OpenRouter (openrouter.ai/rankings). Licensed under CC BY 4.0.',
@@ -177,7 +180,7 @@ function openRouterCoverageError(payload, expectedEndDate) {
   const dates = new Set((payload.data || [])
     .filter((row) => row.model_permaslug && /^\d+$/.test(String(row.total_tokens || '')))
     .map((row) => row.date));
-  const missingDates = Array.from({ length: 7 }, (_, offset) => utcDateOffset(new Date(`${expectedEndDate}T00:00:00.000Z`), -offset))
+  const missingDates = Array.from({ length: 14 }, (_, offset) => utcDateOffset(new Date(`${expectedEndDate}T00:00:00.000Z`), -offset))
     .filter((date) => !dates.has(date));
   return missingDates.length > 0 ? `OpenRouter 缺少完整 UTC 日：${missingDates.join('、')}` : null;
 }
@@ -337,6 +340,9 @@ export function createAiDashboardService({
             startDate: payload.startDate,
             endDate: payload.endDate,
             weekTotalTokens: null,
+            priorWeekTotalTokens: null,
+            weekOverWeekAbsolute: null,
+            weekOverWeekPercent: null,
             topModels: payload.topModels,
             history: [],
             attribution: `Source: OpenRouter public leaderboard (openrouter.ai/rankings), as of ${payload.asOf}. Rounded display values. Licensed under CC BY 4.0.`,

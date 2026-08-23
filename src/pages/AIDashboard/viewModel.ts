@@ -34,12 +34,41 @@ export function formatTokenCount(value: string | null | undefined): string {
     return '—';
   }
   if (tokens === 0n) return '0';
-  const unit = TOKEN_UNITS.find(({ divisor }) => tokens >= divisor);
+  const sign = tokens < 0n ? '-' : '';
+  const absolute = tokens < 0n ? -tokens : tokens;
+  const unit = TOKEN_UNITS.find(({ divisor }) => absolute >= divisor);
   if (!unit) return tokens.toString();
-  const roundedHundredths = (tokens * 100n + unit.divisor / 2n) / unit.divisor;
+  const roundedHundredths = (absolute * 100n + unit.divisor / 2n) / unit.divisor;
   const whole = roundedHundredths / 100n;
   const fraction = String(roundedHundredths % 100n).padStart(2, '0').replace(/0+$/, '');
-  return `${whole}${fraction ? `.${fraction}` : ''}${unit.suffix}`;
+  return `${sign}${whole}${fraction ? `.${fraction}` : ''}${unit.suffix}`;
+}
+
+function signedPercent(value: number | null | undefined): string | null {
+  if (value === null || value === undefined || !Number.isFinite(value)) return null;
+  const percent = value * 100;
+  return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}%`;
+}
+
+export function formatArrDelta(value: number | null | undefined, percent: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+  const formatted = Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '');
+  const change = `${value > 0 ? '+' : ''}${formatted} 亿美元`;
+  const percentage = signedPercent(percent);
+  return percentage ? `${change}（${percentage}）` : change;
+}
+
+export function formatTokenDelta(value: string | null | undefined, percent: number | null | undefined): string {
+  if (value === null || value === undefined || value === '') return '—';
+  let parsed: bigint;
+  try {
+    parsed = BigInt(value);
+  } catch {
+    return '—';
+  }
+  const change = `${parsed > 0n ? '+' : ''}${formatTokenCount(value)} Tokens`;
+  const percentage = signedPercent(percent);
+  return percentage ? `${change}（${percentage}）` : change;
 }
 
 export function formatUsd(value: number | null | undefined, digits = 2): string {

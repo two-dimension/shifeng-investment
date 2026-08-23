@@ -3,30 +3,37 @@ import test from 'node:test';
 import {
   aggregateOpenRouterWeekly,
   attachValuationMultiples,
+  buildArrComparison,
   buildArrMetrics,
   selectLatestBenchmarkModels,
   validateCacheHitRange,
 } from './aiDashboardMetrics.js';
 
-test('ARR uses the last monthly actual, excludes forecasts, and reports absolute movement plus three-month slope', () => {
+test('ARR reports observation-to-observation absolute and percent change without calling a skipped month monthly', () => {
   const metrics = buildArrMetrics([
-    { company: 'Anthropic', observedAt: '2026-05-01', value: 470, kind: 'actual', sourceLabel: 'Yipit' },
-    { company: 'Anthropic', observedAt: '2026-05-26', value: 500, kind: 'actual', sourceLabel: 'Yipit' },
-    { company: 'Anthropic', observedAt: '2026-05-26', value: 700, kind: 'forecast', sourceLabel: 'Yipit' },
-    { company: 'Anthropic', observedAt: '2026-06-12', value: 650, kind: 'actual', sourceLabel: 'Yipit' },
-    { company: 'Anthropic', observedAt: '2026-07-15', value: 730, kind: 'actual', sourceLabel: 'Yipit' },
+    { company: 'Anthropic', observedAt: '2026-05-26', value: 60, kind: 'actual', sourceLabel: 'Yipit', seriesKind: 'estimate' },
+    { company: 'Anthropic', observedAt: '2026-07-15', value: 90, kind: 'actual', sourceLabel: 'Yipit', seriesKind: 'estimate' },
+    { company: 'Anthropic', observedAt: '2026-07-31', value: 100, kind: 'actual', sourceLabel: 'Yipit', seriesKind: 'estimate' },
+    { company: 'Anthropic', observedAt: '2026-08-31', value: 120, kind: 'forecast', sourceLabel: 'Yipit', seriesKind: 'estimate' },
   ], { now: new Date('2026-08-01T00:00:00.000Z') });
 
   assert.equal(metrics.length, 1);
-  assert.deepEqual(metrics[0].actualPoints.map(({ month, value, momAbsolute }) => ({ month, value, momAbsolute })), [
-    { month: '2026-05', value: 500, momAbsolute: null },
-    { month: '2026-06', value: 650, momAbsolute: 150 },
-    { month: '2026-07', value: 730, momAbsolute: 80 },
+  assert.deepEqual(metrics[0].actualPoints.map(({
+    month, value, momAbsolute, momPercent, comparisonLabel, consecutiveMonth,
+  }) => ({ month, value, momAbsolute, momPercent, comparisonLabel, consecutiveMonth })), [
+    {
+      month: '2026-05', value: 60, momAbsolute: null, momPercent: null,
+      comparisonLabel: null, consecutiveMonth: null,
+    },
+    {
+      month: '2026-07', value: 100, momAbsolute: 40, momPercent: 2 / 3,
+      comparisonLabel: '2026-05-26 → 2026-07-31', consecutiveMonth: false,
+    },
   ]);
   assert.deepEqual(metrics[0].forecastPoints.map(({ month, value }) => ({ month, value })), [
-    { month: '2026-05', value: 700 },
+    { month: '2026-08', value: 120 },
   ]);
-  assert.equal(metrics[0].slope3m, 115);
+  assert.equal('slope3m' in metrics[0], false);
   assert.equal(metrics[0].stale, false);
 });
 
@@ -38,46 +45,89 @@ test('ARR marks Yipit stale after 18 days without an actual observation', () => 
   assert.equal(metric.stale, true);
 });
 
-test('valuation uses the most recent prior actual ARR and returns a P/ARR range', () => {
+test('official and estimate ARR stay separate and P/ARR matches the requested prior series', () => {
   const arr = buildArrMetrics([
-    { company: 'Anthropic', observedAt: '2026-05-26', value: 500, kind: 'actual', sourceLabel: 'Yipit' },
-    { company: 'Anthropic', observedAt: '2026-06-12', value: 650, kind: 'actual', sourceLabel: 'Yipit' },
+    { company: 'Anthropic', observedAt: '2026-05-10', value: 470, kind: 'actual', sourceLabel: 'Anthropic', seriesKind: 'official', methodology: 'run-rate revenue' },
+    { company: 'Anthropic', observedAt: '2026-07-31', value: 730, kind: 'actual', sourceLabel: 'Yipit', seriesKind: 'estimate', methodology: 'Yipit estimate' },
+    { company: 'OpenAI', observedAt: '2025-12-31', value: 200, kind: 'actual', sourceLabel: 'OpenAI', seriesKind: 'official', methodology: 'reported ARR' },
+    { company: 'OpenAI', observedAt: '2026-03-31', value: 240, kind: 'actual', sourceLabel: 'OpenAI', seriesKind: 'official', methodology: 'monthly revenue annualized' },
   ]);
 
-  const [valuation, tooEarly] = attachValuationMultiples([
-    { company: 'Anthropic', asOf: '2026-06-30', valuationLow: 3800, valuationHigh: 4000 },
-    { company: 'Anthropic', asOf: '2026-04-30', valuationLow: 3000, valuationHigh: 3000 },
+  const [anthropicOfficial, anthropicEstimate, openAi, tooEarly] = attachValuationMultiples([
+    { company: 'Anthropic', asOf: '2026-08-15', valuationLow: 9650, valuationHigh: 9650, arrSeriesKind: 'official' },
+    { company: 'Anthropic', asOf: '2026-08-15', valuationLow: 9650, valuationHigh: 9650, arrSeriesKind: 'estimate' },
+    { company: 'OpenAI', asOf: '2026-08-15', valuationLow: 8520, valuationHigh: 8520, arrSeriesKind: 'official' },
+    { company: 'OpenAI', asOf: '2023-04-30', valuationLow: 300, valuationHigh: 300, arrSeriesKind: 'official' },
   ], arr);
 
-  assert.equal(valuation.arrAsOf, '2026-06-12');
-  assert.equal(valuation.arrValue, 650);
-  assert.equal(valuation.parrLow, 3800 / 650);
-  assert.equal(valuation.parrHigh, 4000 / 650);
+  assert.equal(anthropicOfficial.arrValue, 470);
+  assert.equal(anthropicOfficial.arrSourceLabel, 'Anthropic');
+  assert.equal(anthropicEstimate.arrValue, 730);
+  assert.equal(anthropicEstimate.arrSourceLabel, 'Yipit');
+  assert.equal(openAi.arrAsOf, '2026-03-31');
+  assert.equal(openAi.arrValue, 240);
+  assert.equal(openAi.parrLow, 8520 / 240);
   assert.equal(tooEarly.arrValue, null);
   assert.equal(tooEarly.parrLow, null);
 });
 
-test('OpenRouter aggregates seven complete UTC days with 64-bit-safe totals and keeps other in the platform total', () => {
-  const rows = [
-    { date: '2026-08-12', model_permaslug: 'vendor/ignored', total_tokens: '999999' },
-    { date: '2026-08-13', model_permaslug: 'vendor/a', total_tokens: '9007199254740993' },
-    { date: '2026-08-13', model_permaslug: 'other', total_tokens: '7' },
-    { date: '2026-08-14', model_permaslug: 'vendor/b', total_tokens: '20' },
-    { date: '2026-08-19', model_permaslug: 'vendor/a', total_tokens: '10' },
-  ];
+test('combined ARR comparison aligns Anthropic and OpenAI while preserving source series', () => {
+  const metrics = buildArrMetrics([
+    { company: 'Anthropic', observedAt: '2026-05-10', value: 470, kind: 'actual', sourceLabel: 'Anthropic', seriesKind: 'official' },
+    { company: 'Anthropic', observedAt: '2026-07-31', value: 730, kind: 'actual', sourceLabel: 'Yipit', seriesKind: 'estimate' },
+    { company: 'OpenAI', observedAt: '2026-03-31', value: 240, kind: 'actual', sourceLabel: 'OpenAI', seriesKind: 'official' },
+  ]);
+
+  const comparison = buildArrComparison(metrics, ['Anthropic', 'OpenAI']);
+
+  assert.deepEqual(comparison.months, ['2026-03', '2026-05', '2026-07']);
+  assert.deepEqual(comparison.series.map(({ company, seriesKind, sourceLabel, points }) => ({
+    company, seriesKind, sourceLabel, values: points.map((point) => point?.value ?? null),
+  })), [
+    { company: 'Anthropic', seriesKind: 'estimate', sourceLabel: 'Yipit', values: [null, null, 730] },
+    { company: 'Anthropic', seriesKind: 'official', sourceLabel: 'Anthropic', values: [null, 470, null] },
+    { company: 'OpenAI', seriesKind: 'official', sourceLabel: 'OpenAI', values: [240, null, null] },
+  ]);
+});
+
+test('OpenRouter aggregates two complete UTC weeks and reports positive week-over-week Token change', () => {
+  const rows = Array.from({ length: 14 }, (_, index) => ({
+    date: `2026-08-${String(6 + index).padStart(2, '0')}`,
+    model_permaslug: index === 13 ? 'other' : 'vendor/a',
+    total_tokens: String(index < 7 ? 10 : 15),
+  }));
 
   const result = aggregateOpenRouterWeekly(rows, { endDate: '2026-08-19', weeks: 2 });
 
-  assert.equal(result.weekTotalTokens, '9007199254741030');
-  assert.deepEqual(result.topModels, [
-    { model: 'vendor/a', totalTokens: '9007199254741003', rank: 1 },
-    { model: 'vendor/b', totalTokens: '20', rank: 2 },
-  ]);
+  assert.equal(result.priorWeekTotalTokens, '70');
+  assert.equal(result.weekTotalTokens, '105');
+  assert.equal(result.weekOverWeekAbsolute, '35');
+  assert.equal(result.weekOverWeekPercent, 0.5);
+  assert.deepEqual(result.topModels, [{ model: 'vendor/a', totalTokens: '90', rank: 1 }]);
   assert.equal(result.history.length, 2);
-  assert.equal(result.history[1].endDate, '2026-08-19');
+  assert.deepEqual(result.history.map(({ totalTokens, weekOverWeekAbsolute }) => ({ totalTokens, weekOverWeekAbsolute })), [
+    { totalTokens: '70', weekOverWeekAbsolute: null },
+    { totalTokens: '105', weekOverWeekAbsolute: '35' },
+  ]);
 });
 
-test('benchmark keeps each vendor latest model and excludes Fable or Mythos from winners', () => {
+test('OpenRouter reports negative change and leaves percent blank when the prior week is zero', () => {
+  const datedRows = (prior, latest) => Array.from({ length: 14 }, (_, index) => ({
+    date: `2026-08-${String(6 + index).padStart(2, '0')}`,
+    model_permaslug: 'vendor/a',
+    total_tokens: String(index < 7 ? prior : latest),
+  }));
+
+  const down = aggregateOpenRouterWeekly(datedRows(20, 10), { endDate: '2026-08-19', weeks: 2 });
+  const noBase = aggregateOpenRouterWeekly(datedRows(0, 10), { endDate: '2026-08-19', weeks: 2 });
+
+  assert.equal(down.weekOverWeekAbsolute, '-70');
+  assert.equal(down.weekOverWeekPercent, -0.5);
+  assert.equal(noBase.weekOverWeekAbsolute, '70');
+  assert.equal(noBase.weekOverWeekPercent, null);
+});
+
+test('benchmark keeps each vendor latest model and does not exclude Fable or Mythos from winners', () => {
   const result = selectLatestBenchmarkModels([
     { vendor: 'OpenAI', model: 'GPT-5.5', releasedAt: '2026-04-01', scores: { coding: { value: 80, direction: 'higher' } } },
     { vendor: 'OpenAI', model: 'GPT-5.6', releasedAt: '2026-07-01', scores: { coding: { value: 90, direction: 'higher' }, cost: { value: 2, direction: 'lower' } } },
@@ -86,8 +136,8 @@ test('benchmark keeps each vendor latest model and excludes Fable or Mythos from
   ]);
 
   assert.deepEqual(result.models.map((model) => model.model), ['Opus 5', 'Mythos Preview', 'GPT-5.6']);
-  assert.deepEqual(result.winners.coding, ['Opus 5', 'GPT-5.6']);
-  assert.deepEqual(result.winners.cost, ['Opus 5']);
+  assert.deepEqual(result.winners.coding, ['Mythos Preview']);
+  assert.deepEqual(result.winners.cost, ['Mythos Preview']);
 });
 
 test('cache hit range accepts only ordered percentages between zero and one hundred', () => {

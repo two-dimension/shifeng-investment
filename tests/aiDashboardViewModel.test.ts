@@ -34,6 +34,18 @@ test('USD formatter preserves zero and distinguishes unavailable values', () => 
   assert.equal(formatUsd(null), '—');
 });
 
+test('ARR and Token delta formatters preserve sign, unit, percent, zero, and unavailable values', () => {
+  assert.equal(dashboardViewModel.formatArrDelta?.(30, 0.5), '+30 亿美元（+50.0%）');
+  assert.equal(dashboardViewModel.formatArrDelta?.(-5, -0.125), '-5 亿美元（-12.5%）');
+  assert.equal(dashboardViewModel.formatArrDelta?.(0, 0), '0 亿美元（0.0%）');
+  assert.equal(dashboardViewModel.formatArrDelta?.(null, null), '—');
+
+  assert.equal(dashboardViewModel.formatTokenDelta?.('1250000000000', 0.25), '+1.25T Tokens（+25.0%）');
+  assert.equal(dashboardViewModel.formatTokenDelta?.('-500000000', -0.1), '-500M Tokens（-10.0%）');
+  assert.equal(dashboardViewModel.formatTokenDelta?.('0', 0), '0 Tokens（0.0%）');
+  assert.equal(dashboardViewModel.formatTokenDelta?.(null, null), '—');
+});
+
 test('source status labels distinguish ready, stale errors, and missing authorization', () => {
   assert.equal(sourceStatusLabel({ status: 'ready', stale: false }), '已同步');
   assert.equal(sourceStatusLabel({ status: 'error', stale: true }), '使用上一版');

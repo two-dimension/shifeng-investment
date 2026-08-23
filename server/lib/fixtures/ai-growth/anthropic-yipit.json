@@ -1,0 +1,16 @@
+{
+  "records": [
+    {
+      "company": "Anthropic",
+      "observedAt": "2026-07-31",
+      "originalValue": 73,
+      "originalUnit": "USD billion",
+      "currency": "USD",
+      "kind": "actual",
+      "sourceLabel": "Yipit",
+      "sourceUrl": "https://www.yipitdata.com/",
+      "methodology": "Yipit estimated ARR",
+      "commentary": "Third-party estimate; do not merge with company-disclosed run-rate revenue."
+    }
+  ]
+}

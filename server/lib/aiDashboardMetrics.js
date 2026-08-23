@@ -1,6 +1,5 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
 const YIPIT_STALE_DAYS = 18;
-const EXCLUDED_WINNER_RE = /fable|mythos/i;
 
 function finiteNumber(value) {
   const number = Number(value);
@@ -17,27 +16,6 @@ function monthKey(value) {
   return dateKey(value)?.slice(0, 7) || null;
 }
 
-function monthIndex(month) {
-  const [year, monthNumber] = month.split('-').map(Number);
-  return year * 12 + monthNumber - 1;
-}
-
-function regressionSlope(points) {
-  if (points.length < 3) return null;
-  const sample = points.slice(-3);
-  const xs = sample.map((point) => monthIndex(point.month));
-  const ys = sample.map((point) => point.value);
-  const xMean = xs.reduce((sum, value) => sum + value, 0) / xs.length;
-  const yMean = ys.reduce((sum, value) => sum + value, 0) / ys.length;
-  let numerator = 0;
-  let denominator = 0;
-  for (let index = 0; index < sample.length; index += 1) {
-    numerator += (xs[index] - xMean) * (ys[index] - yMean);
-    denominator += (xs[index] - xMean) ** 2;
-  }
-  return denominator === 0 ? null : numerator / denominator;
-}
-
 function latestByMonth(records) {
   const latest = new Map();
   for (const record of records) {
@@ -52,23 +30,40 @@ function latestByMonth(records) {
 }
 
 export function buildArrMetrics(records, { now = new Date() } = {}) {
-  const byCompany = new Map();
+  const bySeries = new Map();
   for (const record of records || []) {
     const company = String(record?.company || '').trim();
     if (!company) continue;
-    const bucket = byCompany.get(company) || [];
-    bucket.push(record);
-    byCompany.set(company, bucket);
+    const sourceLabel = String(record?.sourceLabel || '未标注来源').trim();
+    const seriesKind = record?.seriesKind === 'official' ? 'official' : 'estimate';
+    const seriesId = String(record?.seriesId || `${company}:${seriesKind}:${sourceLabel}`);
+    const bucket = bySeries.get(seriesId) || { company, sourceLabel, seriesKind, records: [] };
+    bucket.records.push({ ...record, company, sourceLabel, seriesKind, seriesId });
+    bySeries.set(seriesId, bucket);
   }
 
-  return [...byCompany.entries()]
-    .map(([company, companyRecords]) => {
+  return [...bySeries.entries()]
+    .map(([seriesId, series]) => {
+      const { company, sourceLabel, seriesKind, records: companyRecords } = series;
       const actualPoints = latestByMonth(companyRecords.filter((record) => record.kind !== 'forecast'))
-        .map((point, index, points) => ({
-          ...point,
-          kind: 'actual',
-          momAbsolute: index === 0 ? null : point.value - points[index - 1].value,
-        }));
+        .map((point, index, points) => {
+          const previous = points[index - 1] || null;
+          const previousMonth = previous?.month;
+          const currentMonth = point.month;
+          const [previousYear, previousMonthNumber] = previousMonth?.split('-').map(Number) || [];
+          const [currentYear, currentMonthNumber] = currentMonth.split('-').map(Number);
+          const consecutiveMonth = previous
+            ? currentYear * 12 + currentMonthNumber - (previousYear * 12 + previousMonthNumber) === 1
+            : null;
+          return {
+            ...point,
+            kind: 'actual',
+            momAbsolute: previous ? point.value - previous.value : null,
+            momPercent: previous && previous.value !== 0 ? (point.value - previous.value) / previous.value : null,
+            comparisonLabel: previous ? `${previous.observedAt} → ${point.observedAt}` : null,
+            consecutiveMonth,
+          };
+        });
       const forecastPoints = latestByMonth(companyRecords.filter((record) => record.kind === 'forecast'))
         .map((point) => ({ ...point, kind: 'forecast' }));
       const latestActual = actualPoints.at(-1) || null;
@@ -80,27 +75,52 @@ export function buildArrMetrics(records, { now = new Date() } = {}) {
 
       return {
         company,
+        seriesId,
+        seriesKind,
+        sourceLabel,
         actualPoints,
         forecastPoints,
-        slope3m: regressionSlope(actualPoints),
         latestActual,
         stale,
       };
     })
-    .sort((left, right) => left.company.localeCompare(right.company));
+    .sort((left, right) => left.company.localeCompare(right.company)
+      || left.seriesKind.localeCompare(right.seriesKind)
+      || left.sourceLabel.localeCompare(right.sourceLabel));
+}
+
+export function buildArrComparison(companies, names) {
+  const includedNames = new Set(names || []);
+  const selected = (companies || []).filter((metric) => includedNames.has(metric.company));
+  const months = [...new Set(selected.flatMap((metric) => metric.actualPoints.map((point) => point.month)))].sort();
+  return {
+    months,
+    series: selected.map((metric) => {
+      const byMonth = new Map(metric.actualPoints.map((point) => [point.month, point]));
+      return {
+        company: metric.company,
+        seriesId: metric.seriesId,
+        seriesKind: metric.seriesKind,
+        sourceLabel: metric.sourceLabel,
+        points: months.map((month) => byMonth.get(month) || null),
+      };
+    }),
+  };
 }
 
 export function attachValuationMultiples(valuations, arrMetrics) {
-  const actualsByCompany = new Map(
-    (arrMetrics || []).map((metric) => [
-      metric.company,
-      metric.actualPoints.toSorted((left, right) => left.observedAt.localeCompare(right.observedAt)),
-    ]),
-  );
-
   return (valuations || []).map((valuation) => {
     const asOf = dateKey(valuation.asOf);
-    const points = actualsByCompany.get(valuation.company) || [];
+    const companySeries = (arrMetrics || []).filter((metric) => metric.company === valuation.company);
+    const matchingSeries = companySeries
+      .filter((metric) => !valuation.arrSeriesKind || metric.seriesKind === valuation.arrSeriesKind)
+      .filter((metric) => !valuation.arrSourceLabel || metric.sourceLabel === valuation.arrSourceLabel)
+      .toSorted((left, right) => {
+        if (left.seriesKind !== right.seriesKind) return left.seriesKind === 'official' ? -1 : 1;
+        return left.sourceLabel.localeCompare(right.sourceLabel);
+      })[0];
+    const points = matchingSeries?.actualPoints
+      .toSorted((left, right) => left.observedAt.localeCompare(right.observedAt)) || [];
     const matched = asOf ? points.filter((point) => point.observedAt <= asOf).at(-1) : null;
     const arrValue = matched?.value ?? null;
     const valuationLow = finiteNumber(valuation.valuationLow);
@@ -110,6 +130,10 @@ export function attachValuationMultiples(valuations, arrMetrics) {
       asOf,
       arrAsOf: matched?.observedAt ?? null,
       arrValue,
+      arrSeriesKind: matchingSeries?.seriesKind || valuation.arrSeriesKind || null,
+      arrSourceLabel: matched?.sourceLabel || matchingSeries?.sourceLabel || null,
+      arrMethodology: matched?.methodology || matched?.provenance?.methodology || null,
+      arrProvenance: matched?.provenance || null,
       parrLow: arrValue && valuationLow !== null ? valuationLow / arrValue : null,
       parrHigh: arrValue && valuationHigh !== null ? valuationHigh / arrValue : null,
     };
@@ -126,6 +150,11 @@ function sumRows(rows) {
   return rows.reduce((sum, row) => sum + BigInt(String(row.total_tokens || '0')), 0n);
 }
 
+function bigintPercent(delta, prior) {
+  if (prior === 0n) return null;
+  return Number((delta * 1_000_000n) / prior) / 1_000_000;
+}
+
 export function aggregateOpenRouterWeekly(rows, { endDate, weeks = 12 } = {}) {
   const resolvedEndDate = dateKey(endDate) || addUtcDays(new Date().toISOString().slice(0, 10), -1);
   const normalizedRows = (rows || [])
@@ -140,10 +169,16 @@ export function aggregateOpenRouterWeekly(rows, { endDate, weeks = 12 } = {}) {
     const weekEnd = addUtcDays(resolvedEndDate, -offset * 7);
     const weekStart = addUtcDays(weekEnd, -6);
     const weekRows = normalizedRows.filter((row) => row.date >= weekStart && row.date <= weekEnd);
+    const total = sumRows(weekRows);
+    const previous = history.at(-1);
+    const previousTotal = previous ? BigInt(previous.totalTokens) : null;
+    const delta = previousTotal === null ? null : total - previousTotal;
     history.push({
       startDate: weekStart,
       endDate: weekEnd,
-      totalTokens: sumRows(weekRows).toString(),
+      totalTokens: total.toString(),
+      weekOverWeekAbsolute: delta === null ? null : delta.toString(),
+      weekOverWeekPercent: delta === null ? null : bigintPercent(delta, previousTotal),
     });
   }
 
@@ -159,10 +194,15 @@ export function aggregateOpenRouterWeekly(rows, { endDate, weeks = 12 } = {}) {
     .slice(0, 10)
     .map(([model, totalTokens], index) => ({ model, totalTokens: totalTokens.toString(), rank: index + 1 }));
 
+  const latestHistory = history.at(-1);
+  const priorHistory = history.at(-2);
   return {
     startDate: latestStart,
     endDate: resolvedEndDate,
     weekTotalTokens: sumRows(latestRows).toString(),
+    priorWeekTotalTokens: priorHistory?.totalTokens ?? null,
+    weekOverWeekAbsolute: latestHistory?.weekOverWeekAbsolute ?? null,
+    weekOverWeekPercent: latestHistory?.weekOverWeekPercent ?? null,
     topModels,
     history,
   };
@@ -176,12 +216,11 @@ export function selectLatestBenchmarkModels(models) {
     if (!existing || model.releasedAt > existing.releasedAt) latestByVendor.set(model.vendor, model);
   }
   const latest = [...latestByVendor.values()].sort((left, right) => left.vendor.localeCompare(right.vendor));
-  const eligible = latest.filter((model) => !EXCLUDED_WINNER_RE.test(`${model.vendor} ${model.model}`));
-  const metricNames = new Set(eligible.flatMap((model) => Object.keys(model.scores || {})));
+  const metricNames = new Set(latest.flatMap((model) => Object.keys(model.scores || {})));
   const winners = {};
 
   for (const metricName of metricNames) {
-    const scored = eligible
+    const scored = latest
       .map((model) => ({ model: model.model, score: model.scores?.[metricName] }))
       .filter(({ score }) => finiteNumber(score?.value) !== null);
     if (scored.length === 0) continue;
