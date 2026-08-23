@@ -104,6 +104,41 @@ test('missing credentials return an empty public-source snapshot instead of fabr
   assert.deepEqual(snapshot.openRouter.topModels, []);
 });
 
+test('platform CDS dataset overlays old snapshots without depending on Feishu refresh', async (t) => {
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-cds-'));
+  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
+  const dataFile = path.join(dir, 'snapshot.json');
+  const cdsFile = path.join(dir, 'cds-5y.json');
+  await fs.promises.writeFile(dataFile, JSON.stringify({
+    schemaVersion: 1,
+    generatedAt: '2026-08-22T00:00:00.000Z',
+    debtFinancing: [],
+  }), 'utf8');
+  await fs.promises.writeFile(cdsFile, JSON.stringify({
+    asOf: '2026-08-19',
+    sourceLabel: 'ICE ICC（用户截图）',
+    historyEstimated: true,
+    companies: [{
+      company: 'Oracle',
+      latestBp: 207,
+      changes: { oneDayBp: 2, sevenDayBp: 14, oneMonthBp: 6 },
+      history: [{ date: '2026-08-19', valueBp: 207 }],
+    }],
+  }), 'utf8');
+  const service = createAiDashboardService({
+    dataFile,
+    cdsFile,
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  const snapshot = await service.getSnapshot();
+
+  assert.equal(snapshot.creditRisk.cds5y.asOf, '2026-08-19');
+  assert.equal(snapshot.creditRisk.cds5y.companies[0].company, 'Oracle');
+  assert.equal(snapshot.creditRisk.cds5y.companies[0].latestBp, 207);
+  assert.equal(snapshot.creditRisk.cds5y.historyEstimated, true);
+});
+
 test('local Feishu export seeds a real snapshot when API credentials are unavailable', async (t) => {
   const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-local-export-'));
   t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));

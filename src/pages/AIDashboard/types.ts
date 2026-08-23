@@ -171,6 +171,31 @@ export interface DebtFinancing {
   updatedAt?: string | null;
 }
 
+export interface CdsHistoryPoint {
+  date: string;
+  valueBp: number;
+}
+
+export interface CdsCompanyMetric {
+  company: string;
+  latestBp: number;
+  changes: {
+    oneDayBp: number | null;
+    sevenDayBp: number | null;
+    oneMonthBp: number | null;
+  };
+  history: CdsHistoryPoint[];
+}
+
+export interface CdsRiskSnapshot {
+  asOf: string | null;
+  sourceLabel: string;
+  sourceUrl?: string | null;
+  historyEstimated: boolean;
+  note?: string;
+  companies: CdsCompanyMetric[];
+}
+
 export interface AiDashboardSnapshot {
   schemaVersion: number;
   generatedAt: string;
@@ -212,6 +237,9 @@ export interface AiDashboardSnapshot {
   };
   computeRental: ComputeRentalQuote[];
   debtFinancing: DebtFinancing[];
+  creditRisk: {
+    cds5y: CdsRiskSnapshot;
+  };
 }
 
 export interface AiDashboardApiResponse {

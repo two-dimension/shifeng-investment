@@ -20,6 +20,7 @@ import {
 } from 'antd';
 import {
   ArrowDownOutlined,
+  ArrowRightOutlined,
   ArrowUpOutlined,
   BankOutlined,
   LineChartOutlined,
@@ -31,6 +32,7 @@ import type {
   ArrCompanyMetric,
   BenchmarkMetricDefinition,
   BenchmarkModel,
+  CdsCompanyMetric,
   ComputeRentalQuote,
   TokenPrice,
 } from './types';
@@ -90,6 +92,139 @@ function useChartPalette() {
     orange: '#fa8c16',
     red: '#f5222d',
   }), [theme]);
+}
+
+const CDS_CHART_STYLE: Record<string, { color: string; min: number; max: number }> = {
+  Oracle: { color: '#d97706', min: 140, max: 300 },
+  CoreWeave: { color: '#0f9d8f', min: 400, max: 1200 },
+  NVIDIA: { color: '#65a30d', min: 30, max: 120 },
+  Amazon: { color: '#f59e0b', min: 30, max: 100 },
+  Google: { color: '#3b82f6', min: 30, max: 100 },
+  Microsoft: { color: '#0f9d8f', min: 30, max: 100 },
+  Meta: { color: '#1677ff', min: 50, max: 120 },
+};
+const DEFAULT_CDS_CHART_STYLE = { color: '#1677ff', min: 0, max: 100 };
+
+function CdsChangeBadge({ value, label }: { value: number | null; label: string }) {
+  const direction = value === null || value === 0 ? 'flat' : value > 0 ? 'up' : 'down';
+  const icon = direction === 'up'
+    ? <ArrowUpOutlined />
+    : direction === 'down' ? <ArrowDownOutlined /> : <ArrowRightOutlined />;
+  const formatted = value === null ? '—' : `${value > 0 ? '+' : ''}${compactNumber(value)}bp`;
+  return (
+    <span className="ai-cds-change-wrap">
+      <span className={`ai-cds-change ai-cds-change-${direction}`}>{icon} {formatted}</span>
+      <Text type="secondary" className="ai-cds-change-label">{label}</Text>
+    </span>
+  );
+}
+
+function CdsSummaryCard({ metric }: { metric: CdsCompanyMetric }) {
+  return (
+    <Card className="ai-cds-summary-card" variant="outlined">
+      <Text className="ai-cds-summary-title">{metric.company.toUpperCase()} 5Y CDS 信用违约互换利差</Text>
+      <div className="ai-cds-latest-value">
+        {compactNumber(metric.latestBp)} <span>bp</span>
+      </div>
+      <Flex wrap gap={12} className="ai-cds-changes">
+        <CdsChangeBadge value={metric.changes.oneDayBp} label="1天" />
+        <CdsChangeBadge value={metric.changes.sevenDayBp} label="7天" />
+        <CdsChangeBadge value={metric.changes.oneMonthBp} label="1月" />
+      </Flex>
+    </Card>
+  );
+}
+
+function CdsTrendChart({ metric, estimated }: { metric: CdsCompanyMetric; estimated: boolean }) {
+  const palette = useChartPalette();
+  const screens = Grid.useBreakpoint();
+  const compact = !screens.sm;
+  const style = CDS_CHART_STYLE[metric.company] || DEFAULT_CDS_CHART_STYLE;
+  const labelInterval = Math.max(0, Math.ceil(metric.history.length / (compact ? 5 : 8)) - 1);
+  const option = useMemo(() => ({
+    animationDuration: 350,
+    tooltip: {
+      trigger: 'axis',
+      valueFormatter: (value: number) => `${compactNumber(value)} bp`,
+    },
+    grid: { left: compact ? 48 : 64, right: compact ? 10 : 18, top: 20, bottom: compact ? 62 : 58 },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: metric.history.map((point) => point.date),
+      axisLabel: { color: palette.text, fontSize: compact ? 9 : 11, rotate: 32, interval: labelInterval, hideOverlap: true },
+      axisLine: { lineStyle: { color: palette.line } },
+      axisTick: { show: false },
+    },
+    yAxis: {
+      type: 'value',
+      name: compact ? '' : 'CDS 信用违约互换利差 (bp)',
+      nameLocation: 'middle',
+      nameGap: 43,
+      min: style.min,
+      max: style.max,
+      axisLabel: { color: palette.text, fontSize: compact ? 9 : 11 },
+      nameTextStyle: { color: palette.text, fontSize: 11 },
+      splitLine: { lineStyle: { color: palette.line } },
+    },
+    series: [{
+      name: `${metric.company} 5Y CDS`,
+      type: 'line',
+      smooth: 0.25,
+      showSymbol: false,
+      data: metric.history.map((point) => point.valueBp),
+      lineStyle: { color: style.color, width: 2.2 },
+      itemStyle: { color: style.color },
+      areaStyle: { color: style.color, opacity: 0.1 },
+    }],
+  }), [compact, labelInterval, metric, palette, style]);
+  return (
+    <Card className="ai-cds-chart-card" variant="outlined">
+      <Title level={5}>{metric.company} 5Y CDS 信用违约互换利差（bp）</Title>
+      <Text type="secondary" className="ai-cds-chart-source">
+        ICE ICC 每日 EOD 结算价{estimated ? ' · 截图估算' : ''}
+      </Text>
+      {metric.history.length > 0
+        ? <ReactECharts option={option} style={{ height: compact ? 300 : 330 }} notMerge />
+        : <NoData description="暂无 CDS 历史数据" />}
+    </Card>
+  );
+}
+
+function CdsRiskSection({ data }: DashboardProps) {
+  const cds = data.creditRisk?.cds5y;
+  if (!cds || cds.companies.length === 0) return <ChartCard title="5Y CDS 信用风险监测"><NoData description="暂无 CDS 数据" /></ChartCard>;
+  return (
+    <section className="ai-cds-section" aria-labelledby="ai-cds-title">
+      <Flex className="ai-cds-section-header" justify="space-between" align="flex-start" gap={16} wrap>
+        <div>
+          <Title level={4} id="ai-cds-title">5Y CDS 信用风险监测</Title>
+          <Text type="secondary">信用利差越高，市场定价的信用风险通常越高</Text>
+        </div>
+        <Space size={8} wrap>
+          <Tag color="blue">截至 {dateLabel(cds.asOf)}</Tag>
+          <Tag>{cds.sourceLabel}</Tag>
+        </Space>
+      </Flex>
+      <Row gutter={[12, 12]}>
+        {cds.companies.map((metric) => (
+          <Col xs={24} sm={12} xl={8} key={metric.company}>
+            <CdsSummaryCard metric={metric} />
+          </Col>
+        ))}
+      </Row>
+      <Row gutter={[12, 12]}>
+        {cds.companies.map((metric) => (
+          <Col xs={24} xl={12} key={metric.company}>
+            <CdsTrendChart metric={metric} estimated={cds.historyEstimated} />
+          </Col>
+        ))}
+      </Row>
+      <div className="ai-cds-disclosure">
+        <Text type="secondary">数据说明：{cds.note || '暂无补充说明'}</Text>
+      </div>
+    </section>
+  );
 }
 
 function ArrChart({ metric, height = 320 }: { metric: ArrCompanyMetric | null; height?: number }) {
@@ -730,6 +865,7 @@ export function DebtFinancingSection({ data }: DashboardProps) {
           </Row>
         ) : <NoData description="暂无结构化债务融资事件，请在飞书新表录入" />}
       </ChartCard>
+      <CdsRiskSection data={data} />
       <ChartCard title="债务融资明细">
         <Table
           rowKey={(row) => `${row.company}-${row.asOf}-${row.method}`}

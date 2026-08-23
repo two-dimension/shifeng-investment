@@ -1,0 +1,119 @@
+{
+  "asOf": "2026-08-19",
+  "sourceLabel": "ICE ICC（用户截图）",
+  "sourceUrl": null,
+  "historyEstimated": true,
+  "note": "最新值及1日、7日、1月变化按用户提供截图录入；历史曲线按截图取样估算，仅用于还原趋势，不能替代授权行情。",
+  "companies": [
+    {
+      "company": "Oracle",
+      "latestBp": 207,
+      "changes": { "oneDayBp": 2, "sevenDayBp": 14, "oneMonthBp": 6 },
+      "history": [
+        { "date": "2026-06-10", "valueBp": 160 }, { "date": "2026-06-13", "valueBp": 154 },
+        { "date": "2026-06-17", "valueBp": 158 }, { "date": "2026-06-21", "valueBp": 159 },
+        { "date": "2026-06-25", "valueBp": 164 }, { "date": "2026-06-29", "valueBp": 172 },
+        { "date": "2026-07-02", "valueBp": 170 }, { "date": "2026-07-06", "valueBp": 169 },
+        { "date": "2026-07-09", "valueBp": 177 }, { "date": "2026-07-13", "valueBp": 187 },
+        { "date": "2026-07-16", "valueBp": 186 }, { "date": "2026-07-20", "valueBp": 195 },
+        { "date": "2026-07-23", "valueBp": 205 }, { "date": "2026-07-26", "valueBp": 214 },
+        { "date": "2026-07-30", "valueBp": 216 }, { "date": "2026-08-02", "valueBp": 201 },
+        { "date": "2026-08-06", "valueBp": 188 }, { "date": "2026-08-09", "valueBp": 194 },
+        { "date": "2026-08-13", "valueBp": 192 }, { "date": "2026-08-16", "valueBp": 198 },
+        { "date": "2026-08-19", "valueBp": 207 }
+      ]
+    },
+    {
+      "company": "CoreWeave",
+      "latestBp": 765,
+      "changes": { "oneDayBp": 7, "sevenDayBp": 91, "oneMonthBp": 72 },
+      "history": [
+        { "date": "2026-06-10", "valueBp": 500 }, { "date": "2026-06-13", "valueBp": 510 },
+        { "date": "2026-06-17", "valueBp": 480 }, { "date": "2026-06-21", "valueBp": 530 },
+        { "date": "2026-06-25", "valueBp": 560 }, { "date": "2026-06-29", "valueBp": 550 },
+        { "date": "2026-07-02", "valueBp": 590 }, { "date": "2026-07-06", "valueBp": 600 },
+        { "date": "2026-07-09", "valueBp": 580 }, { "date": "2026-07-13", "valueBp": 620 },
+        { "date": "2026-07-16", "valueBp": 680 }, { "date": "2026-07-20", "valueBp": 690 },
+        { "date": "2026-07-23", "valueBp": 720 }, { "date": "2026-07-26", "valueBp": 760 },
+        { "date": "2026-07-30", "valueBp": 950 }, { "date": "2026-08-02", "valueBp": 830 },
+        { "date": "2026-08-06", "valueBp": 705 }, { "date": "2026-08-09", "valueBp": 760 },
+        { "date": "2026-08-13", "valueBp": 674 }, { "date": "2026-08-16", "valueBp": 722 },
+        { "date": "2026-08-19", "valueBp": 765 }
+      ]
+    },
+    {
+      "company": "NVIDIA",
+      "latestBp": 83,
+      "changes": { "oneDayBp": 0, "sevenDayBp": 11, "oneMonthBp": 25 },
+      "history": [
+        { "date": "2026-06-22", "valueBp": 40 }, { "date": "2026-06-26", "valueBp": 46 },
+        { "date": "2026-07-02", "valueBp": 45 }, { "date": "2026-07-08", "valueBp": 50 },
+        { "date": "2026-07-14", "valueBp": 57 }, { "date": "2026-07-20", "valueBp": 58 },
+        { "date": "2026-07-24", "valueBp": 66 }, { "date": "2026-07-27", "valueBp": 77 },
+        { "date": "2026-07-30", "valueBp": 81 }, { "date": "2026-08-02", "valueBp": 75 },
+        { "date": "2026-08-05", "valueBp": 68 }, { "date": "2026-08-08", "valueBp": 73 },
+        { "date": "2026-08-11", "valueBp": 79 }, { "date": "2026-08-14", "valueBp": 73 },
+        { "date": "2026-08-17", "valueBp": 81 }, { "date": "2026-08-19", "valueBp": 83 }
+      ]
+    },
+    {
+      "company": "Amazon",
+      "latestBp": 59,
+      "changes": { "oneDayBp": 1, "sevenDayBp": 4, "oneMonthBp": 1 },
+      "history": [
+        { "date": "2026-06-10", "valueBp": 51 }, { "date": "2026-06-17", "valueBp": 52 },
+        { "date": "2026-06-25", "valueBp": 54 }, { "date": "2026-07-02", "valueBp": 53 },
+        { "date": "2026-07-09", "valueBp": 57 }, { "date": "2026-07-13", "valueBp": 60 },
+        { "date": "2026-07-16", "valueBp": 57 }, { "date": "2026-07-20", "valueBp": 59 },
+        { "date": "2026-07-24", "valueBp": 67 }, { "date": "2026-07-29", "valueBp": 69 },
+        { "date": "2026-08-02", "valueBp": 58 }, { "date": "2026-08-06", "valueBp": 55 },
+        { "date": "2026-08-10", "valueBp": 56 }, { "date": "2026-08-14", "valueBp": 53 },
+        { "date": "2026-08-19", "valueBp": 59 }
+      ]
+    },
+    {
+      "company": "Google",
+      "latestBp": 56,
+      "changes": { "oneDayBp": 0, "sevenDayBp": 4, "oneMonthBp": -2 },
+      "history": [
+        { "date": "2026-06-10", "valueBp": 50 }, { "date": "2026-06-17", "valueBp": 51 },
+        { "date": "2026-06-25", "valueBp": 54 }, { "date": "2026-07-02", "valueBp": 53 },
+        { "date": "2026-07-09", "valueBp": 57 }, { "date": "2026-07-13", "valueBp": 60 },
+        { "date": "2026-07-16", "valueBp": 57 }, { "date": "2026-07-20", "valueBp": 58 },
+        { "date": "2026-07-24", "valueBp": 64 }, { "date": "2026-07-29", "valueBp": 67 },
+        { "date": "2026-08-02", "valueBp": 58 }, { "date": "2026-08-06", "valueBp": 55 },
+        { "date": "2026-08-10", "valueBp": 56 }, { "date": "2026-08-14", "valueBp": 51 },
+        { "date": "2026-08-19", "valueBp": 56 }
+      ]
+    },
+    {
+      "company": "Microsoft",
+      "latestBp": 45,
+      "changes": { "oneDayBp": 0, "sevenDayBp": 3, "oneMonthBp": -2 },
+      "history": [
+        { "date": "2026-06-10", "valueBp": 39 }, { "date": "2026-06-17", "valueBp": 38 },
+        { "date": "2026-06-25", "valueBp": 41 }, { "date": "2026-07-02", "valueBp": 41 },
+        { "date": "2026-07-09", "valueBp": 48 }, { "date": "2026-07-13", "valueBp": 47 },
+        { "date": "2026-07-20", "valueBp": 47 }, { "date": "2026-07-24", "valueBp": 52 },
+        { "date": "2026-07-29", "valueBp": 55 }, { "date": "2026-08-03", "valueBp": 47 },
+        { "date": "2026-08-07", "valueBp": 46 }, { "date": "2026-08-12", "valueBp": 41 },
+        { "date": "2026-08-15", "valueBp": 43 }, { "date": "2026-08-19", "valueBp": 45 }
+      ]
+    },
+    {
+      "company": "Meta",
+      "latestBp": 91,
+      "changes": { "oneDayBp": 1, "sevenDayBp": 8, "oneMonthBp": 14 },
+      "history": [
+        { "date": "2026-06-10", "valueBp": 71 }, { "date": "2026-06-17", "valueBp": 69 },
+        { "date": "2026-06-25", "valueBp": 71 }, { "date": "2026-07-02", "valueBp": 68 },
+        { "date": "2026-07-09", "valueBp": 73 }, { "date": "2026-07-13", "valueBp": 79 },
+        { "date": "2026-07-17", "valueBp": 77 }, { "date": "2026-07-22", "valueBp": 80 },
+        { "date": "2026-07-25", "valueBp": 90 }, { "date": "2026-07-30", "valueBp": 98 },
+        { "date": "2026-08-03", "valueBp": 83 }, { "date": "2026-08-07", "valueBp": 86 },
+        { "date": "2026-08-11", "valueBp": 84 }, { "date": "2026-08-14", "valueBp": 81 },
+        { "date": "2026-08-19", "valueBp": 91 }
+      ]
+    }
+  ]
+}
