@@ -54,3 +54,17 @@ test('capital collector preserves previous verified events when one official end
   assert.equal(result.payload.capitalEvents.length, 1);
   assert.equal(result.payload.capitalSourceReports.find((row) => row.sourceId === 'coreweave-capital').status, 'error');
 });
+
+test('capital collector keeps verified ledger coverage when a filing index yields no directly parsed event', async () => {
+  const google = source('google-sec');
+  const collector = createAiCapitalCollector({
+    registry: [google],
+    documentClient: { async fetchDocument() { return document('{}', google.entryUrl); } },
+  });
+  const result = await collector({
+    previous: { capitalEvents: [], capitalSourceReports: [{ sourceId: google.id, rows: 7, message: '核验台账保留 7 个债券分档。' }] },
+    generatedAt: '2026-08-23T00:00:00.000Z',
+  });
+  assert.equal(result.payload.capitalSourceReports[0].rows, 7);
+  assert.match(result.payload.capitalSourceReports[0].message, /核验台账/);
+});

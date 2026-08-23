@@ -220,12 +220,12 @@ export const PUBLIC_SOURCE_REGISTRY = validatePublicSourceRegistry([
   },
   {
     id: 'coreweave-pricing', slice: 'compute', entity: 'CoreWeave',
-    entryUrl: 'https://www.coreweave.com/pricing', allowedHosts: ['www.coreweave.com'],
+    entryUrl: 'https://coreweave.com/pricing', allowedHosts: ['coreweave.com', 'www.coreweave.com'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
   },
   {
     id: 'lambda-cloud-pricing', slice: 'compute', entity: 'Lambda',
-    entryUrl: 'https://lambda.ai/pricing', allowedHosts: ['lambda.ai'],
+    entryUrl: 'https://lambda.ai/instances', allowedHosts: ['lambda.ai'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
   },
 ]);

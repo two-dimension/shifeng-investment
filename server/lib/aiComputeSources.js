@@ -126,14 +126,20 @@ export function createAiComputeCollector({ documentClient, registry = AI_COMPUTE
     if (succeeded.length === 0) throw new Error(`all ${sources.length} official compute sources failed`);
     const computeRental = mergeHistory(previous.computeRental, succeeded.flatMap((result) => result.quotes));
     const failed = results.length - succeeded.length;
+    const previousReports = new Map((previous.computeSourceReports || []).map((report) => [report.sourceId, report]));
     return {
       payload: {
         computeRental,
-        computeSourceReports: results.map((result) => ({
-          sourceId: result.definition.id, platform: result.definition.platform, url: result.definition.entryUrl,
-          status: result.status, asOf: result.status === 'ready' ? generatedAt.slice(0, 10) : null,
-          rows: result.quotes.length, message: result.error?.message || null,
-        })),
+        computeSourceReports: results.map((result) => {
+          const previousReport = previousReports.get(result.definition.id);
+          return {
+            sourceId: result.definition.id, platform: result.definition.platform, url: result.definition.entryUrl,
+            status: result.status, asOf: result.status === 'ready' ? generatedAt.slice(0, 10) : previousReport?.asOf || null,
+            rows: result.quotes.length || previousReport?.rows || 0,
+            message: result.error?.message
+              || (result.quotes.length === 0 ? previousReport?.message || '官网可访问，但未解析出新的精确报价；沿用上一版。' : null),
+          };
+        }),
       },
       source: {
         status: 'ready', stale: failed > 0, asOf: generatedAt.slice(0, 10), url: succeeded[0].definition.entryUrl,

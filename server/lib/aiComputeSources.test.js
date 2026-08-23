@@ -46,3 +46,16 @@ test('compute collector retains exact-key history and reports unavailable dynami
   assert.equal(result.payload.computeRental.length, 2);
   assert.equal(result.payload.computeSourceReports.find((row) => row.sourceId === 'azure-vm-pricing').status, 'error');
 });
+
+test('compute collector keeps verified ledger row counts when an official page is reachable but unparseable', async () => {
+  const collector = createAiComputeCollector({
+    registry: [aws],
+    documentClient: { async fetchDocument() { return { ...document, text: '<main>official pricing</main>' }; } },
+  });
+  const result = await collector({
+    previous: { computeRental: [], computeSourceReports: [{ sourceId: aws.id, rows: 3, message: '核验台账保留 3 条精确报价。' }] },
+    generatedAt: '2026-08-23T00:00:00.000Z',
+  });
+  assert.equal(result.payload.computeSourceReports[0].rows, 3);
+  assert.match(result.payload.computeSourceReports[0].message, /核验台账/);
+});

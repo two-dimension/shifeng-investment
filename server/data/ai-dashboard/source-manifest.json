@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-23T16:36:53.222Z",
+  "generatedAt": "2026-08-23T16:49:26.977Z",
   "sources": [
     {
       "id": "artificial-analysis-index",
@@ -170,7 +170,8 @@
       "sourceKind": "filing",
       "entryUrl": "https://www.alibabagroup.com/en-US/ir-filings-hkex",
       "allowedHosts": [
-        "www.alibabagroup.com"
+        "www.alibabagroup.com",
+        "home.alibabagroup.com"
       ],
       "status": "active"
     },
@@ -181,7 +182,8 @@
       "sourceKind": "filing",
       "entryUrl": "https://data.sec.gov/submissions/CIK0001018724.json",
       "allowedHosts": [
-        "data.sec.gov"
+        "data.sec.gov",
+        "www.sec.gov"
       ],
       "status": "active"
     },
@@ -219,6 +221,17 @@
       "status": "active"
     },
     {
+      "id": "coreweave-sec",
+      "slice": "capital",
+      "entity": "CoreWeave",
+      "sourceKind": "filing",
+      "entryUrl": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000104/crwv-20251231.htm",
+      "allowedHosts": [
+        "www.sec.gov"
+      ],
+      "status": "active"
+    },
+    {
       "id": "deepseek-capital",
       "slice": "capital",
       "entity": "DeepSeek",
@@ -236,7 +249,8 @@
       "sourceKind": "filing",
       "entryUrl": "https://data.sec.gov/submissions/CIK0001652044.json",
       "allowedHosts": [
-        "data.sec.gov"
+        "data.sec.gov",
+        "www.sec.gov"
       ],
       "status": "active"
     },
@@ -247,7 +261,8 @@
       "sourceKind": "filing",
       "entryUrl": "https://data.sec.gov/submissions/CIK0001326801.json",
       "allowedHosts": [
-        "data.sec.gov"
+        "data.sec.gov",
+        "www.sec.gov"
       ],
       "status": "active"
     },
@@ -258,7 +273,8 @@
       "sourceKind": "filing",
       "entryUrl": "https://data.sec.gov/submissions/CIK0000789019.json",
       "allowedHosts": [
-        "data.sec.gov"
+        "data.sec.gov",
+        "www.sec.gov"
       ],
       "status": "active"
     },
@@ -366,8 +382,9 @@
       "slice": "compute",
       "entity": "CoreWeave",
       "sourceKind": "official",
-      "entryUrl": "https://www.coreweave.com/pricing",
+      "entryUrl": "https://coreweave.com/pricing",
       "allowedHosts": [
+        "coreweave.com",
         "www.coreweave.com"
       ],
       "status": "active"
@@ -388,7 +405,7 @@
       "slice": "compute",
       "entity": "Lambda",
       "sourceKind": "official",
-      "entryUrl": "https://lambda.ai/pricing",
+      "entryUrl": "https://lambda.ai/instances",
       "allowedHosts": [
         "lambda.ai"
       ],

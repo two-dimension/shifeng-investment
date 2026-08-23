@@ -326,7 +326,7 @@ export interface ComputeRentalQuote {
   instanceSpec: string;
   gpuCount: number;
   region: string;
-  billingMode: 'on_demand' | 'spot' | 'preemptible' | 'reserved';
+  billingMode: 'on_demand' | 'spot' | 'preemptible' | 'reserved' | 'capacity_block';
   currency: string;
   instanceHourlyPrice: number | null;
   pricePerGpuHour: number;

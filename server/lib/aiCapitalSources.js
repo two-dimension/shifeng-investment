@@ -14,13 +14,14 @@ function discoverySource(id, entity, geography, entryUrl = null) {
 export const AI_CAPITAL_SOURCE_REGISTRY = Object.freeze([
   activeSource('openai-capital', 'OpenAI', 'US', 'https://openai.com/news/company/', ['openai.com']),
   activeSource('anthropic-capital', 'Anthropic', 'US', 'https://www.anthropic.com/news', ['www.anthropic.com']),
-  activeSource('google-sec', 'Google', 'US', 'https://data.sec.gov/submissions/CIK0001652044.json', ['data.sec.gov'], 'filing', 'json'),
-  activeSource('microsoft-sec', 'Microsoft', 'US', 'https://data.sec.gov/submissions/CIK0000789019.json', ['data.sec.gov'], 'filing', 'json'),
-  activeSource('amazon-sec', 'Amazon', 'US', 'https://data.sec.gov/submissions/CIK0001018724.json', ['data.sec.gov'], 'filing', 'json'),
-  activeSource('meta-sec', 'Meta', 'US', 'https://data.sec.gov/submissions/CIK0001326801.json', ['data.sec.gov'], 'filing', 'json'),
+  activeSource('google-sec', 'Google', 'US', 'https://data.sec.gov/submissions/CIK0001652044.json', ['data.sec.gov', 'www.sec.gov'], 'filing', 'json'),
+  activeSource('microsoft-sec', 'Microsoft', 'US', 'https://data.sec.gov/submissions/CIK0000789019.json', ['data.sec.gov', 'www.sec.gov'], 'filing', 'json'),
+  activeSource('amazon-sec', 'Amazon', 'US', 'https://data.sec.gov/submissions/CIK0001018724.json', ['data.sec.gov', 'www.sec.gov'], 'filing', 'json'),
+  activeSource('meta-sec', 'Meta', 'US', 'https://data.sec.gov/submissions/CIK0001326801.json', ['data.sec.gov', 'www.sec.gov'], 'filing', 'json'),
   activeSource('xai-capital', 'xAI', 'US', 'https://x.ai/news', ['x.ai']),
   activeSource('coreweave-capital', 'CoreWeave', 'US', 'https://investors.coreweave.com/news-events/news-releases', ['investors.coreweave.com']),
-  activeSource('alibaba-capital', 'Alibaba', 'China', 'https://www.alibabagroup.com/en-US/ir-filings-hkex', ['www.alibabagroup.com'], 'filing'),
+  activeSource('coreweave-sec', 'CoreWeave', 'US', 'https://www.sec.gov/Archives/edgar/data/1769628/000176962826000104/crwv-20251231.htm', ['www.sec.gov'], 'filing'),
+  activeSource('alibaba-capital', 'Alibaba', 'China', 'https://www.alibabagroup.com/en-US/ir-filings-hkex', ['www.alibabagroup.com', 'home.alibabagroup.com'], 'filing'),
   activeSource('tencent-capital', 'Tencent', 'China', 'https://www.tencent.com/en-us/investors.html', ['www.tencent.com'], 'filing'),
   activeSource('baidu-capital', 'Baidu', 'China', 'https://ir.baidu.com/', ['ir.baidu.com'], 'filing'),
   discoverySource('zhipu-capital', '智谱', 'China', 'https://www.zhipuai.cn/'),
@@ -157,12 +158,18 @@ export function createAiCapitalCollector({ documentClient, registry = AI_CAPITAL
     if (succeeded.length === 0) throw new Error(`all ${active.length} active capital sources failed`);
     const capitalEvents = mergeEvents(previous.capitalEvents, succeeded.flatMap((result) => result.events));
     const failed = results.length - succeeded.length;
+    const previousReports = new Map((previous.capitalSourceReports || []).map((report) => [report.sourceId, report]));
     const capitalSourceReports = [
-      ...results.map((result) => ({
-        sourceId: result.definition.id, entity: result.definition.entity, url: result.definition.entryUrl,
-        status: result.status, asOf: result.status === 'ready' ? generatedAt.slice(0, 10) : null,
-        rows: result.events.length, message: result.error?.message || null,
-      })),
+      ...results.map((result) => {
+        const previousReport = previousReports.get(result.definition.id);
+        return {
+          sourceId: result.definition.id, entity: result.definition.entity, url: result.definition.entryUrl,
+          status: result.status, asOf: result.status === 'ready' ? generatedAt.slice(0, 10) : previousReport?.asOf || null,
+          rows: result.events.length || previousReport?.rows || 0,
+          message: result.error?.message
+            || (result.events.length === 0 ? previousReport?.message || '官网/监管入口可访问，但未解析出新事件；沿用核验台账。' : null),
+        };
+      }),
       ...discovery.map((definition) => ({
         sourceId: definition.id, entity: definition.entity, url: definition.entryUrl,
         status: 'discovery-maintained', asOf: null, rows: 0,

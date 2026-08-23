@@ -1,4 +1,5 @@
 import { buildCapitalMetrics, normalizeCapitalEvent } from './aiCapitalData.js';
+import { enrichComputeQuotes, normalizeComputeQuote } from './aiComputeData.js';
 import { attachValuationMultiples, buildArrMetrics } from './aiDashboardMetrics.js';
 import { normalizeGrowthRecords } from './aiGrowthData.js';
 import {
@@ -12,7 +13,7 @@ import {
 } from './aiPricingData.js';
 
 const ARR_METRICS = new Set(['arr', 'arr_estimate', 'run_rate_revenue']);
-const FINANCING_METRICS = new Set(['equity_financing_amount', 'committed_capital']);
+const FINANCING_METRICS = new Set(['equity_financing_amount', 'committed_capital', 'capital_event', 'capital_event_series']);
 const PRICING_METRICS = new Set(['token_api_price', 'video_api_price', 'coding_plan_price']);
 
 function amountUnit(unit) {
@@ -65,6 +66,19 @@ function valuationRecord(record) {
 }
 
 function capitalEvent(record) {
+  if (record.metric === 'capital_event') {
+    return normalizeCapitalEvent({
+      id: record.id,
+      ...record.dimensions,
+      sourceLabel: record.dimensions?.sourceLabel || `${record.entity} 官网/监管申报`,
+      sourceUrl: record.sourceUrl,
+      sourceKind: record.sourceKind,
+      asOf: record.asOf,
+      retrievedAt: record.retrievedAt,
+      methodology: record.methodology,
+      note: record.dimensions?.note || null,
+    });
+  }
   return normalizeCapitalEvent({
     id: record.id,
     entity: record.entity,
@@ -86,6 +100,52 @@ function capitalEvent(record) {
     methodology: record.methodology,
     note: record.metric === 'committed_capital' ? '公司口径为 committed capital。' : null,
   });
+}
+
+function buildComputeSeed(records) {
+  const computeRecords = records.flatMap((record) => {
+    if (record.metric === 'compute_quote') return [record];
+    if (record.metric !== 'compute_quote_series') return [];
+    return (record.dimensions?.quotes || []).map((quote, index) => ({
+      ...record,
+      id: `${record.id}:${quote.id || index}`,
+      metric: 'compute_quote',
+      dimensions: quote,
+    }));
+  });
+  const normalized = computeRecords.map((record) => ({
+    record,
+    row: record.verification?.status === 'unavailable' ? null : normalizeComputeQuote({
+      ...record.dimensions,
+      sourceLabel: record.dimensions?.sourceLabel || `${record.entity} 官网`,
+      sourceUrl: record.sourceUrl,
+      sourceKind: record.sourceKind,
+      asOf: record.asOf,
+      retrievedAt: record.retrievedAt,
+      methodology: record.methodology,
+      note: record.dimensions?.note || record.verification?.note || null,
+    }),
+  }));
+  const grouped = new Map();
+  for (const item of normalized) {
+    if (!grouped.has(item.record.sourceId)) grouped.set(item.record.sourceId, []);
+    grouped.get(item.record.sourceId).push(item);
+  }
+  return {
+    computeRental: enrichComputeQuotes(normalized.filter(({ row }) => row).map(({ row }) => row)),
+    computeSourceReports: [...grouped.entries()].map(([sourceId, rows]) => {
+      const unavailable = rows.every(({ record }) => record.verification?.status === 'unavailable');
+      return {
+        sourceId,
+        platform: rows[0].record.dimensions?.platform || rows[0].record.entity,
+        url: rows[0].record.sourceUrl,
+        status: unavailable ? 'unavailable' : 'ready',
+        asOf: rows.map(({ record }) => record.asOf).sort().at(-1),
+        rows: rows.filter(({ row }) => row).length,
+        message: rows.find(({ record }) => record.verification?.note)?.record.verification.note || null,
+      };
+    }).sort((left, right) => left.sourceId.localeCompare(right.sourceId)),
+  };
 }
 
 function pricingSourceFields(record) {
@@ -182,15 +242,43 @@ export function buildAiDashboardSeedPayload(ledger, {
     normalized.valuationRecords.sort((left, right) => left.asOf.localeCompare(right.asOf) || left.company.localeCompare(right.company)),
     companies,
   );
-  const capitalEvents = records.filter((record) => FINANCING_METRICS.has(record.metric)
-    && record.sourceKind === 'official' && Number.isFinite(record.value))
+  const capitalRecords = records.flatMap((record) => {
+    if (record.metric !== 'capital_event_series') return [record];
+    return (record.dimensions?.events || []).map((event, index) => ({
+      ...record,
+      id: `${record.id}:${event.id || index}`,
+      metric: 'capital_event',
+      value: event.amount,
+      dimensions: event,
+    }));
+  });
+  const normalizedCapitalRecords = capitalRecords.filter((record) => FINANCING_METRICS.has(record.metric)
+    && ['official', 'filing'].includes(record.sourceKind) && Number.isFinite(record.value));
+  const capitalEvents = normalizedCapitalRecords
     .map(capitalEvent)
     .sort((left, right) => right.eventDate.localeCompare(left.eventDate));
+  const capitalReportGroups = new Map();
+  for (const record of normalizedCapitalRecords) {
+    if (!capitalReportGroups.has(record.sourceId)) capitalReportGroups.set(record.sourceId, []);
+    capitalReportGroups.get(record.sourceId).push(record);
+  }
+  const capitalSourceReports = [...capitalReportGroups.entries()].map(([sourceId, sourceRecords]) => ({
+    sourceId,
+    entity: sourceRecords[0].entity,
+    url: sourceRecords[0].sourceUrl,
+    status: 'ready',
+    asOf: sourceRecords.map((record) => record.asOf).sort().at(-1),
+    rows: sourceRecords.length,
+    message: `核验台账保留 ${sourceRecords.length} 条逐笔融资/债务工具。`,
+  })).sort((left, right) => left.sourceId.localeCompare(right.sourceId));
+  const compute = buildComputeSeed(records);
   return {
     arrAndValuation: { companies, valuations },
     modelPricing: buildPricingSeed(records),
+    ...compute,
     capitalEvents,
     capitalMetrics: buildCapitalMetrics(capitalEvents, { now }),
-    debtFinancing: [],
+    capitalSourceReports,
+    debtFinancing: capitalEvents.filter((event) => event.instrumentCategory !== 'equity'),
   };
 }

@@ -32,7 +32,7 @@ export function normalizeComputeQuote(record) {
   const instanceSpec = requiredText(record?.instanceSpec, 'instanceSpec');
   const region = requiredText(record?.region, 'region');
   const billingMode = requiredText(record?.billingMode, 'billingMode');
-  if (!['on_demand', 'spot', 'preemptible', 'reserved'].includes(billingMode)) throw new Error(`unsupported billingMode: ${billingMode}`);
+  if (!['on_demand', 'spot', 'preemptible', 'reserved', 'capacity_block'].includes(billingMode)) throw new Error(`unsupported billingMode: ${billingMode}`);
   const currency = requiredText(record.currency, 'currency').toUpperCase();
   const gpuCount = nullableNumber(record.gpuCount, 'gpuCount');
   if (!gpuCount || !Number.isInteger(gpuCount)) throw new Error('gpuCount must be a positive integer');
