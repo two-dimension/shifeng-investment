@@ -1084,9 +1084,18 @@ export function ArtificialAnalysisSection({ data }: DashboardProps) {
   const palette = useChartPalette();
   const screens = Grid.useBreakpoint();
   const compact = !screens.sm;
-  const indexRows = data.artificialAnalysis.intelligenceIndex || [];
-  const taskCosts = data.artificialAnalysis.taskCosts || [];
-  const scatterRows = taskCosts.filter((row) => row.outputTokens !== null && row.totalCost !== null);
+  const indexRows = useMemo(
+    () => data.artificialAnalysis.intelligenceIndex || [],
+    [data.artificialAnalysis.intelligenceIndex],
+  );
+  const taskCosts = useMemo(
+    () => data.artificialAnalysis.taskCosts || [],
+    [data.artificialAnalysis.taskCosts],
+  );
+  const scatterRows = useMemo(
+    () => taskCosts.filter((row) => row.outputTokens !== null && row.totalCost !== null),
+    [taskCosts],
+  );
   const indexOption = useMemo(() => ({
     tooltip: {
       trigger: 'axis',
@@ -1127,7 +1136,7 @@ export function ArtificialAnalysisSection({ data }: DashboardProps) {
         showIcon
         type="warning"
         title="Artificial Analysis 为独立第三方参考，不参与厂商官网模型卡冠军"
-        description="指数、每任务输出 Token 与成本直接读取 AA 公共页面 JSON-LD；缺失组件保持为空，不使用 OpenRouter 或飞书补数。"
+        description="指数、每任务输出 Token 与成本直接读取 AA 公共页面 JSON-LD；缺失组件保持为空，不使用其他数据源补数。"
       />
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={12}>
