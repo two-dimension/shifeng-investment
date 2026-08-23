@@ -125,6 +125,13 @@ export function attachValuationMultiples(valuations, arrMetrics) {
     const arrValue = matched?.value ?? null;
     const valuationLow = finiteNumber(valuation.valuationLow);
     const valuationHigh = finiteNumber(valuation.valuationHigh ?? valuation.valuationLow);
+    const note = [
+      valuation.note || valuation.commentary || valuation.provenance?.commentary,
+      matched?.note || matched?.commentary || matched?.provenance?.commentary,
+      matched
+        ? `P/ARR 使用估值日前最近一期 ${matched.sourceLabel || matchingSeries?.sourceLabel || valuation.company} ${matchingSeries?.seriesKind === 'estimate' ? '估算口径' : '官方口径'}（${matched.observedAt}）配对。`
+        : '估值日前没有可匹配的 ARR 观测，未计算 P/ARR。',
+    ].filter((value, index, values) => value && values.indexOf(value) === index).join(' ');
     return {
       ...valuation,
       asOf,
@@ -136,6 +143,7 @@ export function attachValuationMultiples(valuations, arrMetrics) {
       arrProvenance: matched?.provenance || null,
       parrLow: arrValue && valuationLow !== null ? valuationLow / arrValue : null,
       parrHigh: arrValue && valuationHigh !== null ? valuationHigh / arrValue : null,
+      note,
     };
   });
 }

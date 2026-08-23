@@ -202,7 +202,7 @@ export function officialWinnerRows(benchmarks: AiDashboardSnapshot['benchmarks']
   const metrics = [...benchmarks.metrics].sort(benchmarkMetricSort);
   return metrics.flatMap((metric) => {
     const winner = benchmarks.winners[metric.key];
-    if (!winner || winner.models.length === 0) return [];
+    if (!winner || !Array.isArray(winner.models) || winner.models.length === 0 || !Number.isFinite(winner.value)) return [];
     return [{
       category: metric.category || metric.group || '其他',
       metricKey: metric.key,

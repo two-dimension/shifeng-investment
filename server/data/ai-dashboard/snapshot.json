@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-23T16:49:39.704Z",
+  "generatedAt": "2026-08-23T17:10:31.677Z",
   "sources": {
     "growth": {
       "status": "ready",
@@ -8,7 +8,7 @@
       "asOf": "2026-08-23",
       "url": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
       "message": "2/4 个公司官网增长源同步成功；2 个保留上一版；Yipit 始终作为独立估算序列",
-      "syncedAt": "2026-08-23T16:49:39.704Z"
+      "syncedAt": "2026-08-23T17:10:31.677Z"
     },
     "openRouter": {
       "status": "ready",
@@ -22,41 +22,41 @@
       "status": "ready",
       "stale": true,
       "asOf": "2026-08-23",
-      "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "syncedAt": "2026-08-23T16:49:39.704Z",
       "message": "15/20 个厂商官网价格源同步成功；5 个沿用上一版",
-      "syncedAt": "2026-08-23T16:49:39.704Z"
+      "url": "https://platform.claude.com/docs/en/about-claude/pricing"
     },
     "capital": {
       "status": "ready",
       "stale": true,
       "asOf": "2026-08-23",
-      "url": "https://www.anthropic.com/news",
+      "syncedAt": "2026-08-23T16:49:39.704Z",
       "message": "10/13 个可抓取的官网/监管融资源同步成功；4 家由来源发现流程维护",
-      "syncedAt": "2026-08-23T16:49:39.704Z"
+      "url": "https://www.anthropic.com/news"
     },
     "benchmarks": {
       "status": "ready",
       "stale": true,
       "asOf": "2026-08-23",
-      "url": "https://anthropic.com/claude-opus-5-system-card",
+      "syncedAt": "2026-08-23T17:05:43.315Z",
       "message": "官网模型卡同步：9/12 家成功 · 7 家披露评分",
-      "syncedAt": "2026-08-23T16:49:39.704Z"
+      "url": "https://anthropic.com/claude-opus-5-system-card"
     },
     "artificialAnalysis": {
       "status": "ready",
       "stale": false,
       "asOf": "2026-08-23",
-      "url": "https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index",
+      "syncedAt": "2026-08-23T16:49:39.704Z",
       "message": "Artificial Analysis 独立参考：20 个模型 · 20 条单任务成本",
-      "syncedAt": "2026-08-23T16:49:39.704Z"
+      "url": "https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index"
     },
     "compute": {
       "status": "ready",
       "stale": true,
       "asOf": "2026-08-23",
-      "url": "https://aws.amazon.com/ec2/pricing/on-demand/",
+      "syncedAt": "2026-08-23T16:49:39.704Z",
       "message": "4/5 个算力官网价格源同步成功；1 个沿用上一版",
-      "syncedAt": "2026-08-23T16:49:39.704Z"
+      "url": "https://aws.amazon.com/ec2/pricing/on-demand/"
     }
   },
   "arrAndValuation": {
@@ -163,7 +163,7 @@
               "sourceUrl": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
               "sourceKind": "official",
               "asOf": "2026-02-12",
-              "retrievedAt": "2026-08-23T16:49:39.704Z",
+              "retrievedAt": "2026-08-23T17:10:31.677Z",
               "methodology": "Company-disclosed run-rate revenue",
               "commentary": "公司融资公告同步披露的 run-rate revenue；与第三方 ARR 估算分开展示。",
               "stale": false
@@ -195,7 +195,7 @@
               "sourceUrl": "https://www.anthropic.com/news/series-h",
               "sourceKind": "official",
               "asOf": "2026-05-28",
-              "retrievedAt": "2026-08-23T16:49:39.704Z",
+              "retrievedAt": "2026-08-23T17:10:31.677Z",
               "methodology": "Company-disclosed run-rate revenue",
               "commentary": "公司融资公告同步披露的 run-rate revenue；与第三方 ARR 估算分开展示。",
               "stale": false
@@ -229,7 +229,7 @@
             "sourceUrl": "https://www.anthropic.com/news/series-h",
             "sourceKind": "official",
             "asOf": "2026-05-28",
-            "retrievedAt": "2026-08-23T16:49:39.704Z",
+            "retrievedAt": "2026-08-23T17:10:31.677Z",
             "methodology": "Company-disclosed run-rate revenue",
             "commentary": "公司融资公告同步披露的 run-rate revenue；与第三方 ARR 估算分开展示。",
             "stale": false
@@ -406,7 +406,7 @@
           "sourceUrl": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
           "sourceKind": "official",
           "asOf": "2026-02-12",
-          "retrievedAt": "2026-08-23T16:49:39.704Z",
+          "retrievedAt": "2026-08-23T17:10:31.677Z",
           "methodology": "Company-disclosed post-money financing valuation",
           "commentary": "公司融资公告披露的 post-money valuation。",
           "stale": false
@@ -420,13 +420,14 @@
           "sourceUrl": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
           "sourceKind": "official",
           "asOf": "2026-02-12",
-          "retrievedAt": "2026-08-23T16:49:39.704Z",
+          "retrievedAt": "2026-08-23T17:10:31.677Z",
           "methodology": "Company-disclosed run-rate revenue",
           "commentary": "公司融资公告同步披露的 run-rate revenue；与第三方 ARR 估算分开展示。",
           "stale": false
         },
         "parrLow": 27.142857142857142,
-        "parrHigh": 27.142857142857142
+        "parrHigh": 27.142857142857142,
+        "note": "公司融资公告披露的 post-money valuation。 公司融资公告同步披露的 run-rate revenue；与第三方 ARR 估算分开展示。 P/ARR 使用估值日前最近一期 Anthropic 官方口径（2026-02-12）配对。"
       },
       {
         "sourceId": "openai-valuation",
@@ -468,7 +469,8 @@
           "stale": false
         },
         "parrLow": 42.6,
-        "parrHigh": 42.6
+        "parrHigh": 42.6,
+        "note": "融资公告披露的 post-money valuation；仅匹配估值日之前的官方 ARR。 公司披露为大于该阈值；图中保存披露下限。 P/ARR 使用估值日前最近一期 OpenAI 官方口径（2025-12-31）配对。"
       },
       {
         "company": "Anthropic",
@@ -489,7 +491,7 @@
           "sourceUrl": "https://www.anthropic.com/news/series-h",
           "sourceKind": "official",
           "asOf": "2026-05-28",
-          "retrievedAt": "2026-08-23T16:49:39.704Z",
+          "retrievedAt": "2026-08-23T17:10:31.677Z",
           "methodology": "Company-disclosed post-money financing valuation",
           "commentary": "公司融资公告披露的 post-money valuation。",
           "stale": false
@@ -503,13 +505,14 @@
           "sourceUrl": "https://www.anthropic.com/news/series-h",
           "sourceKind": "official",
           "asOf": "2026-05-28",
-          "retrievedAt": "2026-08-23T16:49:39.704Z",
+          "retrievedAt": "2026-08-23T17:10:31.677Z",
           "methodology": "Company-disclosed run-rate revenue",
           "commentary": "公司融资公告同步披露的 run-rate revenue；与第三方 ARR 估算分开展示。",
           "stale": false
         },
         "parrLow": 20.53191489361702,
-        "parrHigh": 20.53191489361702
+        "parrHigh": 20.53191489361702,
+        "note": "公司融资公告披露的 post-money valuation。 公司融资公告同步披露的 run-rate revenue；与第三方 ARR 估算分开展示。 P/ARR 使用估值日前最近一期 Anthropic 官方口径（2026-05-28）配对。"
       }
     ]
   },
@@ -5590,7 +5593,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deploymentsafety.openai.com/gpt-5-6",
             "publishedAt": "2026-07-09",
-            "retrievedAt": "2026-08-23T16:49:46.462Z",
+            "retrievedAt": "2026-08-23T17:05:59.065Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5603,7 +5606,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deploymentsafety.openai.com/gpt-5-6",
             "publishedAt": "2026-07-09",
-            "retrievedAt": "2026-08-23T16:49:46.462Z",
+            "retrievedAt": "2026-08-23T17:05:59.065Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5616,7 +5619,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deploymentsafety.openai.com/gpt-5-6",
             "publishedAt": "2026-07-09",
-            "retrievedAt": "2026-08-23T16:49:46.462Z",
+            "retrievedAt": "2026-08-23T17:05:59.065Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5629,7 +5632,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deploymentsafety.openai.com/gpt-5-6",
             "publishedAt": "2026-07-09",
-            "retrievedAt": "2026-08-23T16:49:46.462Z",
+            "retrievedAt": "2026-08-23T17:05:59.065Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5642,7 +5645,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deploymentsafety.openai.com/gpt-5-6",
             "publishedAt": "2026-07-09",
-            "retrievedAt": "2026-08-23T16:49:46.462Z",
+            "retrievedAt": "2026-08-23T17:05:59.065Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5655,7 +5658,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deploymentsafety.openai.com/gpt-5-6",
             "publishedAt": "2026-07-09",
-            "retrievedAt": "2026-08-23T16:49:46.462Z",
+            "retrievedAt": "2026-08-23T17:05:59.065Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5668,7 +5671,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deploymentsafety.openai.com/gpt-5-6",
             "publishedAt": "2026-07-09",
-            "retrievedAt": "2026-08-23T16:49:46.462Z",
+            "retrievedAt": "2026-08-23T17:05:59.065Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5681,7 +5684,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deploymentsafety.openai.com/gpt-5-6",
             "publishedAt": "2026-07-09",
-            "retrievedAt": "2026-08-23T16:49:46.462Z",
+            "retrievedAt": "2026-08-23T17:05:59.065Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5694,7 +5697,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deploymentsafety.openai.com/gpt-5-6",
             "publishedAt": "2026-07-09",
-            "retrievedAt": "2026-08-23T16:49:46.462Z",
+            "retrievedAt": "2026-08-23T17:05:59.065Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           }
@@ -5721,7 +5724,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5734,7 +5737,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5747,7 +5750,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5760,7 +5763,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5773,7 +5776,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5786,7 +5789,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5799,7 +5802,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5812,7 +5815,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5825,7 +5828,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5838,7 +5841,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5851,7 +5854,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5864,7 +5867,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5877,7 +5880,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5890,7 +5893,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5903,7 +5906,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5916,7 +5919,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5929,7 +5932,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5942,7 +5945,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5955,7 +5958,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5968,7 +5971,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5981,7 +5984,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -5994,7 +5997,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6007,7 +6010,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6020,7 +6023,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6033,7 +6036,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6046,7 +6049,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6059,7 +6062,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6072,7 +6075,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6085,7 +6088,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
             "publishedAt": "2026-08-13",
-            "retrievedAt": "2026-08-23T16:49:53.734Z",
+            "retrievedAt": "2026-08-23T17:05:56.926Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           }
@@ -6125,7 +6128,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-M2.7/main/README.md",
             "publishedAt": "2026-08-11",
-            "retrievedAt": "2026-08-23T16:49:41.694Z",
+            "retrievedAt": "2026-08-23T17:05:46.614Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6138,7 +6141,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-M2.7/main/README.md",
             "publishedAt": "2026-08-11",
-            "retrievedAt": "2026-08-23T16:49:41.694Z",
+            "retrievedAt": "2026-08-23T17:05:46.614Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6151,7 +6154,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-M2.7/main/README.md",
             "publishedAt": "2026-08-11",
-            "retrievedAt": "2026-08-23T16:49:41.694Z",
+            "retrievedAt": "2026-08-23T17:05:46.614Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6164,7 +6167,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-M2.7/main/README.md",
             "publishedAt": "2026-08-11",
-            "retrievedAt": "2026-08-23T16:49:41.694Z",
+            "retrievedAt": "2026-08-23T17:05:46.614Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6177,7 +6180,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-M2.7/main/README.md",
             "publishedAt": "2026-08-11",
-            "retrievedAt": "2026-08-23T16:49:41.694Z",
+            "retrievedAt": "2026-08-23T17:05:46.614Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           }
@@ -6204,7 +6207,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6217,7 +6220,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6230,7 +6233,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6243,7 +6246,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6256,7 +6259,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6269,7 +6272,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6282,7 +6285,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6295,7 +6298,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6308,7 +6311,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6321,7 +6324,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6334,7 +6337,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6347,7 +6350,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6360,7 +6363,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6373,7 +6376,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6386,7 +6389,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6399,7 +6402,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6412,7 +6415,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6425,7 +6428,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6438,7 +6441,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6451,7 +6454,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6464,7 +6467,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6477,7 +6480,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6490,7 +6493,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6503,7 +6506,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6516,7 +6519,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6529,7 +6532,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6542,7 +6545,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6555,7 +6558,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6568,7 +6571,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6581,7 +6584,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.211Z",
+            "retrievedAt": "2026-08-23T17:05:45.860Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           }
@@ -6634,7 +6637,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6647,7 +6650,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6660,7 +6663,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6673,7 +6676,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6686,7 +6689,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6699,7 +6702,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6712,7 +6715,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6725,7 +6728,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6738,7 +6741,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6751,7 +6754,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6764,7 +6767,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6777,7 +6780,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6790,7 +6793,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6803,7 +6806,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6816,7 +6819,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6829,7 +6832,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6842,7 +6845,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6855,7 +6858,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6868,7 +6871,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6881,7 +6884,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6894,7 +6897,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6907,7 +6910,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6920,7 +6923,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6933,7 +6936,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6946,7 +6949,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6959,7 +6962,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6972,7 +6975,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6985,7 +6988,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -6998,7 +7001,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7011,7 +7014,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7024,7 +7027,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7037,7 +7040,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7050,7 +7053,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7063,7 +7066,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7076,7 +7079,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7089,7 +7092,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7102,7 +7105,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7115,7 +7118,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
             "publishedAt": "2026-08-10",
-            "retrievedAt": "2026-08-23T16:50:09.113Z",
+            "retrievedAt": "2026-08-23T17:05:53.048Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           }
@@ -7155,7 +7158,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://raw.githubusercontent.com/Tencent-Hunyuan/Hy3/main/README.md",
             "publishedAt": "2026-07-17",
-            "retrievedAt": "2026-08-23T16:49:41.820Z",
+            "retrievedAt": "2026-08-23T17:05:45.856Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           }
@@ -7182,7 +7185,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://x.ai/news/grok-4-6",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.027Z",
+            "retrievedAt": "2026-08-23T17:05:45.353Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7195,7 +7198,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://x.ai/news/grok-4-6",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.027Z",
+            "retrievedAt": "2026-08-23T17:05:45.353Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7208,7 +7211,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://x.ai/news/grok-4-6",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.027Z",
+            "retrievedAt": "2026-08-23T17:05:45.353Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7221,7 +7224,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://x.ai/news/grok-4-6",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.027Z",
+            "retrievedAt": "2026-08-23T17:05:45.353Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7234,7 +7237,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://x.ai/news/grok-4-6",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.027Z",
+            "retrievedAt": "2026-08-23T17:05:45.353Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7247,7 +7250,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://x.ai/news/grok-4-6",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.027Z",
+            "retrievedAt": "2026-08-23T17:05:45.353Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           },
@@ -7260,7 +7263,7 @@
             "source": "official-model-card",
             "sourceUrl": "https://x.ai/news/grok-4-6",
             "publishedAt": "2026-08-12",
-            "retrievedAt": "2026-08-23T16:49:44.027Z",
+            "retrievedAt": "2026-08-23T17:05:45.353Z",
             "configurationComplete": false,
             "comparisonNote": "官网未完整披露可比运行配置"
           }
@@ -10373,7 +10376,7 @@
         "sourceUrl": "https://anthropic.com/claude-opus-5-system-card",
         "discoveryMode": "manual-registry",
         "releasedAt": "2026-07-01",
-        "retrievedAt": "2026-08-23T16:49:44.864Z",
+        "retrievedAt": "2026-08-23T17:05:45.128Z",
         "error": null,
         "disclosedScores": 0
       },
@@ -10385,7 +10388,7 @@
         "sourceUrl": "https://deploymentsafety.openai.com/gpt-5-6",
         "discoveryMode": "html-index",
         "releasedAt": "2026-07-09",
-        "retrievedAt": "2026-08-23T16:49:46.462Z",
+        "retrievedAt": "2026-08-23T17:05:59.065Z",
         "error": null,
         "disclosedScores": 9
       },
@@ -10397,7 +10400,7 @@
         "sourceUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
         "discoveryMode": "html-index",
         "releasedAt": "2026-08-13",
-        "retrievedAt": "2026-08-23T16:49:53.734Z",
+        "retrievedAt": "2026-08-23T17:05:56.926Z",
         "error": null,
         "disclosedScores": 29
       },
@@ -10409,7 +10412,7 @@
         "sourceUrl": "https://docs.bigmodel.cn/cn/guide/start/model-overview",
         "discoveryMode": "official-docs",
         "releasedAt": null,
-        "retrievedAt": "2026-08-23T16:49:40.505Z",
+        "retrievedAt": "2026-08-23T17:05:43.771Z",
         "error": null,
         "disclosedScores": 0
       },
@@ -10421,7 +10424,7 @@
         "sourceUrl": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-M2.7/main/README.md",
         "discoveryMode": "official-github",
         "releasedAt": "2026-08-11",
-        "retrievedAt": "2026-08-23T16:49:41.694Z",
+        "retrievedAt": "2026-08-23T17:05:46.614Z",
         "error": null,
         "disclosedScores": 5
       },
@@ -10433,7 +10436,7 @@
         "sourceUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
         "discoveryMode": "official-github",
         "releasedAt": "2026-08-12",
-        "retrievedAt": "2026-08-23T16:49:44.211Z",
+        "retrievedAt": "2026-08-23T17:05:45.860Z",
         "error": null,
         "disclosedScores": 30
       },
@@ -10445,7 +10448,7 @@
         "sourceUrl": "https://github.com/XiaomiMiMo",
         "discoveryMode": "manual-registry",
         "releasedAt": null,
-        "retrievedAt": "2026-08-23T16:49:46.184Z",
+        "retrievedAt": "2026-08-23T17:05:51.515Z",
         "error": "官网发现入口尚未提供稳定的当前旗舰模型卡链接",
         "disclosedScores": 0
       },
@@ -10457,7 +10460,7 @@
         "sourceUrl": "https://github.com/deepseek-ai",
         "discoveryMode": "manual-registry",
         "releasedAt": null,
-        "retrievedAt": "2026-08-23T16:49:44.995Z",
+        "retrievedAt": "2026-08-23T17:05:47.318Z",
         "error": "官网发现入口尚未提供稳定的当前旗舰模型卡链接",
         "disclosedScores": 0
       },
@@ -10469,7 +10472,7 @@
         "sourceUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
         "discoveryMode": "official-github",
         "releasedAt": "2026-08-10",
-        "retrievedAt": "2026-08-23T16:50:09.113Z",
+        "retrievedAt": "2026-08-23T17:05:53.048Z",
         "error": null,
         "disclosedScores": 38
       },
@@ -10481,7 +10484,7 @@
         "sourceUrl": "https://developer.meta.com/ai/models/",
         "discoveryMode": "manual-registry",
         "releasedAt": null,
-        "retrievedAt": "2026-08-23T16:49:41.892Z",
+        "retrievedAt": "2026-08-23T17:05:47.700Z",
         "error": "source request failed with HTTP 404",
         "disclosedScores": 0
       },
@@ -10493,7 +10496,7 @@
         "sourceUrl": "https://raw.githubusercontent.com/Tencent-Hunyuan/Hy3/main/README.md",
         "discoveryMode": "official-github",
         "releasedAt": "2026-07-17",
-        "retrievedAt": "2026-08-23T16:49:41.820Z",
+        "retrievedAt": "2026-08-23T17:05:45.856Z",
         "error": null,
         "disclosedScores": 1
       },
@@ -10505,19 +10508,19 @@
         "sourceUrl": "https://x.ai/news/grok-4-6",
         "discoveryMode": "html-index",
         "releasedAt": "2026-08-12",
-        "retrievedAt": "2026-08-23T16:49:44.027Z",
+        "retrievedAt": "2026-08-23T17:05:45.353Z",
         "error": null,
         "disclosedScores": 7
       }
     ],
+    "asOf": "2026-08-23T17:05:43.315Z",
+    "sourceMode": "official-model-cards",
     "coverage": {
       "vendors": 12,
       "disclosedVendors": 7,
       "metrics": 119,
       "comparableMetrics": 0
     },
-    "asOf": "2026-08-23T16:49:39.704Z",
-    "sourceMode": "official-model-cards",
     "attributions": [
       {
         "source": "official-model-card",

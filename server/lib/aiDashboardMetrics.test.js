@@ -47,14 +47,14 @@ test('ARR marks Yipit stale after 18 days without an actual observation', () => 
 
 test('official and estimate ARR stay separate and P/ARR matches the requested prior series', () => {
   const arr = buildArrMetrics([
-    { company: 'Anthropic', observedAt: '2026-05-10', value: 470, kind: 'actual', sourceLabel: 'Anthropic', seriesKind: 'official', methodology: 'run-rate revenue' },
+    { company: 'Anthropic', observedAt: '2026-05-10', value: 470, kind: 'actual', sourceLabel: 'Anthropic', seriesKind: 'official', methodology: 'run-rate revenue', commentary: '公司官网披露的收入运行率。' },
     { company: 'Anthropic', observedAt: '2026-07-31', value: 730, kind: 'actual', sourceLabel: 'Yipit', seriesKind: 'estimate', methodology: 'Yipit estimate' },
     { company: 'OpenAI', observedAt: '2025-12-31', value: 200, kind: 'actual', sourceLabel: 'OpenAI', seriesKind: 'official', methodology: 'reported ARR' },
     { company: 'OpenAI', observedAt: '2026-03-31', value: 240, kind: 'actual', sourceLabel: 'OpenAI', seriesKind: 'official', methodology: 'monthly revenue annualized' },
   ]);
 
   const [anthropicOfficial, anthropicEstimate, openAi, tooEarly] = attachValuationMultiples([
-    { company: 'Anthropic', asOf: '2026-08-15', valuationLow: 9650, valuationHigh: 9650, arrSeriesKind: 'official' },
+    { company: 'Anthropic', asOf: '2026-08-15', valuationLow: 9650, valuationHigh: 9650, arrSeriesKind: 'official', commentary: '融资公告披露的投后估值。' },
     { company: 'Anthropic', asOf: '2026-08-15', valuationLow: 9650, valuationHigh: 9650, arrSeriesKind: 'estimate' },
     { company: 'OpenAI', asOf: '2026-08-15', valuationLow: 8520, valuationHigh: 8520, arrSeriesKind: 'official' },
     { company: 'OpenAI', asOf: '2023-04-30', valuationLow: 300, valuationHigh: 300, arrSeriesKind: 'official' },
@@ -62,6 +62,7 @@ test('official and estimate ARR stay separate and P/ARR matches the requested pr
 
   assert.equal(anthropicOfficial.arrValue, 470);
   assert.equal(anthropicOfficial.arrSourceLabel, 'Anthropic');
+  assert.equal(anthropicOfficial.note, '融资公告披露的投后估值。 公司官网披露的收入运行率。 P/ARR 使用估值日前最近一期 Anthropic 官方口径（2026-05-10）配对。');
   assert.equal(anthropicEstimate.arrValue, 730);
   assert.equal(anthropicEstimate.arrSourceLabel, 'Yipit');
   assert.equal(openAi.arrAsOf, '2026-03-31');

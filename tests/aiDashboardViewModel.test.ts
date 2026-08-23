@@ -83,6 +83,19 @@ test('winner rows retain exact tests, winning scores, ties, and run configuratio
   assert.equal(rows.some((row) => /Artificial Analysis|Design Arena|OpenRouter Evals|飞书口径/.test(row.label)), false);
 });
 
+test('winner rows ignore legacy aggregate winner arrays instead of crashing the Benchmark tab', () => {
+  const rows = officialWinnerRows({
+    models: [], metrics: metricFixture,
+    winners: {
+      terminal: ['Legacy aggregate winner'],
+    } as unknown as Record<string, { models: string[]; value: number }>,
+    vendorSources: [], asOf: '2026-08-23', sourceMode: 'official-model-cards',
+    coverage: { vendors: 0, disclosedVendors: 0, metrics: 4, comparableMetrics: 0 }, attributions: [],
+  });
+
+  assert.deepEqual(rows, []);
+});
+
 test('single-task formatters expose token and cost formulas without inventing missing values', () => {
   assert.equal(formatTaskTokenBreakdown({ answerTokens: 3200, reasoningTokens: 6800, outputTokens: 10000 }), 'Answer 3,200 + Reasoning 6,800 = 10,000 Tokens');
   assert.equal(formatTaskTokenBreakdown({ answerTokens: null, reasoningTokens: null, outputTokens: null }), 'Token 明细未公开');
