@@ -1,4 +1,5 @@
 import net from 'node:net';
+import { load } from 'cheerio';
 
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const SUPPORTED_CONTENT_TYPES = new Set([
@@ -62,6 +63,41 @@ function baseContentType(response) {
 
 function contentTypeAllowed(contentType) {
   return SUPPORTED_CONTENT_TYPES.has(contentType) || contentType.endsWith('+json');
+}
+
+export async function decodeOfficialDocument(document, format) {
+  if (format === 'html') {
+    const $ = load(String(document?.text || ''));
+    $('script,style,noscript').remove();
+    $('h1,h2,h3,h4,h5,h6,p,li,td,th,tr,div,main,article,section').append(' ');
+    return $.root().text().replace(/\s+/g, ' ').trim();
+  }
+  if (format === 'markdown') return String(document?.text || '');
+  if (format === 'json') return JSON.stringify(JSON.parse(String(document?.text || '')));
+  if (format === 'pdf') {
+    const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const loadingTask = getDocument({
+      data: document?.bytes instanceof Uint8Array ? document.bytes : new Uint8Array(document?.bytes || []),
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      useSystemFonts: true,
+    });
+    let pdf;
+    try {
+      pdf = await loadingTask.promise;
+      const pages = [];
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const content = await page.getTextContent();
+        pages.push(content.items.map((item) => 'str' in item ? item.str : '').join(' '));
+      }
+      return pages.join('\n').replace(/[ \t]+/g, ' ').trim();
+    } finally {
+      if (pdf) await pdf.destroy();
+      else await loadingTask.destroy();
+    }
+  }
+  throw new Error(`unsupported official document format: ${format}`);
 }
 
 export function createOfficialDocumentClient({

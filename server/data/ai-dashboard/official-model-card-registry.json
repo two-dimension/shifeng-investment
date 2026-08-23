@@ -1,0 +1,129 @@
+[
+  {
+    "vendor": "Anthropic",
+    "indexUrl": "https://www.anthropic.com/system-cards",
+    "cardUrl": "https://anthropic.com/claude-opus-5-system-card",
+    "allowedHosts": ["www.anthropic.com", "anthropic.com", "www-cdn.anthropic.com"],
+    "format": "pdf",
+    "discoveryMode": "manual-registry",
+    "model": "Claude Opus 5",
+    "releasedAt": "2026-07-01"
+  },
+  {
+    "vendor": "OpenAI",
+    "indexUrl": "https://deploymentsafety.openai.com/",
+    "cardUrl": "https://deploymentsafety.openai.com/gpt-5-6",
+    "allowedHosts": ["deploymentsafety.openai.com"],
+    "format": "html",
+    "discoveryMode": "html-index",
+    "model": "GPT-5.6 Sol",
+    "releasedAt": "2026-07-09"
+  },
+  {
+    "vendor": "Gemini",
+    "indexUrl": "https://deepmind.google/models/model-cards/",
+    "cardUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
+    "allowedHosts": ["deepmind.google"],
+    "format": "html",
+    "discoveryMode": "html-index",
+    "model": "Gemini 3.7 Flash",
+    "releasedAt": "2026-08-13"
+  },
+  {
+    "vendor": "智谱",
+    "indexUrl": "https://docs.z.ai/guides/overview/models",
+    "cardUrl": "https://docs.z.ai/guides/overview/models",
+    "allowedHosts": ["docs.z.ai"],
+    "format": "html",
+    "discoveryMode": "official-docs",
+    "model": "GLM-5.2",
+    "releasedAt": null
+  },
+  {
+    "vendor": "MiniMax",
+    "indexUrl": "https://github.com/MiniMax-AI",
+    "cardUrl": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-M2.7/main/README.md",
+    "allowedHosts": ["github.com", "raw.githubusercontent.com", "api.github.com"],
+    "format": "markdown",
+    "discoveryMode": "official-github",
+    "officialOwner": "MiniMax-AI",
+    "model": "MiniMax M2.7",
+    "releasedAt": "2026-08-11"
+  },
+  {
+    "vendor": "Qwen",
+    "indexUrl": "https://github.com/QwenLM",
+    "cardUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
+    "allowedHosts": ["github.com", "raw.githubusercontent.com", "api.github.com", "huggingface.co"],
+    "format": "html",
+    "discoveryMode": "official-github",
+    "officialOwner": "QwenLM",
+    "officialHuggingFaceOwner": "Qwen",
+    "model": "Qwen3.8-2.4T-A95B",
+    "releasedAt": "2026-08-12"
+  },
+  {
+    "vendor": "Mimo",
+    "indexUrl": "https://github.com/XiaomiMiMo",
+    "cardUrl": null,
+    "allowedHosts": ["github.com", "raw.githubusercontent.com", "api.github.com"],
+    "format": "html",
+    "discoveryMode": "manual-registry",
+    "officialOwner": "XiaomiMiMo",
+    "model": "MiMo-V2.5-Pro",
+    "releasedAt": null
+  },
+  {
+    "vendor": "DeepSeek",
+    "indexUrl": "https://github.com/deepseek-ai",
+    "cardUrl": null,
+    "allowedHosts": ["github.com", "raw.githubusercontent.com", "api.github.com"],
+    "format": "html",
+    "discoveryMode": "manual-registry",
+    "officialOwner": "deepseek-ai",
+    "model": "DeepSeek-V4-Pro",
+    "releasedAt": null
+  },
+  {
+    "vendor": "Kimi",
+    "indexUrl": "https://github.com/MoonshotAI",
+    "cardUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
+    "allowedHosts": ["github.com", "raw.githubusercontent.com", "api.github.com"],
+    "format": "markdown",
+    "discoveryMode": "official-github",
+    "officialOwner": "MoonshotAI",
+    "model": "Kimi K3",
+    "releasedAt": "2026-08-10"
+  },
+  {
+    "vendor": "Meta",
+    "indexUrl": "https://www.llama.com/models/",
+    "cardUrl": null,
+    "allowedHosts": ["www.llama.com", "llama.com"],
+    "format": "html",
+    "discoveryMode": "manual-registry",
+    "model": null,
+    "releasedAt": null
+  },
+  {
+    "vendor": "Tencent",
+    "indexUrl": "https://github.com/Tencent-Hunyuan",
+    "cardUrl": "https://raw.githubusercontent.com/Tencent-Hunyuan/Hy3/main/README.md",
+    "allowedHosts": ["github.com", "raw.githubusercontent.com", "api.github.com"],
+    "format": "markdown",
+    "discoveryMode": "official-github",
+    "officialOwner": "Tencent-Hunyuan",
+    "model": "Hy3",
+    "releasedAt": "2026-07-17"
+  },
+  {
+    "vendor": "xAI",
+    "indexUrl": "https://x.ai/news",
+    "cardUrl": "https://x.ai/news/grok-4-6",
+    "allowedHosts": ["x.ai", "data.x.ai"],
+    "format": "html",
+    "discoveryMode": "html-index",
+    "model": "Grok 4.6",
+    "releasedAt": "2026-08-12"
+  }
+]

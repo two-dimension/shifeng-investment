@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createOfficialDocumentClient } from './officialDocumentClient.js';
+import { createOfficialDocumentClient, decodeOfficialDocument } from './officialDocumentClient.js';
 
 const source = {
   entryUrl: 'https://docs.vendor.test/model-card',
@@ -115,4 +115,12 @@ test('preserves PDF bytes for the format-specific parser without decoding them a
   const document = await client.fetchDocument({ ...source, format: 'pdf' });
   assert.equal(document.text, null);
   assert.deepEqual([...document.bytes], [...pdfBytes]);
+});
+
+test('decodes HTML, Markdown, and JSON for format-specific official adapters', async () => {
+  const bytes = (value) => new TextEncoder().encode(value);
+  assert.equal(await decodeOfficialDocument({ text: '<main><h1>Model card</h1><p>Score 83.8</p></main>', bytes: bytes('x') }, 'html'), 'Model card Score 83.8');
+  assert.equal(await decodeOfficialDocument({ text: '# Model card\nScore 83.8', bytes: bytes('x') }, 'markdown'), '# Model card\nScore 83.8');
+  assert.equal(await decodeOfficialDocument({ text: '{"model":"Latest"}', bytes: bytes('x') }, 'json'), '{"model":"Latest"}');
+  await assert.rejects(decodeOfficialDocument({ text: 'x', bytes: bytes('x') }, 'zip'), /unsupported official document format/);
 });
