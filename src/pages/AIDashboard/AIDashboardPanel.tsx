@@ -221,7 +221,7 @@ export const AIDashboardPanel: React.FC = () => {
     { key: 'pricing', label: '模型价格', children: <ModelPricingSection data={data} /> },
     { key: 'benchmark', label: 'Benchmark', children: <BenchmarkSection data={data} refreshing={benchmarkRefreshing} /> },
     { key: 'compute', label: '算力租赁', children: <ComputeRentalSection data={data} /> },
-    { key: 'debt', label: '债务融资', children: <DebtFinancingSection data={data} /> },
+    { key: 'debt', label: '融资与债务', children: <DebtFinancingSection data={data} /> },
   ] : [], [benchmarkRefreshing, data]);
 
   if (auth === 'checking' || (loading && !data)) return <><Skeleton active paragraph={{ rows: 8 }} />{messageContext}</>;

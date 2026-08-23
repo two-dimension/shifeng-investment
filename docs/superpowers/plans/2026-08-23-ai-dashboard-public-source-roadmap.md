@@ -400,37 +400,37 @@ git commit -m "feat: source current AI pricing from official pages"
 - `normalizeComputeQuote` keys history by platform, GPU, instance spec, region, billing mode, and currency.
 - `enrichComputeQuotes` calculates absolute and percentage changes only inside the exact quote key.
 
-- [ ] **Step 1: Write failing capital normalization tests**
+- [x] **Step 1: Write failing capital normalization tests**
 
 Use official-style fixtures for a fixed-rate bond, benchmark-plus-spread loan, convertible note, equity round, missing-rate event, CNY event, and USD event. Assert unknown rates remain null and equity does not enter debt coupon calculations.
 
-- [ ] **Step 2: Write failing frequency and weighted-rate tests**
+- [x] **Step 2: Write failing frequency and weighted-rate tests**
 
 Assert event count and trailing-12-month cadence per company, while weighted average coupon includes only fixed-rate debt with comparable amount currency.
 
-- [ ] **Step 3: Write failing compute tests**
+- [x] **Step 3: Write failing compute tests**
 
 Prove that H100 on-demand in `us-east` never compares with H100 Spot, H100 in another region, or a different instance specification. Test positive and negative percentage changes.
 
-- [ ] **Step 4: Run tests and verify RED**
+- [x] **Step 4: Run tests and verify RED**
 
 Run: `node --test server/lib/aiCapitalData.test.js server/lib/aiCapitalSources.test.js server/lib/aiComputeData.test.js server/lib/aiComputeSources.test.js`
 
 Expected: FAIL because the modules do not exist.
 
-- [ ] **Step 5: Implement official capital-source registries**
+- [x] **Step 5: Implement official capital-source registries**
 
 Initial entity registry covers OpenAI, Anthropic, Google, Microsoft, Amazon, Meta, xAI, CoreWeave, Alibaba, Tencent, Baidu, 智谱, MiniMax, Moonshot, DeepSeek, and Xiaomi. Each entry names official IR/news/filing endpoints and regulator identifiers where available; an entity without a verified endpoint is marked discovery-maintained rather than silently omitted.
 
-- [ ] **Step 6: Implement official compute adapters**
+- [x] **Step 6: Implement official compute adapters**
 
 Initial platforms are AWS, Azure, Google Cloud, CoreWeave, and Lambda. Parse exact instance/SKU and region before price. If a dynamic calculator cannot be read reproducibly, mark that platform unavailable and retain its last-good official record.
 
-- [ ] **Step 7: Replace financing and compute UI**
+- [x] **Step 7: Replace financing and compute UI**
 
 Financing page shows industry summary, company filter, full timeline, amount, instrument, rate/coupon, frequency, tenor, and official links. Compute page shows exact-SKU latest comparison, history, absolute/percentage change, region, and freshness. Remove “海外” and Feishu-specific copy.
 
-- [ ] **Step 8: Run focused tests, build, and commit**
+- [x] **Step 8: Run focused tests, build, and commit**
 
 Run: `node --test server/lib/aiCapitalData.test.js server/lib/aiCapitalSources.test.js server/lib/aiComputeData.test.js server/lib/aiComputeSources.test.js`
 

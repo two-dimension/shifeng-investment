@@ -9,6 +9,7 @@ import {
   Flex,
   Grid,
   Row,
+  Select,
   Space,
   Statistic,
   Table,
@@ -33,6 +34,7 @@ import type {
   ArrPoint,
   BenchmarkMetricDefinition,
   BenchmarkModel,
+  CapitalEvent,
   CdsCompanyMetric,
   ComputeRentalQuote,
   PriceEvent,
@@ -58,6 +60,21 @@ function compactNumber(value: number): string {
   return new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 }).format(value);
 }
 
+function formatLargeMoney(value: number | null | undefined, currency = 'USD'): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+  const absolute = Math.abs(value);
+  const divisor = absolute >= 1_000_000_000 ? 1_000_000_000 : absolute >= 1_000_000 ? 1_000_000 : 1;
+  const suffix = divisor === 1_000_000_000 ? 'B' : divisor === 1_000_000 ? 'M' : '';
+  return `${currency} ${(value / divisor).toFixed(2)}${suffix}`;
+}
+
+function capitalRateLabel(event: CapitalEvent): string {
+  if (event.rateType === 'fixed') return event.couponPercent === null ? '固定利率未披露' : `${event.couponPercent.toFixed(2)}% 固定`;
+  if (event.rateType === 'floating') return `${event.benchmark || '基准'}${event.spreadBps === null ? '' : ` + ${event.spreadBps}bp`}`;
+  if (event.rateType === 'not_applicable') return '股权融资';
+  return '利率未披露';
+}
+
 function safeTokenNumber(value: string): number {
   try {
     return Number(BigInt(value));
@@ -68,16 +85,6 @@ function safeTokenNumber(value: string): number {
 
 function dateLabel(value: string | null | undefined): string {
   return value ? value.slice(0, 10) : '—';
-}
-
-function changeNode(value: number | null) {
-  if (value === null || Math.abs(value) < 0.000001) return <Text type="secondary">—</Text>;
-  const positive = value > 0;
-  return (
-    <Text className={positive ? 'ai-change-up' : 'ai-change-down'}>
-      {positive ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {formatUsd(Math.abs(value), 3)}
-    </Text>
-  );
 }
 
 function ChartCard({ title, extra, children, className = '' }: React.PropsWithChildren<{ title: React.ReactNode; extra?: React.ReactNode; className?: string }>) {
@@ -467,7 +474,7 @@ function latestArrCompany(data: AiDashboardSnapshot) {
 export function OverviewSection({ data }: DashboardProps) {
   const arr = latestArrCompany(data);
   const arrPoint = arr?.latestActual;
-  const debt = data.debtFinancing[0];
+  const capital = data.capitalEvents?.[0] || data.debtFinancing?.[0];
   const valuation = data.arrAndValuation.valuations[0];
   return (
     <div className="ai-section-stack">
@@ -492,8 +499,8 @@ export function OverviewSection({ data }: DashboardProps) {
         </Col>
         <Col xs={24} sm={12} xl={6}>
           <Card className="ai-kpi-card ai-debt-kpi">
-            <Statistic title={`最新融资规模${debt ? ` · ${debt.company}` : ''}`} value={debt ? `${debt.currency} ${compactNumber(debt.amount)}` : '—'} prefix={<BankOutlined />} />
-            <Text strong>{debt?.method || '暂无债务融资事件'}</Text>
+            <Statistic title={`最新融资规模${capital ? ` · ${capital.entity}` : ''}`} value={capital ? formatLargeMoney(capital.amountOriginal, capital.currency) : '—'} prefix={<BankOutlined />} />
+            <Text strong>{capital?.instrument || '暂无结构化融资事件'}</Text>
           </Card>
         </Col>
         <Col xs={24} sm={12} xl={6}>
@@ -517,16 +524,17 @@ export function OverviewSection({ data }: DashboardProps) {
       </Row>
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={12}>
-          <ChartCard title="最新债务融资" extra={<Text type="secondary">手段与规模优先展示</Text>}>
-            {debt ? (
+          <ChartCard title="最新融资事件" extra={<Text type="secondary">股权、债务与可转债统一事件口径</Text>}>
+            {capital ? (
               <Descriptions bordered column={{ xs: 1, sm: 2 }} size="small">
-                <Descriptions.Item label="融资手段"><Text strong className="ai-emphasis-value">{debt.method}</Text></Descriptions.Item>
-                <Descriptions.Item label="融资规模"><Text strong className="ai-emphasis-value">{debt.currency} {compactNumber(debt.amount)}</Text></Descriptions.Item>
-                <Descriptions.Item label="公司">{debt.company}</Descriptions.Item>
-                <Descriptions.Item label="日期">{dateLabel(debt.asOf)}</Descriptions.Item>
-                <Descriptions.Item label="点评" span="filled">{debt.note || '—'}</Descriptions.Item>
+                <Descriptions.Item label="融资手段"><Text strong className="ai-emphasis-value">{capital.instrument}</Text></Descriptions.Item>
+                <Descriptions.Item label="融资规模"><Text strong className="ai-emphasis-value">{formatLargeMoney(capital.amountOriginal, capital.currency)}</Text></Descriptions.Item>
+                <Descriptions.Item label="公司">{capital.entity}</Descriptions.Item>
+                <Descriptions.Item label="日期">{dateLabel(capital.eventDate)}</Descriptions.Item>
+                <Descriptions.Item label="利率 / 类型">{capitalRateLabel(capital)}</Descriptions.Item>
+                <Descriptions.Item label="来源"><a href={capital.sourceUrl} target="_blank" rel="noreferrer">{capital.sourceLabel}</a></Descriptions.Item>
               </Descriptions>
-            ) : <NoData description="暂无结构化债务融资数据" />}
+            ) : <NoData description="暂无结构化融资数据" />}
           </ChartCard>
         </Col>
         <Col xs={24} xl={12}>
@@ -1007,15 +1015,11 @@ function ComputeLatestChart({ quotes }: { quotes: ComputeRentalQuote[] }) {
   const compact = !screens.sm;
   const rows = quotes.toReversed();
   const option = useMemo(() => ({
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: (value: number) => formatUsd(value, 3) },
-    legend: { top: 0, textStyle: { color: palette.text } },
-    grid: { left: compact ? 100 : 180, right: compact ? 8 : 32, top: 44, bottom: 32 },
-    xAxis: { type: 'value', name: compact ? '' : 'USD / GPU / 小时', axisLabel: { color: palette.text, fontSize: compact ? 8 : 12 }, splitLine: { lineStyle: { color: palette.line } } },
-    yAxis: { type: 'category', data: rows.map((row) => `${row.platform} · ${row.gpu}`), axisLabel: { color: palette.text, fontSize: compact ? 8 : 12, width: compact ? 90 : 160, overflow: 'break' }, axisTick: { show: false } },
-    series: [
-      { name: 'On-demand', type: 'bar', data: rows.map((row) => row.onDemand), itemStyle: { color: palette.blue } },
-      { name: 'Preemptible', type: 'bar', data: rows.map((row) => row.preemptible), itemStyle: { color: palette.cyan } },
-    ],
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: (value: number) => formatCurrencyPrice(value, rows[0]?.currency, 3) },
+    grid: { left: compact ? 112 : 230, right: compact ? 8 : 32, top: 28, bottom: 32 },
+    xAxis: { type: 'value', name: compact ? '' : `${rows[0]?.currency || ''} / GPU / 小时`, axisLabel: { color: palette.text, fontSize: compact ? 8 : 12 }, splitLine: { lineStyle: { color: palette.line } } },
+    yAxis: { type: 'category', data: rows.map((row) => `${row.platform} · ${row.gpu} · ${row.billingMode}\n${row.region} · ${row.instanceSpec}`), axisLabel: { color: palette.text, fontSize: compact ? 8 : 11, width: compact ? 100 : 210, overflow: 'break' }, axisTick: { show: false } },
+    series: [{ name: '每 GPU 小时', type: 'bar', data: rows.map((row) => row.pricePerGpuHour), itemStyle: { color: palette.blue, borderRadius: [0, 5, 5, 0] } }],
   }), [compact, rows, palette]);
   if (quotes.length === 0) return <NoData description="暂无最新租赁报价" />;
   return <ReactECharts option={option} style={{ height: Math.max(340, rows.length * 36 + 90) }} notMerge />;
@@ -1028,15 +1032,18 @@ function ComputeHistoryChart({ quotes }: { quotes: ComputeRentalQuote[] }) {
   const dates = [...new Set(quotes.map((row) => row.asOf))].sort();
   const groups = new Map<string, ComputeRentalQuote[]>();
   for (const row of quotes) {
-    const key = `${row.platform} · ${row.gpu}`;
-    groups.set(key, [...(groups.get(key) || []), row]);
+    groups.set(row.quoteKey, [...(groups.get(row.quoteKey) || []), row]);
   }
-  const series = [...groups.entries()].flatMap(([key, rows]) => {
+  const series = [...groups.values()].slice(0, 14).map((rows) => {
     const byDate = new Map(rows.map((row) => [row.asOf, row]));
-    return [
-      { name: `${key} On-demand`, type: 'line', showSymbol: false, connectNulls: true, data: dates.map((date) => byDate.get(date)?.onDemand ?? null) },
-      { name: `${key} Preemptible`, type: 'line', showSymbol: false, connectNulls: true, lineStyle: { type: 'dashed' }, data: dates.map((date) => byDate.get(date)?.preemptible ?? null) },
-    ];
+    const first = rows[0];
+    return {
+      name: `${first.platform} · ${first.gpu} · ${first.region} · ${first.billingMode}`,
+      type: 'line',
+      showSymbol: true,
+      connectNulls: true,
+      data: dates.map((date) => byDate.get(date)?.pricePerGpuHour ?? null),
+    };
   });
   const option = useMemo(() => ({
     tooltip: { trigger: 'axis', valueFormatter: (value: number) => formatUsd(value, 3) },
@@ -1052,70 +1059,162 @@ function ComputeHistoryChart({ quotes }: { quotes: ComputeRentalQuote[] }) {
 
 export function ComputeRentalSection({ data }: DashboardProps) {
   const latest = data.computeRental.filter((row) => row.latest);
+  const comparableLatest = latest.filter((row) => row.currency === 'USD');
   return (
     <div className="ai-section-stack">
+      <Alert type="info" showIcon title="精确报价口径" description="涨跌只在同平台、同 GPU、同实例规格、同地区、同计费方式、同币种内计算。Spot / 抢占式、按需与预留价格不会互相拼接；实例总价仅在 GPU 数量明确时折算为每 GPU 小时。" />
       <Row gutter={[16, 16]}>
-        <Col xs={24} xl={12}><ChartCard title="最新租赁价格横向对比"><ComputeLatestChart quotes={latest} /></ChartCard></Col>
-        <Col xs={24} xl={12}><ChartCard title="租赁价格历史趋势"><ComputeHistoryChart quotes={data.computeRental} /></ChartCard></Col>
+        <Col xs={24} xl={12}><ChartCard title="最新 USD 精确报价横向对比"><ComputeLatestChart quotes={comparableLatest} /></ChartCard></Col>
+        <Col xs={24} xl={12}><ChartCard title="同一精确报价键历史趋势"><ComputeHistoryChart quotes={data.computeRental.filter((row) => row.currency === 'USD')} /></ChartCard></Col>
       </Row>
-      <ChartCard title="最新报价、绝对涨跌与折价比例">
+      <ChartCard title="最新报价、同口径绝对涨跌与环比">
         <Table
-          rowKey={(row) => `${row.platform}-${row.gpu}-${row.asOf}`}
+          rowKey={(row) => `${row.quoteKey}-${row.asOf}`}
           size="small"
-          pagination={false}
-          scroll={{ x: 1050 }}
+          pagination={{ pageSize: 15, showSizeChanger: false }}
+          scroll={{ x: 1500 }}
           locale={{ emptyText: <NoData description="暂无算力租赁数据" /> }}
           dataSource={latest}
           columns={[
             { title: '平台', dataIndex: 'platform', fixed: 'left', width: 140 },
             { title: 'GPU', dataIndex: 'gpu', fixed: 'left', width: 130 },
+            { title: '实例规格', dataIndex: 'instanceSpec', width: 190 },
+            { title: '地区', dataIndex: 'region', width: 120 },
+            { title: '计费方式', dataIndex: 'billingMode', width: 120 },
             { title: '日期', dataIndex: 'asOf', width: 112 },
-            { title: 'On-demand', dataIndex: 'onDemand', width: 130, align: 'right', render: (value) => formatUsd(value, 3) },
-            { title: '绝对涨跌', dataIndex: 'onDemandChange', width: 120, align: 'right', render: changeNode },
-            { title: 'Preemptible', dataIndex: 'preemptible', width: 130, align: 'right', render: (value) => formatUsd(value, 3) },
-            { title: '绝对涨跌', dataIndex: 'preemptibleChange', width: 120, align: 'right', render: changeNode },
-            { title: 'Preemptible / On-demand', dataIndex: 'preemptibleRatio', width: 205, align: 'right', render: (value) => value === null ? '—' : `${(value * 100).toFixed(1)}%` },
-            { title: '来源', dataIndex: 'sourceLabel' },
+            { title: '每 GPU / 小时', dataIndex: 'pricePerGpuHour', width: 145, align: 'right', render: (value, row) => formatCurrencyPrice(value, row.currency, 3) },
+            { title: '前值', dataIndex: 'previousPricePerGpuHour', width: 110, align: 'right', render: (value, row) => formatCurrencyPrice(value, row.currency, 3) },
+            { title: '绝对涨跌', dataIndex: 'absoluteChange', width: 120, align: 'right', render: (value, row) => value === null ? '—' : <Text className={value > 0 ? 'ai-change-up' : 'ai-change-down'}>{value > 0 ? '+' : ''}{formatCurrencyPrice(value, row.currency, 3)}</Text> },
+            { title: '环比', dataIndex: 'percentChange', width: 100, align: 'right', render: (value) => value === null ? '—' : `${value > 0 ? '+' : ''}${(value * 100).toFixed(1)}%` },
+            { title: '来源', width: 130, render: (_, row) => <a href={row.sourceUrl} target="_blank" rel="noreferrer">{row.sourceLabel}</a> },
           ]}
         />
+      </ChartCard>
+      <ChartCard title="算力官网来源状态" extra={<Text type="secondary">动态计算器不可复现时保留上一版</Text>}>
+        <Table rowKey="sourceId" size="small" pagination={false} dataSource={data.computeSourceReports || []} locale={{ emptyText: <NoData description="等待首次算力官网同步" /> }} columns={[
+          { title: '平台', dataIndex: 'platform' },
+          { title: '状态', dataIndex: 'status', width: 100, render: (value) => <Tag color={value === 'ready' ? 'success' : 'error'}>{value === 'ready' ? '已同步' : '失败'}</Tag> },
+          { title: '报价行', dataIndex: 'rows', width: 90, align: 'right' },
+          { title: '日期', dataIndex: 'asOf', width: 112, render: dateLabel },
+          { title: '详情', dataIndex: 'message', render: (value) => value || '—' },
+          { title: '官网', width: 80, render: (_, row) => row.url ? <a href={row.url} target="_blank" rel="noreferrer">打开</a> : '—' },
+        ]} />
       </ChartCard>
     </div>
   );
 }
 
+function CapitalHistoryChart({ events }: { events: CapitalEvent[] }) {
+  const palette = useChartPalette();
+  const screens = Grid.useBreakpoint();
+  const compact = !screens.sm;
+  const rows = events.filter((event) => event.comparableUsdAmount !== null).toSorted((left, right) => left.eventDate.localeCompare(right.eventDate));
+  const option = useMemo(() => ({
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: { data: { value: number; event: CapitalEvent } }) => {
+        const event = params.data.event;
+        return [
+          `<b>${escapeHtml(event.entity)} · ${escapeHtml(event.eventDate)}</b>`,
+          escapeHtml(event.instrument),
+          `原币：${escapeHtml(formatLargeMoney(event.amountOriginal, event.currency))}`,
+          `可比美元：${escapeHtml(formatLargeMoney(event.comparableUsdAmount, 'USD'))}`,
+          `利率：${escapeHtml(capitalRateLabel(event))}`,
+        ].join('<br/>');
+      },
+    },
+    grid: { left: compact ? 44 : 70, right: compact ? 8 : 24, top: 30, bottom: compact ? 105 : 80 },
+    xAxis: { type: 'category', data: rows.map((event) => `${event.eventDate}\n${event.entity}`), axisLabel: { color: palette.text, rotate: 35, fontSize: compact ? 8 : 11 }, axisLine: { lineStyle: { color: palette.line } } },
+    yAxis: { type: 'value', name: compact ? '' : '可比融资规模（十亿美元）', axisLabel: { color: palette.text }, splitLine: { lineStyle: { color: palette.line } } },
+    series: [{
+      type: 'bar',
+      data: rows.map((event) => ({
+        value: (event.comparableUsdAmount || 0) / 1_000_000_000,
+        event,
+        itemStyle: { color: event.instrumentCategory === 'equity' ? palette.blue : event.instrumentCategory === 'convertible' ? '#722ed1' : palette.orange },
+      })),
+    }],
+  }), [compact, rows, palette]);
+  if (rows.length === 0) return <NoData description="暂无可比美元融资历史" />;
+  return <ReactECharts option={option} style={{ height: 390 }} notMerge />;
+}
+
 export function DebtFinancingSection({ data }: DashboardProps) {
-  const latest = data.debtFinancing[0];
+  const [selectedEntity, setSelectedEntity] = React.useState('all');
+  const allEvents = data.capitalEvents || [];
+  const entities = [...new Set(allEvents.map((event) => event.entity))].sort((left, right) => left.localeCompare(right, 'zh-CN'));
+  const events = selectedEntity === 'all' ? allEvents : allEvents.filter((event) => event.entity === selectedEntity);
+  const metric = selectedEntity === 'all'
+    ? data.capitalMetrics?.industry
+    : data.capitalMetrics?.byEntity.find((row) => row.entity === selectedEntity);
+  const latest = events[0];
   return (
     <div className="ai-section-stack">
-      <ChartCard title="最新债务融资事件" className="ai-debt-highlight">
+      <Alert type="info" showIcon title="覆盖口径" description="覆盖全球与中国 CSP、模型厂商的股权轮、固定息债、浮息贷款、可转债与授信；金额保留原币，可比美元只在披露或核验汇率口径存在时使用。利率缺失保持空值，不由相邻交易推断。" />
+      <Flex justify="space-between" align="center" wrap gap={12}>
+        <Title level={4} style={{ margin: 0 }}>融资历史与债务条件</Title>
+        <Select value={selectedEntity} onChange={setSelectedEntity} style={{ minWidth: 220 }} options={[
+          { value: 'all', label: '全部公司' },
+          ...entities.map((entity) => ({ value: entity, label: entity })),
+        ]} />
+      </Flex>
+      <Row gutter={[16, 16]}>
+        <Col xs={12} xl={6}><Card className="ai-kpi-card"><Statistic title="累计可比融资" value={formatLargeMoney(metric?.cumulativeComparableUsd, 'USD')} /></Card></Col>
+        <Col xs={12} xl={6}><Card className="ai-kpi-card"><Statistic title="近 12 月可比融资" value={formatLargeMoney(metric?.trailing12MonthComparableUsd, 'USD')} /></Card></Col>
+        <Col xs={12} xl={6}><Card className="ai-kpi-card"><Statistic title="近 12 月事件数" value={metric?.trailing12MonthCount ?? '—'} suffix={metric ? '笔' : undefined} /></Card></Col>
+        <Col xs={12} xl={6}><Card className="ai-kpi-card"><Statistic title="固定息债加权票息" value={metric?.weightedAverageFixedCoupon ?? '—'} suffix={metric?.weightedAverageFixedCoupon !== null && metric?.weightedAverageFixedCoupon !== undefined ? '%' : undefined} precision={2} /></Card></Col>
+      </Row>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} xl={15}><ChartCard title="完整融资事件历史 · 可比美元"><CapitalHistoryChart events={events} /></ChartCard></Col>
+        <Col xs={24} xl={9}>
+          <ChartCard title="最新融资事件" className="ai-debt-highlight">
         {latest ? (
-          <Row gutter={[24, 20]} align="middle">
-            <Col xs={24} md={7}><Text type="secondary">公司 / 日期</Text><Title level={3}>{latest.company}</Title><Text>{dateLabel(latest.asOf)}</Text></Col>
-            <Col xs={24} md={8}><Text type="secondary">融资手段</Text><Title level={2} className="ai-emphasis-value">{latest.method}</Title></Col>
-            <Col xs={24} md={9}><Text type="secondary">融资规模</Text><Title level={2} className="ai-emphasis-value">{latest.currency} {compactNumber(latest.amount)}</Title></Col>
-            <Col span={24}><Paragraph>{latest.note || '暂无点评'}</Paragraph><Text type="secondary">来源：{latest.sourceLabel} · 更新于 {dateLabel(latest.updatedAt)}</Text></Col>
-          </Row>
-        ) : <NoData description="暂无结构化债务融资事件，请在飞书新表录入" />}
-      </ChartCard>
+          <Descriptions bordered column={1} size="small">
+            <Descriptions.Item label="公司 / 日期">{latest.entity} · {dateLabel(latest.eventDate)}</Descriptions.Item>
+            <Descriptions.Item label="融资工具"><Text strong className="ai-emphasis-value">{latest.instrument}</Text></Descriptions.Item>
+            <Descriptions.Item label="规模"><Text strong>{formatLargeMoney(latest.amountOriginal, latest.currency)}</Text></Descriptions.Item>
+            <Descriptions.Item label="利率 / 类型">{capitalRateLabel(latest)}</Descriptions.Item>
+            <Descriptions.Item label="期限">{latest.tenorYears === null ? '未披露' : `${latest.tenorYears} 年`}</Descriptions.Item>
+            <Descriptions.Item label="用途">{latest.useOfProceeds || '未披露'}</Descriptions.Item>
+            <Descriptions.Item label="来源"><a href={latest.sourceUrl} target="_blank" rel="noreferrer">{latest.sourceLabel}</a></Descriptions.Item>
+          </Descriptions>
+        ) : <NoData description="暂无结构化融资事件" />}
+          </ChartCard>
+        </Col>
+      </Row>
       <CdsRiskSection data={data} />
-      <ChartCard title="债务融资明细">
+      <ChartCard title="股权与债务融资全量明细">
         <Table
-          rowKey={(row) => `${row.company}-${row.asOf}-${row.method}`}
+          rowKey="id"
           size="middle"
           pagination={{ pageSize: 15, showSizeChanger: false }}
-          scroll={{ x: 1080 }}
-          locale={{ emptyText: <NoData description="暂无债务融资数据" /> }}
-          dataSource={data.debtFinancing}
+          scroll={{ x: 1750 }}
+          locale={{ emptyText: <NoData description="暂无融资数据" /> }}
+          dataSource={events}
           columns={[
-            { title: '公司', dataIndex: 'company', fixed: 'left', width: 150 },
-            { title: '日期', dataIndex: 'asOf', width: 112, render: dateLabel },
-            { title: '融资手段', dataIndex: 'method', width: 220, render: (value) => <Text strong className="ai-emphasis-value">{value}</Text> },
-            { title: '融资规模', width: 190, render: (_, row) => <Text strong className="ai-emphasis-value">{row.currency} {compactNumber(row.amount)}</Text> },
-            { title: '点评', dataIndex: 'note', width: 280 },
-            { title: '来源', dataIndex: 'sourceLabel', width: 130 },
-            { title: '更新时间', dataIndex: 'updatedAt', width: 112, render: dateLabel },
+            { title: '公司', dataIndex: 'entity', fixed: 'left', width: 140 },
+            { title: '地区', dataIndex: 'geography', width: 90 },
+            { title: '事件日', dataIndex: 'eventDate', width: 112, render: dateLabel },
+            { title: '融资工具', dataIndex: 'instrument', width: 220, render: (value) => <Text strong className="ai-emphasis-value">{value}</Text> },
+            { title: '原币规模', width: 160, align: 'right', render: (_, row) => formatLargeMoney(row.amountOriginal, row.currency) },
+            { title: '可比美元', dataIndex: 'comparableUsdAmount', width: 150, align: 'right', render: (value) => formatLargeMoney(value, 'USD') },
+            { title: '利率 / 类型', width: 150, render: (_, row) => capitalRateLabel(row) },
+            { title: '期限', dataIndex: 'tenorYears', width: 90, render: (value) => value === null ? '—' : `${value} 年` },
+            { title: '到期日', dataIndex: 'maturityDate', width: 112, render: dateLabel },
+            { title: '资金用途', dataIndex: 'useOfProceeds', width: 260, render: (value) => value || '—' },
+            { title: '来源', width: 140, render: (_, row) => <a href={row.sourceUrl} target="_blank" rel="noreferrer">{row.sourceLabel}</a> },
           ]}
         />
+      </ChartCard>
+      <ChartCard title="融资官网 / 监管来源状态" extra={<Text type="secondary">无稳定第一方入口的公司标为“来源发现维护”</Text>}>
+        <Table rowKey="sourceId" size="small" pagination={{ pageSize: 16, showSizeChanger: false }} dataSource={data.capitalSourceReports || []} locale={{ emptyText: <NoData description="等待首次融资来源同步" /> }} columns={[
+          { title: '公司', dataIndex: 'entity' },
+          { title: '状态', dataIndex: 'status', width: 140, render: (value) => <Tag color={value === 'ready' ? 'success' : value === 'error' ? 'error' : 'default'}>{value === 'ready' ? '已同步' : value === 'error' ? '失败' : '来源发现维护'}</Tag> },
+          { title: '事件行', dataIndex: 'rows', width: 90, align: 'right' },
+          { title: '日期', dataIndex: 'asOf', width: 112, render: dateLabel },
+          { title: '详情', dataIndex: 'message', render: (value) => value || '—' },
+          { title: '官网 / 申报', width: 110, render: (_, row) => row.url ? <a href={row.url} target="_blank" rel="noreferrer">打开</a> : '待发现' },
+        ]} />
       </ChartCard>
     </div>
   );

@@ -208,6 +208,26 @@ test('environment service wires the registered official pricing collector by def
   assert.equal(snapshot.modelPricing.tokenHistory.some((row) => row.model === 'GPT 5.5'), true);
 });
 
+test('environment service wires official capital and exact-SKU compute collectors by default', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-capital-compute-');
+  const capitalHtml = await fs.promises.readFile(new URL('./fixtures/ai-capital/openai-round.html', import.meta.url), 'utf8');
+  const computeHtml = await fs.promises.readFile(new URL('./fixtures/ai-compute/aws-pricing.html', import.meta.url), 'utf8');
+  const service = createAiDashboardServiceFromEnv({
+    dataFile,
+    capitalSourceIds: ['openai-capital'],
+    computeSourceIds: ['aws-ec2-pricing'],
+    fetchImpl: async (url) => new Response(String(url).includes('openai.com') ? capitalHtml : computeHtml, { headers: { 'content-type': 'text/html' } }),
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['capital', 'compute'], force: true });
+
+  assert.equal(snapshot.capitalEvents[0].entity, 'OpenAI');
+  assert.equal(snapshot.capitalMetrics.industry.trailing12MonthCount, 1);
+  assert.equal(snapshot.computeRental.length, 2);
+  assert.equal(snapshot.computeRental[0].quoteKey.includes('on_demand') || snapshot.computeRental[1].quoteKey.includes('on_demand'), true);
+});
+
 test('public OpenRouter export seeds the visible weekly Top 10 without fabricating a platform total', async (t) => {
   const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-openrouter-public-');
   const openRouterPublicFile = path.join(dir, 'openrouter-public.json');

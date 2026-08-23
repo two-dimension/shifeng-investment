@@ -1,0 +1,57 @@
+[
+  {
+    "platform": "AWS",
+    "gpu": "H100 80GB",
+    "instanceSpec": "p5.48xlarge / 8 GPU",
+    "gpuCount": 8,
+    "region": "us-east-1",
+    "billingMode": "on_demand",
+    "currency": "USD",
+    "instanceHourlyPrice": 98.32,
+    "asOf": "2026-07-01"
+  },
+  {
+    "platform": "AWS",
+    "gpu": "H100 80GB",
+    "instanceSpec": "p5.48xlarge / 8 GPU",
+    "gpuCount": 8,
+    "region": "us-east-1",
+    "billingMode": "on_demand",
+    "currency": "USD",
+    "instanceHourlyPrice": 95.2,
+    "asOf": "2026-08-01"
+  },
+  {
+    "platform": "AWS",
+    "gpu": "H100 80GB",
+    "instanceSpec": "p5.48xlarge / 8 GPU",
+    "gpuCount": 8,
+    "region": "us-east-1",
+    "billingMode": "spot",
+    "currency": "USD",
+    "instanceHourlyPrice": 40,
+    "asOf": "2026-08-01"
+  },
+  {
+    "platform": "AWS",
+    "gpu": "H100 80GB",
+    "instanceSpec": "p5.48xlarge / 8 GPU",
+    "gpuCount": 8,
+    "region": "us-west-2",
+    "billingMode": "on_demand",
+    "currency": "USD",
+    "instanceHourlyPrice": 102.4,
+    "asOf": "2026-08-01"
+  },
+  {
+    "platform": "CoreWeave",
+    "gpu": "H100 80GB",
+    "instanceSpec": "1x H100 80GB",
+    "gpuCount": 1,
+    "region": "US",
+    "billingMode": "on_demand",
+    "currency": "USD",
+    "pricePerGpuHour": 4.25,
+    "asOf": "2026-08-01"
+  }
+]

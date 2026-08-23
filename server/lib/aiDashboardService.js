@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeCdsDataset } from './aiCdsData.js';
+import { AI_CAPITAL_SOURCE_REGISTRY, createAiCapitalCollector } from './aiCapitalSources.js';
+import { AI_COMPUTE_SOURCE_REGISTRY, createAiComputeCollector } from './aiComputeSources.js';
 import { aggregateOpenRouterWeekly } from './aiDashboardMetrics.js';
 import { createAiPricingCollector } from './aiPricingSources.js';
 import { createOfficialDocumentClient } from './officialDocumentClient.js';
@@ -18,10 +20,10 @@ const SOURCE_KEY_SET = new Set(DASHBOARD_SOURCE_KEYS);
 const SLICE_PAYLOAD_FIELDS = Object.freeze({
   growth: Object.freeze(['arrAndValuation']),
   pricing: Object.freeze(['modelPricing']),
-  capital: Object.freeze(['debtFinancing']),
+  capital: Object.freeze(['capitalEvents', 'capitalMetrics', 'capitalSourceReports', 'debtFinancing']),
   benchmarks: Object.freeze(['benchmarks']),
   artificialAnalysis: Object.freeze(['artificialAnalysis']),
-  compute: Object.freeze(['computeRental']),
+  compute: Object.freeze(['computeRental', 'computeSourceReports']),
 });
 
 export const DEFAULT_AI_DASHBOARD_FILE = path.join(__dirname, '../data/ai-dashboard/snapshot.json');
@@ -104,6 +106,13 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
       taskCosts: [],
     },
     computeRental: [],
+    computeSourceReports: [],
+    capitalEvents: [],
+    capitalMetrics: {
+      industry: null,
+      byEntity: [],
+    },
+    capitalSourceReports: [],
     debtFinancing: [],
     creditRisk: {
       cds5y: {
@@ -417,6 +426,8 @@ export function createAiDashboardServiceFromEnv({
   openRouterPublicFile = DEFAULT_OPENROUTER_PUBLIC_FILE,
   collectors = {},
   pricingSourceIds,
+  capitalSourceIds,
+  computeSourceIds,
   now = () => new Date(),
 } = {}) {
   const openRouterClient = process.env.OPENROUTER_API_KEY
@@ -437,13 +448,32 @@ export function createAiDashboardServiceFromEnv({
       }
     : undefined;
   const mergedCollectors = { ...collectors };
+  const officialDocumentClient = createOfficialDocumentClient({ fetchImpl, now });
   if (typeof mergedCollectors.pricing !== 'function') {
     const pricingRegistry = PUBLIC_SOURCE_REGISTRY.filter((source) => (
       source.slice === 'pricing' && (!pricingSourceIds || pricingSourceIds.includes(source.id))
     ));
     mergedCollectors.pricing = createAiPricingCollector({
-      documentClient: createOfficialDocumentClient({ fetchImpl, now }),
+      documentClient: officialDocumentClient,
       registry: pricingRegistry,
+    });
+  }
+  if (typeof mergedCollectors.capital !== 'function') {
+    const capitalRegistry = AI_CAPITAL_SOURCE_REGISTRY.filter((source) => (
+      !capitalSourceIds || capitalSourceIds.includes(source.id)
+    ));
+    mergedCollectors.capital = createAiCapitalCollector({
+      documentClient: officialDocumentClient,
+      registry: capitalRegistry,
+    });
+  }
+  if (typeof mergedCollectors.compute !== 'function') {
+    const computeRegistry = AI_COMPUTE_SOURCE_REGISTRY.filter((source) => (
+      !computeSourceIds || computeSourceIds.includes(source.id)
+    ));
+    mergedCollectors.compute = createAiComputeCollector({
+      documentClient: officialDocumentClient,
+      registry: computeRegistry,
     });
   }
   return createAiDashboardService({

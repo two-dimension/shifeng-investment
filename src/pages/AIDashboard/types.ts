@@ -238,25 +238,78 @@ export interface BenchmarkModel {
 export interface ComputeRentalQuote {
   platform: string;
   gpu: string;
+  instanceSpec: string;
+  gpuCount: number;
+  region: string;
+  billingMode: 'on_demand' | 'spot' | 'preemptible' | 'reserved';
+  currency: string;
+  instanceHourlyPrice: number | null;
+  pricePerGpuHour: number;
+  comparableUsdPerGpuHour: number | null;
   asOf: string;
-  onDemand: number | null;
-  preemptible: number | null;
-  preemptibleRatio: number | null;
-  onDemandChange: number | null;
-  preemptibleChange: number | null;
+  quoteKey: string;
+  previousPricePerGpuHour: number | null;
+  absoluteChange: number | null;
+  percentChange: number | null;
   latest: boolean;
   sourceLabel: string;
+  sourceUrl: string;
+  sourceKind: 'official';
+  retrievedAt: string;
+  note?: string | null;
+  provenance: MetricProvenance;
 }
 
-export interface DebtFinancing {
-  company: string;
-  asOf: string | null;
-  method: string;
-  amount: number;
+export interface CapitalEvent {
+  id: string;
+  entity: string;
+  geography: string;
+  eventDate: string;
+  closeDate: string | null;
+  maturityDate: string | null;
+  instrumentCategory: 'equity' | 'debt' | 'convertible' | 'credit_facility';
+  instrument: string;
+  amountOriginal: number;
   currency: string;
-  note?: string;
+  comparableUsdAmount: number | null;
+  rateType: 'fixed' | 'floating' | 'unknown' | 'not_applicable';
+  couponPercent: number | null;
+  benchmark: string | null;
+  spreadBps: number | null;
+  tenorYears: number | null;
+  counterparties: string[];
+  useOfProceeds: string | null;
   sourceLabel: string;
-  updatedAt?: string | null;
+  sourceUrl: string;
+  sourceKind: 'official' | 'filing';
+  asOf: string;
+  retrievedAt: string;
+  note?: string | null;
+  provenance: MetricProvenance;
+}
+
+export interface CapitalMetric {
+  entity: string;
+  eventCount: number;
+  trailing12MonthCount: number;
+  trailing12MonthComparableUsd: number;
+  cumulativeComparableUsd: number;
+  averageDaysBetweenEvents: number | null;
+  annualizedEventFrequency: number | null;
+  fixedCouponEventCount: number;
+  weightedAverageFixedCoupon: number | null;
+  latestEventDate: string | null;
+}
+
+export interface PublicSourceReport {
+  sourceId: string;
+  entity?: string;
+  platform?: string;
+  url: string | null;
+  status: 'ready' | 'error' | 'discovery-maintained';
+  asOf: string | null;
+  rows: number;
+  message: string | null;
 }
 
 export interface CdsHistoryPoint {
@@ -331,7 +384,14 @@ export interface AiDashboardSnapshot {
     taskCosts: Array<Record<string, unknown>>;
   };
   computeRental: ComputeRentalQuote[];
-  debtFinancing: DebtFinancing[];
+  computeSourceReports: PublicSourceReport[];
+  capitalEvents: CapitalEvent[];
+  capitalMetrics: {
+    industry: CapitalMetric | null;
+    byEntity: CapitalMetric[];
+  };
+  capitalSourceReports: PublicSourceReport[];
+  debtFinancing: CapitalEvent[];
   creditRisk: {
     cds5y: CdsRiskSnapshot;
   };
