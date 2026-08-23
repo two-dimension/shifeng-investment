@@ -163,6 +163,162 @@ test('OpenRouter client sends the configured API key and preserves response meta
   assert.equal(calls[0].options.headers.Authorization, 'Bearer openrouter-key');
 });
 
+test('OpenRouter client reads the text model catalog and unified benchmarks with the server-side key', async () => {
+  const calls = [];
+  const client = createOpenRouterClient({
+    apiKey: 'server-only-key',
+    fetchImpl: async (url, options) => {
+      calls.push({ url: String(url), options });
+      if (String(url).includes('/models')) return Response.json({ data: [{ id: 'openai/gpt-new' }] });
+      return Response.json({ data: [{ source: 'artificial-analysis' }], meta: { as_of: '2026-08-23T00:00:00.000Z' } });
+    },
+  });
+
+  const models = await client.fetchModels();
+  const benchmarks = await client.fetchBenchmarks();
+
+  assert.equal(models.data[0].id, 'openai/gpt-new');
+  assert.equal(benchmarks.meta.as_of, '2026-08-23T00:00:00.000Z');
+  assert.match(calls[0].url, /\/api\/v1\/models\?output_modalities=text/);
+  assert.match(calls[1].url, /\/api\/v1\/benchmarks$/);
+  assert.equal(calls[0].options.headers.Authorization, 'Bearer server-only-key');
+  assert.equal(calls[1].options.headers.Authorization, 'Bearer server-only-key');
+});
+
+test('OpenRouter benchmark client rejects source-specific HTTP and timeout failures', async () => {
+  const failedClient = createOpenRouterClient({
+    apiKey: 'key',
+    fetchImpl: async () => new Response('', { status: 401 }),
+  });
+  await assert.rejects(failedClient.fetchBenchmarks(), /OpenRouter Benchmarks API failed with HTTP 401/);
+
+  const timeoutClient = createOpenRouterClient({
+    apiKey: 'key',
+    timeoutMs: 5,
+    fetchImpl: async (_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener('abort', () => reject(options.signal.reason));
+    }),
+  });
+  await assert.rejects(timeoutClient.fetchModels(), /timed out/);
+});
+
+function benchmarkClientFixture({ onFetch } = {}) {
+  return {
+    async fetchModels() {
+      onFetch?.('models');
+      return {
+        data: [
+          { id: 'openai/gpt-old', name: 'GPT Old', created: 100, architecture: { output_modalities: ['text'] } },
+          { id: 'openai/gpt-new', name: 'GPT New', created: 200, architecture: { output_modalities: ['text'] } },
+        ],
+      };
+    },
+    async fetchBenchmarks() {
+      onFetch?.('benchmarks');
+      return {
+        data: [{ source: 'artificial-analysis', model_permaslug: 'openai/gpt-new', intelligence_index: 71.2 }],
+        meta: { as_of: '2026-08-23T00:00:00.000Z', version: 'v1' },
+      };
+    },
+  };
+}
+
+test('benchmark refresh replaces only the benchmark slice and records independent source status', async (t) => {
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-benchmark-'));
+  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
+  const service = createAiDashboardService({
+    dataFile: path.join(dir, 'snapshot.json'),
+    openRouterClient: benchmarkClientFixture(),
+    now: () => new Date('2026-08-23T00:01:00.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['benchmarks'], force: true });
+
+  assert.equal(snapshot.sources.benchmarks.status, 'ready');
+  assert.equal(snapshot.sources.benchmarks.stale, false);
+  assert.equal(snapshot.benchmarks.sourceMode, 'openrouter');
+  assert.equal(snapshot.benchmarks.models[0].model, 'GPT New');
+  assert.equal(snapshot.benchmarks.metrics[0].key, 'artificial-analysis:intelligence_index');
+  assert.equal(snapshot.openRouter.weekTotalTokens, null);
+});
+
+test('benchmark refresh respects 15-minute freshness while force bypasses it', async (t) => {
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-benchmark-fresh-'));
+  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
+  let calls = 0;
+  const service = createAiDashboardService({
+    dataFile: path.join(dir, 'snapshot.json'),
+    openRouterClient: benchmarkClientFixture({ onFetch: () => { calls += 1; } }),
+    now: () => new Date('2026-08-23T00:05:00.000Z'),
+  });
+
+  await service.refresh({ sources: ['benchmarks'], force: true });
+  await service.refresh({ sources: ['benchmarks'] });
+  assert.equal(calls, 2);
+  await service.refresh({ sources: ['benchmarks'], force: true });
+  assert.equal(calls, 4);
+});
+
+test('overlapping forced benchmark refreshes share a single upstream request', async (t) => {
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-benchmark-dedupe-'));
+  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  let benchmarkCalls = 0;
+  const client = benchmarkClientFixture();
+  const service = createAiDashboardService({
+    dataFile: path.join(dir, 'snapshot.json'),
+    openRouterClient: {
+      ...client,
+      async fetchBenchmarks() {
+        benchmarkCalls += 1;
+        await gate;
+        return client.fetchBenchmarks();
+      },
+    },
+    now: () => new Date('2026-08-23T00:05:00.000Z'),
+  });
+
+  const first = service.refresh({ sources: ['benchmarks'], force: true });
+  const second = service.refresh({ sources: ['benchmarks'], force: true });
+  await new Promise((resolve) => setImmediate(resolve));
+  release();
+  const [firstSnapshot, secondSnapshot] = await Promise.all([first, second]);
+
+  assert.equal(benchmarkCalls, 1);
+  assert.equal(firstSnapshot.generatedAt, secondSnapshot.generatedAt);
+});
+
+test('failed or empty online benchmark refresh preserves last-good and marks it stale', async (t) => {
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-benchmark-last-good-'));
+  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
+  const dataFile = path.join(dir, 'snapshot.json');
+  await fs.promises.writeFile(dataFile, JSON.stringify({
+    schemaVersion: 1,
+    generatedAt: '2026-08-22T00:00:00.000Z',
+    sources: { benchmarks: { status: 'ready', stale: false, asOf: '2026-08-22T00:00:00.000Z' } },
+    benchmarks: {
+      models: [{ vendor: 'OpenAI', model: 'Last Good', modelSlug: 'openai/last-good', scores: {} }],
+      metrics: [], winners: {}, asOf: '2026-08-22T00:00:00.000Z', sourceMode: 'openrouter',
+      coverage: { vendors: 1, evaluatedVendors: 0, metrics: 0 }, attributions: [],
+    },
+  }), 'utf8');
+  const service = createAiDashboardService({
+    dataFile,
+    openRouterClient: {
+      async fetchModels() { return { data: [] }; },
+      async fetchBenchmarks() { return { data: [], meta: { as_of: '2026-08-23T00:00:00.000Z' } }; },
+    },
+    now: () => new Date('2026-08-23T00:05:00.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['benchmarks'], force: true });
+
+  assert.equal(snapshot.benchmarks.models[0].model, 'Last Good');
+  assert.equal(snapshot.sources.benchmarks.status, 'error');
+  assert.equal(snapshot.sources.benchmarks.stale, true);
+});
+
 test('overlapping source refreshes are serialized without dropping the daily OpenRouter run', async (t) => {
   const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-refresh-queue-'));
   t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
