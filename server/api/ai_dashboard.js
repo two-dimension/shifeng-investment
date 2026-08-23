@@ -4,6 +4,7 @@ import { createAiDashboardServiceFromEnv } from '../lib/aiDashboardService.js';
 
 const COOKIE_NAME = 'ai_dashboard_session';
 const SESSION_MAX_AGE_SECONDS = 12 * 60 * 60;
+const REFRESH_SOURCES = new Set(['feishu', 'openRouter', 'benchmarks']);
 
 function jsonError(res, status, code, message) {
   return res.status(status).json({ success: false, error: { code, message } });
@@ -166,10 +167,28 @@ export function createAiDashboardRouter({
   });
 
   router.post('/refresh', async (req, res) => {
+    const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
+    const hasSources = Object.prototype.hasOwnProperty.call(body, 'sources');
+    const hasForce = Object.prototype.hasOwnProperty.call(body, 'force');
+    const validSources = !hasSources || (Array.isArray(body.sources)
+      && body.sources.length > 0
+      && body.sources.every((source) => REFRESH_SOURCES.has(source)));
+    const validForce = !hasForce || typeof body.force === 'boolean';
+    if (!validSources || !validForce) {
+      return jsonError(
+        res,
+        400,
+        'AI_DASHBOARD_INVALID_REFRESH_SOURCE',
+        '刷新范围必须是 feishu、openRouter 或 benchmarks，force 必须是布尔值',
+      );
+    }
+    const refreshOptions = hasSources || hasForce
+      ? { ...(hasSources ? { sources: body.sources } : {}), ...(hasForce ? { force: body.force } : {}) }
+      : undefined;
     try {
       return res.json({
         success: true,
-        data: await service.refresh(),
+        data: await service.refresh(refreshOptions),
         publicAccess,
         sessionExpiresAt: req.aiDashboardSession
           ? new Date(req.aiDashboardSession.expiresAt).toISOString()

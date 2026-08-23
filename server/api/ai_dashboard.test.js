@@ -51,6 +51,56 @@ test('dashboard data and refresh are available without a separate AI session', a
   assert.equal(refreshCount, 1);
 });
 
+test('refresh forwards validated scoped sources and force to the dashboard service', async (t) => {
+  const calls = [];
+  const service = {
+    async getSnapshot() { return { schemaVersion: 1 }; },
+    async refresh(options) { calls.push(options); return { schemaVersion: 1, refreshed: true }; },
+  };
+  const { app } = testApp({ service });
+  const server = await listen(app);
+  t.after(server.close);
+
+  const scoped = await fetch(`${server.baseUrl}/api/ai-dashboard/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sources: ['benchmarks'], force: false }),
+  });
+  assert.equal(scoped.status, 200);
+  assert.deepEqual(calls[0], { sources: ['benchmarks'], force: false });
+
+  const full = await fetch(`${server.baseUrl}/api/ai-dashboard/refresh`, { method: 'POST' });
+  assert.equal(full.status, 200);
+  assert.equal(calls[1], undefined);
+});
+
+test('refresh rejects unknown or malformed source scopes without calling the service', async (t) => {
+  let refreshCount = 0;
+  const service = {
+    async getSnapshot() { return { schemaVersion: 1 }; },
+    async refresh() { refreshCount += 1; return { schemaVersion: 1 }; },
+  };
+  const { app } = testApp({ service });
+  const server = await listen(app);
+  t.after(server.close);
+
+  for (const body of [
+    { sources: ['unknown'] },
+    { sources: [] },
+    { sources: 'benchmarks' },
+    { sources: ['benchmarks'], force: 'yes' },
+  ]) {
+    const response = await fetch(`${server.baseUrl}/api/ai-dashboard/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).error.code, 'AI_DASHBOARD_INVALID_REFRESH_SOURCE');
+  }
+  assert.equal(refreshCount, 0);
+});
+
 test('optional password mode rejects unauthenticated and tampered sessions', async (t) => {
   const { app } = testApp({ publicAccess: false });
   const server = await listen(app);
