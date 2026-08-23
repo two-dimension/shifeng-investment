@@ -3,6 +3,7 @@ export { PortfolioPanel } from './Portfolio';
 export { PortfolioAnomalyPanel } from './Portfolio';
 export { NewsPanel } from './News';
 export { CalendarPanel } from './Calendar';
+export { AIDashboardPanel } from './AIDashboard';
 export { MACDPanel } from './MACD';
 export { default as StockDetailPanel } from './Stock/StockDetailPanel';
 export { default as TMTMarginPanel } from './TMTMargin/TMTMarginPanel';

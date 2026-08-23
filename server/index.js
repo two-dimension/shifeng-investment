@@ -10,9 +10,14 @@ import tmtMarginRouter from './api/tmt_margin.js';
 import researchRouter from './api/research.js';
 import calendarRouter from './api/calendar.js';
 import etfMonitorRouter from './api/etf_monitor.js';
+import { createAiDashboardRouter } from './api/ai_dashboard.js';
 import { syncResearch } from './lib/researchSync.js';
 import { markSyncResultCompletions } from './lib/researchCompletion.js';
 import { fetchBlsCpiNews, fetchNewsIntelligence } from './lib/newsIntelligence.js';
+import {
+  createAiDashboardServiceFromEnv,
+  startAiDashboardAutoRefresh,
+} from './lib/aiDashboardService.js';
 import {
   isExactMissingOptionalModuleError,
   validateQuantStrategyExports,
@@ -49,6 +54,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 'loopback');
+const aiDashboardService = createAiDashboardServiceFromEnv();
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 const NEWS_FILE = path.join(__dirname, 'data', 'news.json');
@@ -2519,6 +2526,7 @@ app.use('/api/tmt-margin', tmtMarginRouter);
 app.use('/api/etf-monitor', etfMonitorRouter);
 app.use('/api/research', researchRouter);
 app.use('/api/calendar', calendarRouter);
+app.use('/api/ai-dashboard', createAiDashboardRouter({ service: aiDashboardService }));
 
 // 研究报告（cninfo/earnings）的原始文件 xlsx/pdf 静态服务
 const REPORTS_DIR = process.env.RESEARCH_REPORTS_DIR || path.join(__dirname, 'public/reports');
@@ -3302,5 +3310,6 @@ app.listen(PORT, HOST, () => {
     startDailyResearchAutoSync();
     startNewsAutoRefresh();
     priceTracking.startAutoRefresh();
+    startAiDashboardAutoRefresh(aiDashboardService);
   }
 });
