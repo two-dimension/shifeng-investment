@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { normalizeCdsDataset } from './aiCdsData.js';
 import { AI_CAPITAL_SOURCE_REGISTRY, createAiCapitalCollector } from './aiCapitalSources.js';
 import { AI_COMPUTE_SOURCE_REGISTRY, createAiComputeCollector } from './aiComputeSources.js';
+import { AI_GROWTH_SOURCE_REGISTRY, createAiGrowthCollector } from './aiGrowthSources.js';
 import { aggregateOpenRouterWeekly } from './aiDashboardMetrics.js';
 import { createAiPricingCollector } from './aiPricingSources.js';
 import { createArtificialAnalysisCollector } from './artificialAnalysisSource.js';
@@ -521,6 +522,7 @@ export function createAiDashboardServiceFromEnv({
   openRouterPublicFile = DEFAULT_OPENROUTER_PUBLIC_FILE,
   collectors = {},
   pricingSourceIds,
+  growthSourceIds,
   capitalSourceIds,
   computeSourceIds,
   officialBenchmarkClient,
@@ -545,6 +547,15 @@ export function createAiDashboardServiceFromEnv({
     : undefined;
   const mergedCollectors = { ...collectors };
   const officialDocumentClient = createOfficialDocumentClient({ fetchImpl, now });
+  if (typeof mergedCollectors.growth !== 'function') {
+    const growthRegistry = AI_GROWTH_SOURCE_REGISTRY.filter((source) => (
+      !growthSourceIds || growthSourceIds.includes(source.id)
+    ));
+    mergedCollectors.growth = createAiGrowthCollector({
+      documentClient: officialDocumentClient,
+      registry: growthRegistry,
+    });
+  }
   if (typeof mergedCollectors.pricing !== 'function') {
     const pricingRegistry = PUBLIC_SOURCE_REGISTRY.filter((source) => (
       source.slice === 'pricing' && (!pricingSourceIds || pricingSourceIds.includes(source.id))

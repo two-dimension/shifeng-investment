@@ -74,6 +74,11 @@ const DAY_MS = 86_400_000;
 
 export const PUBLIC_SOURCE_REGISTRY = validatePublicSourceRegistry([
   {
+    id: 'anthropic-series-g', slice: 'growth', entity: 'Anthropic',
+    entryUrl: 'https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation', allowedHosts: ['www.anthropic.com'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
     id: 'anthropic-run-rate', slice: 'growth', entity: 'Anthropic',
     entryUrl: 'https://www.anthropic.com/news/series-h', allowedHosts: ['www.anthropic.com'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
@@ -81,6 +86,11 @@ export const PUBLIC_SOURCE_REGISTRY = validatePublicSourceRegistry([
   {
     id: 'openai-arr-history', slice: 'growth', entity: 'OpenAI',
     entryUrl: 'https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/', allowedHosts: ['openai.com'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
+    id: 'openai-valuation', slice: 'growth', entity: 'OpenAI',
+    entryUrl: 'https://openai.com/index/accelerating-the-next-phase-ai/', allowedHosts: ['openai.com'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
   },
   {

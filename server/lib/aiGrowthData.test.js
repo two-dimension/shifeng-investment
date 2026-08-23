@@ -5,6 +5,7 @@ import {
   normalizeGrowthRecords,
   parseOfficialArrHistoryHtml,
   parseOfficialRunRateRevenueHtml,
+  parseOfficialValuationHtml,
 } from './aiGrowthData.js';
 
 const fixture = (name) => fs.readFileSync(new URL(`./fixtures/ai-growth/${name}`, import.meta.url), 'utf8');
@@ -79,4 +80,25 @@ test('growth normalizer rejects unsupported currencies and non-positive unit sca
     valuationRecords: [],
     retrievedAt: '2026-08-23T00:00:00.000Z',
   }), /unsupported currency/i);
+});
+
+test('official financing announcements expose post-money valuation without borrowing a media estimate', () => {
+  const anthropic = parseOfficialValuationHtml(fixture('anthropic-official.html'), {
+    company: 'Anthropic',
+    asOf: '2026-05-28',
+    sourceLabel: 'Anthropic',
+    sourceUrl: 'https://www.anthropic.com/news/series-h',
+    arrSeriesKind: 'official',
+  });
+  const openai = parseOfficialValuationHtml(fixture('openai-valuation.html'), {
+    company: 'OpenAI',
+    asOf: '2026-03-31',
+    sourceLabel: 'OpenAI',
+    sourceUrl: 'https://openai.com/index/accelerating-the-next-phase-ai/',
+    arrSeriesKind: 'official',
+  });
+
+  assert.deepEqual({ low: anthropic.valuationLow, unit: anthropic.originalUnit }, { low: 965, unit: 'USD billion' });
+  assert.deepEqual({ low: openai.valuationLow, unit: openai.originalUnit }, { low: 852, unit: 'USD billion' });
+  assert.equal(openai.methodology, 'Company-disclosed post-money financing valuation');
 });

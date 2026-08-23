@@ -152,6 +152,31 @@ export function parseOfficialArrHistoryHtml(html, options) {
   return records;
 }
 
+export function parseOfficialValuationHtml(html, options) {
+  const text = cleanText(html);
+  const patterns = [
+    /post[- ]money valuation(?:\s+of)?\s+\$([\d.]+)\s*(billion|million)/i,
+    /valuing (?:the company|[A-Za-z]+) at\s+\$([\d.]+)\s*(billion|million)\s+post[- ]money/i,
+    /\$([\d.]+)\s*(billion|million)\s+post[- ]money valuation/i,
+  ];
+  const match = patterns.map((pattern) => text.match(pattern)).find(Boolean);
+  if (!match) throw new Error('official post-money valuation disclosure not found');
+  return {
+    company: requiredText(options?.company, 'company'),
+    asOf: normalizeDate(options?.asOf, 'asOf'),
+    valuationLow: Number(match[1]),
+    valuationHigh: Number(match[1]),
+    originalUnit: `USD ${match[2].toLowerCase()}`,
+    currency: 'USD',
+    sourceKind: 'official',
+    sourceLabel: requiredText(options?.sourceLabel, 'sourceLabel'),
+    sourceUrl: requiredText(options?.sourceUrl, 'sourceUrl'),
+    methodology: 'Company-disclosed post-money financing valuation',
+    arrSeriesKind: options?.arrSeriesKind || 'official',
+    ...(options?.commentary ? { commentary: options.commentary } : {}),
+  };
+}
+
 export function normalizeGrowthRecords({
   yipitRecords = [],
   officialRecords = [],
