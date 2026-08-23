@@ -44,6 +44,22 @@ function writeFunds() {
   }] }));
 }
 
+function writeLegacyCninfoDay(date) {
+  const dayDir = path.join(cninfoRoot, date);
+  const processedDir = path.join(dayDir, 'processed');
+  fs.mkdirSync(processedDir, { recursive: true });
+  fs.writeFileSync(path.join(processedDir, `processed_${date}.json`), JSON.stringify({
+    date,
+    generated_at: `${date}T15:00:00.000Z`,
+    coverage: { report_date: date, range_label: date },
+    fetch_meta: { total: 1, total_raw: 1 },
+    sentiment: { total: 1, good_count: 0, bad_count: 0, neutral_count: 1 },
+    top_good: [],
+    top_bad: [],
+  }));
+  fs.writeFileSync(path.join(dayDir, `公告研判-${date}.pdf`), `legacy report ${date}`);
+}
+
 function announcement(secCode, announcementTitle) {
   return {
     announcementId: `${secCode}-fixture`,
@@ -117,6 +133,43 @@ test('cninfo automatic sync tries Shanghai weekdays newest-first and skips empty
   assert.equal(result.results[0].source, 'cninfo-direct');
 });
 
+test('cninfo automatic sync ignores an expired complete legacy day and fetches the latest weekday', async () => {
+  writeFunds();
+  writeLegacyCninfoDay('2026-08-20');
+  const requestedDates = [];
+
+  const result = await syncResearch({ kind: 'cninfo' }, {
+    fundsFile,
+    now: new Date('2026-08-23T04:00:00.000Z'),
+    fetchCninfoMarketDayImpl: async ({ date }) => {
+      requestedDates.push(date);
+      return marketDay(date, [announcement('600497', '关于股东增持股份的公告')]);
+    },
+  });
+
+  assert.deepEqual(requestedDates, ['2026-08-21']);
+  assert.equal(result.success, true);
+  assert.equal(result.results[0].date, '2026-08-21');
+  assert.equal(result.results[0].source, 'cninfo-direct');
+});
+
+test('cninfo sync for an explicit complete legacy date imports without calling the official source', async () => {
+  writeLegacyCninfoDay('2026-08-20');
+  let directCalls = 0;
+
+  const result = await syncResearch({ kind: 'cninfo', date: '2026-08-20' }, {
+    fetchCninfoMarketDayImpl: async () => {
+      directCalls += 1;
+      throw new Error('official source should not be called');
+    },
+  });
+
+  assert.equal(directCalls, 0);
+  assert.equal(result.success, true);
+  assert.equal(result.results[0].date, '2026-08-20');
+  assert.equal(typeof result.results[0].source, 'object');
+});
+
 test('a requested import-only kind without available source dates reports zero attempts', async () => {
   const result = await syncResearch({ kind: 'earnings' });
 
@@ -149,6 +202,18 @@ test('all sync remains successful when direct cninfo succeeds without imported s
   assert.equal(result.success, true);
   assert.equal(result.totals.attempted, 1);
   assert.equal(result.results[0].source, 'cninfo-direct');
+});
+
+test('all sync reports failure when every source has zero attempts', async () => {
+  const result = await syncResearch({ kind: 'all', days: 2 }, {
+    now: new Date('2026-08-23T04:00:00.000Z'),
+    fetchCninfoMarketDayImpl: async ({ date }) => marketDay(date),
+  });
+
+  assert.equal(result.success, false);
+  assert.equal(result.error, '未找到可同步的数据源');
+  assert.equal(result.totals.attempted, 0);
+  assert.deepEqual(result.results, []);
 });
 
 test('cninfo source status exposes the direct official endpoint', () => {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { fetchCninfoMarketDay } from './cninfoAnnouncements.js';
+import { CninfoUpstreamError, fetchCninfoMarketDay } from './cninfoAnnouncements.js';
 
 function announcement(id, secCode) {
   return {
@@ -144,6 +144,33 @@ test('fetchCninfoMarketDay rejects an incomplete final page', async () => {
       fetchImpl: async () => response({ totalRecordNum: 2, totalAnnouncement: 2, announcements: [] }),
     }),
     /incomplete CNINFO response/,
+  );
+});
+
+test('fetchCninfoMarketDay rejects when a later page changes the total record count', async () => {
+  await assert.rejects(
+    fetchCninfoMarketDay({
+      date: '2026-08-20',
+      columns: ['szse'],
+      pageSize: 30,
+      attempts: 1,
+      sleepImpl: async () => {},
+      fetchImpl: async (_url, options) => {
+        const page = Number(options.body.get('pageNum'));
+        const rows = Array.from({ length: 30 }, (_, index) => (
+          announcement(`page-${page}-${index}`, '000001')
+        ));
+        const totalRecordNum = page === 1 ? 60 : 90;
+        return response({ totalRecordNum, totalAnnouncement: totalRecordNum, announcements: rows });
+      },
+    }),
+    (error) => {
+      assert.equal(error instanceof CninfoUpstreamError, true);
+      assert.equal(error.code, 'CNINFO_INCONSISTENT_TOTAL');
+      assert.equal(error.column, 'szse');
+      assert.equal(error.page, 2);
+      return true;
+    },
   );
 });
 

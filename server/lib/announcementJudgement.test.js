@@ -81,3 +81,20 @@ test('buildDirectCninfoSummary aggregates portfolio companies and keeps market t
   assert.equal(summary.topGood[0].url, 'https://static.cninfo.com.cn/finalpage/a1.PDF');
   assert.equal(summary.stats.neutralFiltered, 1);
 });
+
+test('buildDirectCninfoSummary preserves the main announcement time on the research entry', () => {
+  const universe = new Map([['600497', {
+    code: '600497', name: '驰宏锌锗', subsets: ['小金属'],
+  }]]);
+  const summary = buildDirectCninfoSummary({
+    date: '2026-08-20',
+    totalCount: 1,
+    generatedAt: '2026-08-20T15:00:00.000Z',
+    universe,
+    announcements: [
+      announcement({ id: 'timed', code: '600497', title: '关于股东增持股份的公告', time: 1787220000000 }),
+    ],
+  });
+
+  assert.equal(summary.topGood[0].time, '2026-08-20T10:00:00.000Z');
+});

@@ -55,7 +55,13 @@ async function fetchColumn({ date, column, fetchImpl, sleepImpl, timeoutMs, atte
     const page = pages + 1;
     const payload = await requestPage({ date, column, page, pageSize, fetchImpl, sleepImpl, timeoutMs, attempts });
     const total = readTotal(payload, column, page);
-    if (firstTotal === null) firstTotal = total;
+    if (firstTotal === null) {
+      firstTotal = total;
+    } else if (total !== firstTotal) {
+      throw new CninfoUpstreamError('inconsistent CNINFO response total', {
+        code: 'CNINFO_INCONSISTENT_TOTAL', column, page,
+      });
+    }
     announcements.push(...payload.announcements.map(normalizeAnnouncement));
     pages = page;
     if (page < Math.ceil(firstTotal / pageSize)) await sleepImpl(interPageDelayMs);

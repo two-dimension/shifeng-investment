@@ -1372,16 +1372,12 @@ function recentShanghaiWeekdays(now, lookbackDays) {
 
 function pickDates(kind, date, days, now) {
   if (date) return [date];
-  const root = SOURCE_CONFIG[kind].root;
   const limit = Math.max(1, Math.min(Number(days) || 14, 120));
-  const importedDates = listDateDirs(root)
+  if (kind === 'cninfo') return recentShanghaiWeekdays(now, limit);
+  return listDateDirs(SOURCE_CONFIG[kind].root)
     .reverse()
     .filter((currentDate) => isAutoSyncableDate(kind, currentDate))
     .slice(0, limit);
-  if (kind === 'cninfo' && importedDates.length === 0) {
-    return recentShanghaiWeekdays(now, limit);
-  }
-  return importedDates;
 }
 
 export async function syncResearch(
@@ -1402,21 +1398,19 @@ export async function syncResearch(
   const results = [];
   for (const currentKind of kinds) {
     const dates = pickDates(currentKind, date, days, dependencies.now);
-    const isDirectCninfoFallback = currentKind === 'cninfo'
-      && !date
-      && !listDateDirs(SOURCE_CONFIG.cninfo.root).some((currentDate) => isAutoSyncableDate('cninfo', currentDate));
+    const isRecentCninfoSync = currentKind === 'cninfo' && !date;
     for (const currentDate of dates) {
       const result = await syncOne(currentKind, currentDate, force, dependencies);
       if (result.skipped) continue;
       results.push(result);
-      if (isDirectCninfoFallback) break;
+      if (isRecentCninfoSync) break;
     }
   }
 
-  if (kind !== 'all' && results.length === 0) {
+  if (results.length === 0) {
     return {
       success: false,
-      error: `未找到可同步的 ${kind} 数据源`,
+      error: kind === 'all' ? '未找到可同步的数据源' : `未找到可同步的 ${kind} 数据源`,
       totals: {
         attempted: 0,
         succeeded: 0,

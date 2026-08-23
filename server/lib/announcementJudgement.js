@@ -92,6 +92,9 @@ export function buildDirectCninfoSummary({
       summary: `标题规则：${main.classified.matchedRules.join('、') || '未命中'}；仅基于公告标题判断。`,
       url: String(main.adjunctUrl || ''),
       annCount: companyAnnouncements.length,
+      time: Number.isFinite(Number(main.announcementTime)) && Number(main.announcementTime) > 0
+        ? new Date(Number(main.announcementTime)).toISOString()
+        : '',
     };
     (score > 0 ? allGood : allBad).push(entry);
   }
