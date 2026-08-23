@@ -123,6 +123,17 @@
   overflow-wrap: anywhere;
 }
 
+.ai-benchmark-attributions {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ai-border);
+  font-size: 12px;
+}
+
+.ai-benchmark-attributions a {
+  overflow-wrap: anywhere;
+}
+
 .ai-debt-highlight {
   border-left: 4px solid #1677ff;
 }

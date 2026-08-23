@@ -1,4 +1,4 @@
-import type { SourceStatus } from './types';
+import type { BenchmarkMetricDefinition, BenchmarkScore, SourceStatus } from './types';
 
 const TOKEN_UNITS: Array<{ divisor: bigint; suffix: string }> = [
   { divisor: 1_000_000_000_000_000_000n, suffix: 'E' },
@@ -59,4 +59,21 @@ export function sourceStatusColor(source: Pick<SourceStatus, 'status' | 'stale'>
 
 export function showDashboardSessionControls(publicAccess: boolean | undefined): boolean {
   return publicAccess !== true;
+}
+
+export function benchmarkRefreshRequest(activeTab: string): { sources: ['benchmarks']; force: false } | null {
+  return activeTab === 'benchmark' ? { sources: ['benchmarks'], force: false } : null;
+}
+
+export function formatBenchmarkValue(
+  score: Pick<BenchmarkScore, 'value'> | null | undefined,
+  metric: Pick<BenchmarkMetricDefinition, 'unit'>,
+): string {
+  if (!score || !Number.isFinite(score.value)) return '—';
+  if (metric.unit === 'percent') return `${(score.value * 100).toFixed(1)}%`;
+  if (metric.unit === 'percent-point') return `${score.value.toFixed(1)}%`;
+  if (metric.unit === 'elo') return Math.round(score.value).toLocaleString('en-US');
+  if (metric.unit === 'rank') return `#${Math.round(score.value)}`;
+  if (metric.unit === 'usd') return formatUsd(score.value, score.value < 0.01 ? 4 : 2);
+  return Number.isInteger(score.value) ? score.value.toLocaleString('en-US') : score.value.toFixed(1);
 }

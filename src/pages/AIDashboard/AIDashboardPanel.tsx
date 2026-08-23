@@ -24,7 +24,12 @@ import {
   RobotOutlined,
 } from '@ant-design/icons';
 import type { AiDashboardApiResponse, AiDashboardSnapshot, SourceStatus } from './types';
-import { showDashboardSessionControls, sourceStatusColor, sourceStatusLabel } from './viewModel';
+import {
+  benchmarkRefreshRequest,
+  showDashboardSessionControls,
+  sourceStatusColor,
+  sourceStatusLabel,
+} from './viewModel';
 import {
   ArrValuationSection,
   BenchmarkSection,
@@ -92,6 +97,8 @@ export const AIDashboardPanel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [benchmarkRefreshing, setBenchmarkRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
   const [publicAccess, setPublicAccess] = useState(false);
   const [sessionExpiresAt, setSessionExpiresAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -156,7 +163,7 @@ export const AIDashboardPanel: React.FC = () => {
   const refresh = async () => {
     setRefreshing(true);
     try {
-      const payload = await requestDashboard('/refresh', { method: 'POST', body: JSON.stringify({}) });
+      const payload = await requestDashboard('/refresh', { method: 'POST', body: JSON.stringify({ force: true }) });
       setData(payload.data || null);
       setPublicAccess(payload.publicAccess === true);
       setSessionExpiresAt(payload.sessionExpiresAt || sessionExpiresAt);
@@ -174,6 +181,32 @@ export const AIDashboardPanel: React.FC = () => {
     }
   };
 
+  const changeTab = async (key: string) => {
+    setActiveTab(key);
+    const refreshRequest = benchmarkRefreshRequest(key);
+    if (!refreshRequest || benchmarkRefreshing) return;
+    setBenchmarkRefreshing(true);
+    try {
+      const payload = await requestDashboard('/refresh', {
+        method: 'POST',
+        body: JSON.stringify(refreshRequest),
+      });
+      setData(payload.data || null);
+      setPublicAccess(payload.publicAccess === true);
+      setSessionExpiresAt(payload.sessionExpiresAt || sessionExpiresAt);
+    } catch (requestError) {
+      if ((requestError as { status?: number }).status === 401) {
+        setAuth('required');
+        setData(null);
+        setSessionExpiresAt(null);
+      } else {
+        messageApi.warning(`Benchmark 刷新失败，继续展示上一版：${(requestError as Error).message}`);
+      }
+    } finally {
+      setBenchmarkRefreshing(false);
+    }
+  };
+
   const logout = async () => {
     try { await requestDashboard('/session', { method: 'DELETE' }); } catch { /* session is cleared locally either way */ }
     setAuth('required');
@@ -186,10 +219,10 @@ export const AIDashboardPanel: React.FC = () => {
     { key: 'arr', label: 'ARR & 估值', children: <ArrValuationSection data={data} /> },
     { key: 'openrouter', label: 'OpenRouter', children: <OpenRouterSection data={data} /> },
     { key: 'pricing', label: '模型价格', children: <ModelPricingSection data={data} /> },
-    { key: 'benchmark', label: 'Benchmark', children: <BenchmarkSection data={data} /> },
+    { key: 'benchmark', label: 'Benchmark', children: <BenchmarkSection data={data} refreshing={benchmarkRefreshing} /> },
     { key: 'compute', label: '算力租赁', children: <ComputeRentalSection data={data} /> },
     { key: 'debt', label: '债务融资', children: <DebtFinancingSection data={data} /> },
-  ] : [], [data]);
+  ] : [], [benchmarkRefreshing, data]);
 
   if (auth === 'checking' || (loading && !data)) return <><Skeleton active paragraph={{ rows: 8 }} />{messageContext}</>;
   if (auth === 'required') return <>{messageContext}<AccessGate loading={submitting} onSubmit={login} /></>;
@@ -197,7 +230,7 @@ export const AIDashboardPanel: React.FC = () => {
   if (!data) return null;
 
   const feishuUrl = data.sources.feishu.url || 'https://xcn0zaydz11m.feishu.cn/sheets/F9W3s5BBEhRRV8tdZvCchEAfnCf?sheet=0rbUAO&table=tblzvLEtWP2TaYtF&view=vew0i9u3MV';
-  const hasStaleSource = data.sources.feishu.stale || data.sources.openRouter.stale;
+  const hasStaleSource = data.sources.feishu.stale || data.sources.openRouter.stale || data.sources.benchmarks.stale;
 
   return (
     <div className="ai-dashboard">
@@ -212,6 +245,7 @@ export const AIDashboardPanel: React.FC = () => {
           <Flex gap={14} wrap className="ai-source-row">
             <SourceBadge label="飞书" source={data.sources.feishu} />
             <SourceBadge label="OpenRouter" source={data.sources.openRouter} />
+            <SourceBadge label="Benchmark" source={data.sources.benchmarks} />
           </Flex>
         </div>
         <Space wrap>
@@ -223,7 +257,7 @@ export const AIDashboardPanel: React.FC = () => {
         </Space>
       </header>
       {error && <Alert className="ai-page-alert" type="warning" showIcon closable title="数据加载存在异常" description={error} />}
-      <Tabs className="ai-primary-tabs" defaultActiveKey="overview" items={tabs} destroyOnHidden={false} />
+      <Tabs className="ai-primary-tabs" activeKey={activeTab} onChange={(key) => void changeTab(key)} items={tabs} destroyOnHidden={false} />
       <footer className="ai-dashboard-footer">
         数据仅供研究参考，不构成投资建议。OpenRouter 数据遵循 CC BY 4.0；公开 Token 流量不代表全行业使用量或模型质量。
       </footer>

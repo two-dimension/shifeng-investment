@@ -95,14 +95,31 @@ export interface CodingPlan {
 
 export interface BenchmarkScore {
   value: number;
-  direction: 'higher' | 'lower';
+  direction?: 'higher' | 'lower';
   metric?: string;
+  asOf?: string | null;
+  sampleSize?: number;
+  standardDeviation?: number;
+  source?: string;
+  sourceUrl?: string;
+}
+
+export interface BenchmarkMetricDefinition {
+  key: string;
+  label: string;
+  group: string;
+  unit: string;
+  direction: 'higher' | 'lower';
+  source: string;
+  sourceUrl?: string;
 }
 
 export interface BenchmarkModel {
   vendor: string;
   model: string;
-  releasedAt: string;
+  modelSlug?: string;
+  releasedAt: string | null;
+  sourceMode?: 'openrouter' | 'feishu';
   scores: Record<string, BenchmarkScore>;
   sourceLabel?: string;
 }
@@ -137,6 +154,7 @@ export interface AiDashboardSnapshot {
   sources: {
     feishu: SourceStatus;
     openRouter: SourceStatus;
+    benchmarks: SourceStatus;
   };
   arrAndValuation: {
     companies: ArrCompanyMetric[];
@@ -157,7 +175,16 @@ export interface AiDashboardSnapshot {
   };
   benchmarks: {
     models: BenchmarkModel[];
+    metrics: BenchmarkMetricDefinition[];
     winners: Record<string, string[]>;
+    asOf: string | null;
+    sourceMode: 'openrouter' | 'feishu' | 'none';
+    coverage: {
+      vendors: number;
+      evaluatedVendors: number;
+      metrics: number;
+    };
+    attributions: Array<{ source: string; label: string; url?: string }>;
   };
   computeRental: ComputeRentalQuote[];
   debtFinancing: DebtFinancing[];

@@ -2,10 +2,25 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as dashboardViewModel from '../src/pages/AIDashboard/viewModel.ts';
 import {
+  benchmarkRefreshRequest,
+  formatBenchmarkValue,
   formatTokenCount,
   formatUsd,
   sourceStatusLabel,
 } from '../src/pages/AIDashboard/viewModel.ts';
+
+test('only entering the Benchmark tab requests a scoped non-forced refresh', () => {
+  assert.deepEqual(benchmarkRefreshRequest('benchmark'), { sources: ['benchmarks'], force: false });
+  assert.equal(benchmarkRefreshRequest('pricing'), null);
+});
+
+test('benchmark formatter respects metric units and missing values', () => {
+  assert.equal(formatBenchmarkValue({ value: 0.72 }, { unit: 'percent' }), '72.0%');
+  assert.equal(formatBenchmarkValue({ value: 1200 }, { unit: 'elo' }), '1,200');
+  assert.equal(formatBenchmarkValue({ value: 4 }, { unit: 'rank' }), '#4');
+  assert.equal(formatBenchmarkValue({ value: 71.234 }, { unit: 'index' }), '71.2');
+  assert.equal(formatBenchmarkValue(null, { unit: 'index' }), '—');
+});
 
 test('token formatter keeps 64-bit values readable without converting through Number first', () => {
   assert.equal(formatTokenCount('1250000000000'), '1.25T');

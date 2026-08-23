@@ -10,6 +10,7 @@ import {
   Grid,
   Row,
   Select,
+  Space,
   Statistic,
   Table,
   Tabs,
@@ -28,11 +29,18 @@ import { useTheme } from '../../hooks/useTheme';
 import type {
   AiDashboardSnapshot,
   ArrCompanyMetric,
+  BenchmarkMetricDefinition,
   BenchmarkModel,
   ComputeRentalQuote,
   TokenPrice,
 } from './types';
-import { formatCacheHitRange, formatMultiple, formatTokenCount, formatUsd } from './viewModel';
+import {
+  formatBenchmarkValue,
+  formatCacheHitRange,
+  formatMultiple,
+  formatTokenCount,
+  formatUsd,
+} from './viewModel';
 
 const { Text, Title, Paragraph } = Typography;
 
@@ -494,56 +502,135 @@ function benchmarkMetrics(models: BenchmarkModel[]) {
   return [...new Set(models.flatMap((model) => Object.keys(model.scores || {})))];
 }
 
-export function BenchmarkSection({ data }: DashboardProps) {
-  const metrics = benchmarkMetrics(data.benchmarks.models);
-  const matrixRows = data.benchmarks.models.map((model) => ({ ...model, key: `${model.vendor}-${model.model}` }));
+function legacyMetricDefinition(key: string, models: BenchmarkModel[]): BenchmarkMetricDefinition {
+  const score = models.find((model) => model.scores?.[key])?.scores?.[key];
+  return {
+    key,
+    label: key,
+    group: '飞书历史口径',
+    unit: score?.metric || 'number',
+    direction: score?.direction === 'lower' ? 'lower' : 'higher',
+    source: score?.source || 'feishu',
+    sourceUrl: score?.sourceUrl,
+  };
+}
+
+function BenchmarkScoreTooltip({ score, metric }: {
+  score: BenchmarkModel['scores'][string];
+  metric: BenchmarkMetricDefinition;
+}) {
   return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} xl={7}>
-        <ChartCard title="各分项最强模型" extra={<Tag>排除 Fable / Mythos</Tag>}>
-          {Object.keys(data.benchmarks.winners).length === 0 ? <NoData description="暂无冠军摘要" /> : (
-            <div className="ai-winner-list">
-              {Object.entries(data.benchmarks.winners).map(([metric, winners]) => {
-                const direction = data.benchmarks.models.find((model) => model.scores?.[metric])?.scores[metric]?.direction;
-                return (
-                  <div className="ai-winner-row" key={metric}>
-                    <div><Text strong>{metric}</Text> <Tag variant="filled">{direction === 'lower' ? '越低越好' : '越高越好'}</Tag></div>
-                    <Text className="ai-winner-name">{winners.join(' / ')}</Text>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </ChartCard>
-      </Col>
-      <Col xs={24} xl={17}>
-        <ChartCard title="各厂商最新模型 Benchmark 矩阵" extra={<Text type="secondary">并列第一完整保留</Text>}>
-          <Table
-            rowKey="key"
-            size="small"
-            pagination={false}
-            scroll={{ x: Math.max(850, 340 + metrics.length * 140) }}
-            locale={{ emptyText: <NoData description="暂无 Benchmark 数据" /> }}
-            dataSource={matrixRows}
-            columns={[
-              { title: '厂商', dataIndex: 'vendor', fixed: 'left', width: 120 },
-              { title: '最新模型', dataIndex: 'model', fixed: 'left', width: 220, className: 'ai-model-name' },
-              { title: '发布日期', dataIndex: 'releasedAt', width: 112 },
-              ...metrics.map((metric) => ({
-                title: <Tooltip title={data.benchmarks.models.find((model) => model.scores?.[metric])?.scores[metric]?.direction === 'lower' ? 'lower-is-better' : 'higher-is-better'}>{metric}</Tooltip>,
-                width: 140,
-                align: 'right' as const,
-                render: (_: unknown, row: BenchmarkModel) => {
-                  const score = row.scores?.[metric];
-                  const champion = data.benchmarks.winners[metric]?.includes(row.model);
-                  return score ? <Text strong={champion} className={champion ? 'ai-benchmark-winner' : ''}>{compactNumber(score.value)}{score.metric ? ` ${score.metric}` : ''}</Text> : '—';
+    <Space direction="vertical" size={2}>
+      <Text>{metric.label} · {metric.direction === 'lower' ? 'lower-is-better' : 'higher-is-better'}</Text>
+      <Text>来源：{score.source || metric.source}</Text>
+      {score.asOf && <Text>数据日期：{dateLabel(score.asOf)}</Text>}
+      {score.sampleSize !== undefined && <Text>样本数：{score.sampleSize}</Text>}
+      {score.standardDeviation !== undefined && <Text>标准差：{score.standardDeviation}</Text>}
+      {(score.sourceUrl || metric.sourceUrl) && <a href={score.sourceUrl || metric.sourceUrl} target="_blank" rel="noreferrer">查看来源</a>}
+    </Space>
+  );
+}
+
+export function BenchmarkSection({ data, refreshing = false }: DashboardProps & { refreshing?: boolean }) {
+  const metrics = data.benchmarks.metrics?.length
+    ? data.benchmarks.metrics
+    : benchmarkMetrics(data.benchmarks.models).map((key) => legacyMetricDefinition(key, data.benchmarks.models));
+  const matrixRows = data.benchmarks.models.map((model) => ({ ...model, key: `${model.vendor}-${model.model}` }));
+  const metricsByGroup = metrics.reduce<Map<string, BenchmarkMetricDefinition[]>>((groups, metric) => {
+    groups.set(metric.group, [...(groups.get(metric.group) || []), metric]);
+    return groups;
+  }, new Map());
+  const metricByKey = new Map(metrics.map((metric) => [metric.key, metric]));
+  const coverage = data.benchmarks.coverage || {
+    vendors: matrixRows.length,
+    evaluatedVendors: matrixRows.filter((model) => Object.keys(model.scores || {}).length > 0).length,
+    metrics: metrics.length,
+  };
+  return (
+    <div className="ai-section-stack">
+      <Alert
+        type={data.benchmarks.sourceMode === 'openrouter' ? 'info' : 'warning'}
+        showIcon
+        title={`${coverage.vendors} 个厂商的最新文本模型 · ${coverage.evaluatedVendors} 个已评测 · ${coverage.metrics} 个分项`}
+        description={(
+          <Flex gap={8} wrap>
+            <Text type="secondary">数据日期 {dateLabel(data.benchmarks.asOf)}</Text>
+            <Tag color={data.benchmarks.sourceMode === 'openrouter' ? 'blue' : 'default'}>{data.benchmarks.sourceMode === 'openrouter' ? 'OpenRouter 统一 Benchmark API' : '飞书 / 上一版'}</Tag>
+            {refreshing && <Tag color="processing">正在检查最新数据…</Tag>}
+          </Flex>
+        )}
+      />
+      <Row gutter={[16, 16]}>
+        <Col xs={24} xl={7}>
+          <ChartCard title="各分项最强模型" extra={<Tag>排除 Fable / Mythos</Tag>}>
+            {Object.keys(data.benchmarks.winners).length === 0 ? <NoData description="暂无冠军摘要" /> : (
+              <div className="ai-winner-list">
+                {Object.entries(data.benchmarks.winners).map(([metricKey, winners]) => {
+                  const metric = metricByKey.get(metricKey) || legacyMetricDefinition(metricKey, data.benchmarks.models);
+                  return (
+                    <div className="ai-winner-row" key={metricKey}>
+                      <div><Text strong>{metric.label}</Text> <Tag variant="filled">{metric.direction === 'lower' ? '越低越好' : '越高越好'}</Tag></div>
+                      <Text type="secondary">{metric.group}</Text>
+                      <Text className="ai-winner-name">{winners.join(' / ')}</Text>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </ChartCard>
+        </Col>
+        <Col xs={24} xl={17}>
+          <ChartCard title="各厂商最新模型 Benchmark 矩阵" extra={<Text type="secondary">旧模型得分不顶替最新模型 · 并列第一完整保留</Text>}>
+            <Table
+              rowKey="key"
+              size="small"
+              pagination={false}
+              scroll={{ x: Math.max(960, 500 + metrics.length * 150) }}
+              locale={{ emptyText: <NoData description="暂无 Benchmark 数据" /> }}
+              dataSource={matrixRows}
+              columns={[
+                { title: '厂商', dataIndex: 'vendor', fixed: 'left', width: 115 },
+                { title: '最新文本模型', dataIndex: 'model', fixed: 'left', width: 220, className: 'ai-model-name' },
+                { title: '发布日期', dataIndex: 'releasedAt', width: 112, render: dateLabel },
+                {
+                  title: '评测状态',
+                  width: 105,
+                  render: (_: unknown, row: BenchmarkModel) => Object.keys(row.scores || {}).length > 0
+                    ? <Tag color="success">已评测</Tag>
+                    : <Tag>尚未评测</Tag>,
                 },
-              })),
-            ]}
-          />
-        </ChartCard>
-      </Col>
-    </Row>
+                ...[...metricsByGroup.entries()].map(([group, groupMetrics]) => ({
+                  title: group,
+                  children: groupMetrics.map((metric) => ({
+                    title: <Tooltip title={`${metric.direction === 'lower' ? 'lower' : 'higher'}-is-better · ${metric.source}`}>{metric.label}</Tooltip>,
+                    width: 150,
+                    align: 'right' as const,
+                    render: (_: unknown, row: BenchmarkModel) => {
+                      const score = row.scores?.[metric.key];
+                      const champion = data.benchmarks.winners[metric.key]?.includes(row.model);
+                      if (!score) return <Text type="secondary">—</Text>;
+                      return (
+                        <Tooltip title={<BenchmarkScoreTooltip score={score} metric={metric} />}>
+                          <Text strong={champion} className={champion ? 'ai-benchmark-winner' : ''}>{formatBenchmarkValue(score, metric)}</Text>
+                        </Tooltip>
+                      );
+                    },
+                  })),
+                })),
+              ]}
+            />
+            {data.benchmarks.attributions?.length > 0 && (
+              <Flex className="ai-benchmark-attributions" gap={10} wrap>
+                <Text type="secondary">数据来源：</Text>
+                {data.benchmarks.attributions.map((source) => source.url
+                  ? <a key={source.source} href={source.url} target="_blank" rel="noreferrer">{source.label}</a>
+                  : <Text key={source.source}>{source.label}</Text>)}
+              </Flex>
+            )}
+          </ChartCard>
+        </Col>
+      </Row>
+    </div>
   );
 }
 
