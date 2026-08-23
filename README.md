@@ -15,7 +15,7 @@ export OPENROUTER_API_KEY='sk-or-v1-xxx'
 
 飞书应用只需电子表格读取权限，并需要作为协作者加入源表。服务端会按工作表名称发现 sheet ID。飞书每小时同步；OpenRouter 公开流量榜和 Benchmark 每日独立同步，也可以在页面手动刷新。
 
-`OPENROUTER_API_KEY` 同时用于公开 Token 排名 Data API、文本模型目录和统一 Benchmark API。这些都是数据读取请求，不会调用模型推理，也不会产生 Token 推理费用；但需要有效的 OpenRouter key，并受 OpenRouter 接口限流与政策约束。Benchmark 默认只展示每个已跟踪厂商最新发布的文本模型，综合 OpenRouter 汇总的 Artificial Analysis、Design Arena 和 OpenRouter Evals；旧模型已有得分不会顶替最新但尚未评测的模型。进入 Benchmark 页签时会检查数据，15 分钟内已同步的快照会直接复用。
+`OPENROUTER_API_KEY` 同时用于公开 Token 排名 Data API、文本模型目录和统一 Benchmark API。这些都是数据读取请求，不会调用模型推理，也不会产生 Token 推理费用；但需要有效的 OpenRouter key，并受 OpenRouter 接口限流与政策约束。Benchmark 只跟踪 Anthropic、OpenAI、Gemini、智谱、MiniMax、Qwen、Mimo、DeepSeek、Kimi、Meta、Tencent 和 xAI，每家只展示最新发布的文本模型，综合 OpenRouter 汇总的 Artificial Analysis、Design Arena 和 OpenRouter Evals；旧模型已有得分不会顶替最新但尚未评测的模型。进入 Benchmark 页签时会检查数据，15 分钟内已同步的快照会直接复用。
 
 未配置 OpenRouter key 时，页面可读取本地保存的官方公开榜单 Top 10，但不会把 Top 10 合计冒充全平台总量；Benchmark 继续显示飞书或最后一版在线快照，并明确标记过期/待授权。快照原子写入 `server/data/ai-dashboard/snapshot.json`，单一来源失败时继续返回上一版数据并标记过期。
 

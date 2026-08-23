@@ -326,7 +326,7 @@ test('online benchmark refresh keeps Feishu-only tracked vendors across later re
   t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
   const dataFile = path.join(dir, 'snapshot.json');
   const feishuModels = [{
-    vendor: 'Fable', model: 'Fable 5', releasedAt: '2026-08-01',
+    vendor: 'Moonshot', model: 'Kimi Latest', releasedAt: '2026-08-01',
     scores: { Legacy: { value: 99, direction: 'higher', metric: '分' } },
   }];
   await fs.promises.writeFile(dataFile, JSON.stringify({
@@ -348,8 +348,8 @@ test('online benchmark refresh keeps Feishu-only tracked vendors across later re
   const first = await service.refresh({ sources: ['benchmarks'], force: true });
   const second = await service.refresh({ sources: ['benchmarks'], force: true });
 
-  assert.deepEqual(first.benchmarks.models.map((model) => model.vendor), ['Fable', 'OpenAI']);
-  assert.deepEqual(second.benchmarks.models.map((model) => model.vendor), ['Fable', 'OpenAI']);
+  assert.deepEqual(first.benchmarks.models.map((model) => model.vendor), ['Kimi', 'OpenAI']);
+  assert.deepEqual(second.benchmarks.models.map((model) => model.vendor), ['Kimi', 'OpenAI']);
 });
 
 test('overlapping source refreshes are serialized without dropping the daily OpenRouter run', async (t) => {

@@ -7,14 +7,14 @@ const EXCLUDED_WINNER_RE = /fable|mythos/i;
 const VENDOR_LABELS = new Map([
   ['openai', 'OpenAI'],
   ['anthropic', 'Anthropic'],
-  ['google', 'Google'],
+  ['google', 'Gemini'],
   ['deepseek', 'DeepSeek'],
-  ['qwen', 'Alibaba'],
-  ['alibaba', 'Alibaba'],
-  ['z-ai', 'Zhipu'],
-  ['zhipu', 'Zhipu'],
-  ['moonshotai', 'Moonshot'],
-  ['moonshot', 'Moonshot'],
+  ['qwen', 'Qwen'],
+  ['alibaba', 'Qwen'],
+  ['z-ai', '智谱'],
+  ['zhipu', '智谱'],
+  ['moonshotai', 'Kimi'],
+  ['moonshot', 'Kimi'],
   ['minimax', 'MiniMax'],
   ['fable', 'Fable'],
   ['meta', 'Meta'],
@@ -28,8 +28,48 @@ const VENDOR_LABELS = new Map([
   ['perplexity', 'Perplexity'],
   ['baidu', 'Baidu'],
   ['tencent', 'Tencent'],
-  ['xiaomi', 'Xiaomi'],
+  ['xiaomi', 'Mimo'],
   ['stepfun', 'StepFun'],
+]);
+
+const TRACKED_BENCHMARK_VENDORS = new Set([
+  'Anthropic',
+  'OpenAI',
+  'Gemini',
+  '智谱',
+  'MiniMax',
+  'Qwen',
+  'Mimo',
+  'DeepSeek',
+  'Kimi',
+  'Meta',
+  'Tencent',
+  'xAI',
+]);
+
+const VENDOR_ALIASES = new Map([
+  ['anthropic', 'Anthropic'],
+  ['openai', 'OpenAI'],
+  ['google', 'Gemini'],
+  ['gemini', 'Gemini'],
+  ['z-ai', '智谱'],
+  ['z.ai', '智谱'],
+  ['zhipu', '智谱'],
+  ['智谱', '智谱'],
+  ['minimax', 'MiniMax'],
+  ['alibaba', 'Qwen'],
+  ['qwen', 'Qwen'],
+  ['xiaomi', 'Mimo'],
+  ['mimo', 'Mimo'],
+  ['deepseek', 'DeepSeek'],
+  ['moonshot', 'Kimi'],
+  ['moonshotai', 'Kimi'],
+  ['kimi', 'Kimi'],
+  ['meta', 'Meta'],
+  ['meta-llama', 'Meta'],
+  ['tencent', 'Tencent'],
+  ['xai', 'xAI'],
+  ['x-ai', 'xAI'],
 ]);
 
 const ATTRIBUTIONS = Object.freeze({
@@ -81,16 +121,21 @@ export function canonicalModelSlug(slug) {
   return canonical;
 }
 
+function canonicalBenchmarkModelSlug(slug) {
+  return canonicalModelSlug(slug).replace(/-20\d{6}$/i, '');
+}
+
 export function vendorLabel(slug) {
   const namespace = canonicalModelSlug(slug).split('/')[0].toLowerCase();
   return VENDOR_LABELS.get(namespace) || namespace;
 }
 
+function canonicalVendorLabel(value) {
+  const raw = String(value || '').trim();
+  return VENDOR_ALIASES.get(raw.toLowerCase()) || raw;
+}
+
 export function selectLatestCatalogModels(catalog, benchmarkRows, feishuModels = []) {
-  const tracked = new Set([
-    ...(benchmarkRows || []).map((row) => vendorLabel(row?.model_permaslug)).filter(Boolean),
-    ...(feishuModels || []).map((row) => String(row?.vendor || '').trim()).filter(Boolean),
-  ]);
   const latest = new Map();
 
   for (const row of catalog || []) {
@@ -99,7 +144,7 @@ export function selectLatestCatalogModels(catalog, benchmarkRows, feishuModels =
     if (!modelSlug || rawSlug !== modelSlug) continue;
     const vendor = vendorLabel(modelSlug);
     const modalities = row?.architecture?.output_modalities || row?.output_modalities || [];
-    if (!tracked.has(vendor) || (modalities.length > 0 && !modalities.includes('text'))) continue;
+    if (!TRACKED_BENCHMARK_VENDORS.has(vendor) || (modalities.length > 0 && !modalities.includes('text'))) continue;
     const created = finiteNumber(row?.created) ?? 0;
     const candidate = {
       vendor,
@@ -118,8 +163,8 @@ export function selectLatestCatalogModels(catalog, benchmarkRows, feishuModels =
   }
 
   for (const row of feishuModels || []) {
-    const vendor = String(row?.vendor || '').trim();
-    if (!vendor || latest.has(vendor)) continue;
+    const vendor = canonicalVendorLabel(row?.vendor);
+    if (!TRACKED_BENCHMARK_VENDORS.has(vendor) || latest.has(vendor)) continue;
     latest.set(vendor, {
       ...row,
       vendor,
@@ -260,7 +305,7 @@ export function normalizeOnlineBenchmarks({ catalog = [], benchmarkPayload = {},
   const asOf = benchmarkPayload?.meta?.as_of || null;
   const models = selectLatestCatalogModels(catalog, benchmarkRows, feishuModels)
     .map((model) => ({ ...model, scores: { ...(model.scores || {}) } }));
-  const modelsBySlug = new Map(models.map((model) => [canonicalModelSlug(model.modelSlug), model]));
+  const modelsBySlug = new Map(models.map((model) => [canonicalBenchmarkModelSlug(model.modelSlug), model]));
   const metrics = new Map();
 
   for (const model of models.filter((candidate) => candidate.sourceMode === 'feishu')) {
@@ -268,7 +313,7 @@ export function normalizeOnlineBenchmarks({ catalog = [], benchmarkPayload = {},
   }
 
   for (const row of benchmarkRows) {
-    const model = modelsBySlug.get(canonicalModelSlug(row?.model_permaslug));
+    const model = modelsBySlug.get(canonicalBenchmarkModelSlug(row?.model_permaslug));
     if (!model || model.sourceMode !== 'openrouter') continue;
     if (row?.source === 'artificial-analysis') addArtificialAnalysisRow({ row, model, metrics, asOf });
     if (row?.source === 'design-arena') addDesignArenaRow({ row, model, metrics, asOf });
