@@ -8,8 +8,37 @@ import {
   formatPriceChange,
   formatTokenCount,
   formatUsd,
+  groupOfficialBenchmarkMetrics,
+  officialWinnerRows,
   sourceStatusLabel,
 } from '../src/pages/AIDashboard/viewModel.ts';
+
+const metricFixture = [
+  {
+    key: 'swe', category: 'Coding' as const, group: 'Coding', label: 'SWE-bench Verified · Pass@1',
+    testName: 'SWE-bench', testFamily: 'SWE-bench', testVersion: 'Verified', scoreName: 'Pass@1',
+    unit: 'percent-point', direction: 'higher' as const, comparable: true, priority: 1, sourceOrder: 1,
+    harness: 'official', source: 'official-model-card',
+  },
+  {
+    key: 'terminal', category: 'Agent' as const, group: 'Agent', label: 'Terminal-Bench 2.1 · Accuracy',
+    testName: 'Terminal-Bench', testFamily: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy',
+    unit: 'percent-point', direction: 'higher' as const, comparable: true, priority: 0, sourceOrder: 0,
+    agent: 'Claude Code', effort: 'xhigh', source: 'official-model-card',
+  },
+  {
+    key: 'gpqa', category: 'Reasoning & Knowledge' as const, group: 'Reasoning & Knowledge', label: 'GPQA Diamond · Accuracy',
+    testName: 'GPQA', testFamily: 'GPQA', testVersion: 'Diamond', scoreName: 'Accuracy',
+    unit: 'percent-point', direction: 'higher' as const, comparable: true, priority: 1, sourceOrder: 2,
+    source: 'official-model-card',
+  },
+  {
+    key: 'novel', category: '其他' as const, group: '其他', label: 'Vendor Novel Eval · Accuracy',
+    testName: 'Vendor Novel Eval', testFamily: 'Vendor Novel Eval', testVersion: null, scoreName: 'Accuracy',
+    unit: 'percent-point', direction: 'higher' as const, comparable: false, priority: 1, sourceOrder: 3,
+    source: 'official-model-card',
+  },
+];
 
 test('only entering the Benchmark tab requests a scoped non-forced refresh', () => {
   assert.deepEqual(benchmarkRefreshRequest('benchmark'), { sources: ['benchmarks'], force: false });
@@ -22,6 +51,34 @@ test('benchmark formatter respects metric units and missing values', () => {
   assert.equal(formatBenchmarkValue({ value: 4 }, { unit: 'rank' }), '#4');
   assert.equal(formatBenchmarkValue({ value: 71.234 }, { unit: 'index' }), '71.2%');
   assert.equal(formatBenchmarkValue(null, { unit: 'index' }), '—');
+});
+
+test('groups exact benchmark names with Terminal-Bench first', () => {
+  const groups = groupOfficialBenchmarkMetrics(metricFixture);
+  assert.deepEqual(groups.map((group) => group.category), ['Agent', 'Coding', 'Reasoning & Knowledge', '其他']);
+  assert.equal(groups[0].metrics[0].label, 'Terminal-Bench 2.1 · Accuracy');
+  assert.equal(groups[0].metrics[0].testName, 'Terminal-Bench');
+  assert.equal(groups[1].metrics[0].testVersion, 'Verified');
+});
+
+test('winner rows retain exact tests, winning scores, ties, and run configurations', () => {
+  const rows = officialWinnerRows({
+    models: [], metrics: metricFixture,
+    winners: {
+      terminal: { models: ['Claude Opus 5'], value: 83.8 },
+      swe: { models: ['Claude Opus 5', 'GPT-5.6 Sol'], value: 78 },
+    },
+    vendorSources: [], asOf: '2026-08-23', sourceMode: 'official-model-cards',
+    coverage: { vendors: 12, disclosedVendors: 8, metrics: 4, comparableMetrics: 3 }, attributions: [],
+  });
+  assert.deepEqual(rows[0], {
+    category: 'Agent', metricKey: 'terminal', label: 'Terminal-Bench 2.1 · Accuracy',
+    testName: 'Terminal-Bench', testVersion: '2.1', models: ['Claude Opus 5'],
+    formattedValue: '83.8%', runLabel: 'Claude Code · xhigh', terminalBench: true,
+    direction: 'higher', comparable: true,
+  });
+  assert.deepEqual(rows[1].models, ['Claude Opus 5', 'GPT-5.6 Sol']);
+  assert.equal(rows.some((row) => /Artificial Analysis|Design Arena|OpenRouter Evals|飞书口径/.test(row.label)), false);
 });
 
 test('token formatter keeps 64-bit values readable without converting through Number first', () => {

@@ -208,7 +208,12 @@ export interface BenchmarkScore {
   value: number;
   direction?: 'higher' | 'lower';
   metric?: string;
+  unit?: string;
   asOf?: string | null;
+  publishedAt?: string | null;
+  retrievedAt?: string | null;
+  configurationComplete?: boolean;
+  comparisonNote?: string | null;
   sampleSize?: number;
   standardDeviation?: number;
   source?: string;
@@ -219,10 +224,27 @@ export interface BenchmarkMetricDefinition {
   key: string;
   label: string;
   group: string;
+  category?: 'Agent' | 'Coding' | 'Search & Tool Use' | 'Reasoning & Knowledge' | 'Multimodal' | '其他';
+  testName?: string;
+  testFamily?: string;
+  testVersion?: string | null;
+  split?: string | null;
+  scoreName?: string;
   unit: string;
   direction: 'higher' | 'lower';
+  agent?: string | null;
+  harness?: string | null;
+  effort?: string | null;
+  shots?: number | null;
+  passK?: number | null;
+  tools?: string | null;
+  comparable?: boolean;
+  comparisonNote?: string | null;
+  priority?: number;
+  sourceOrder?: number;
   source: string;
-  sourceUrl?: string;
+  sourceUrl?: string | null;
+  winnerKey?: string | null;
 }
 
 export interface BenchmarkModel {
@@ -231,8 +253,31 @@ export interface BenchmarkModel {
   modelSlug?: string;
   releasedAt: string | null;
   sourceMode?: 'official-model-card';
+  status?: 'ready' | 'error' | 'unavailable';
+  stale?: boolean;
   scores: Record<string, BenchmarkScore>;
   sourceLabel?: string;
+  sourceUrl?: string | null;
+  discoveryMode?: string | null;
+  error?: string | null;
+}
+
+export interface BenchmarkWinner {
+  models: string[];
+  value: number;
+}
+
+export interface BenchmarkVendorSource {
+  vendor: string;
+  model: string | null;
+  status: 'ready' | 'error' | 'unavailable';
+  stale: boolean;
+  sourceUrl: string | null;
+  discoveryMode: string | null;
+  releasedAt: string | null;
+  retrievedAt: string | null;
+  error: string | null;
+  disclosedScores: number;
 }
 
 export interface ComputeRentalQuote {
@@ -369,13 +414,15 @@ export interface AiDashboardSnapshot {
   benchmarks: {
     models: BenchmarkModel[];
     metrics: BenchmarkMetricDefinition[];
-    winners: Record<string, string[]>;
+    winners: Record<string, BenchmarkWinner>;
+    vendorSources: BenchmarkVendorSource[];
     asOf: string | null;
     sourceMode: 'official-model-cards' | 'none';
     coverage: {
       vendors: number;
-      evaluatedVendors: number;
+      disclosedVendors: number;
       metrics: number;
+      comparableMetrics: number;
     };
     attributions: Array<{ source: string; label: string; url?: string }>;
   };

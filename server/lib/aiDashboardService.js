@@ -6,7 +6,9 @@ import { AI_CAPITAL_SOURCE_REGISTRY, createAiCapitalCollector } from './aiCapita
 import { AI_COMPUTE_SOURCE_REGISTRY, createAiComputeCollector } from './aiComputeSources.js';
 import { aggregateOpenRouterWeekly } from './aiDashboardMetrics.js';
 import { createAiPricingCollector } from './aiPricingSources.js';
+import { normalizeOfficialBenchmarks } from './officialBenchmarkData.js';
 import { createOfficialDocumentClient } from './officialDocumentClient.js';
+import { createOfficialModelCardRegistry } from './officialModelCardRegistry.js';
 import { DASHBOARD_SOURCE_KEYS, PUBLIC_SOURCE_REGISTRY } from './publicSourceRegistry.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -96,9 +98,10 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
       models: [],
       metrics: [],
       winners: {},
+      vendorSources: [],
       asOf: null,
       sourceMode: 'none',
-      coverage: { vendors: 0, evaluatedVendors: 0, metrics: 0 },
+      coverage: { vendors: 0, disclosedVendors: 0, metrics: 0, comparableMetrics: 0 },
       attributions: [],
     },
     artificialAnalysis: {
@@ -142,10 +145,95 @@ function migrateBenchmarks(parsedBenchmarks, emptyBenchmarks) {
     models: parsedBenchmarks.models || emptyBenchmarks.models,
     metrics: parsedBenchmarks.metrics || emptyBenchmarks.metrics,
     winners: parsedBenchmarks.winners || emptyBenchmarks.winners,
+    vendorSources: parsedBenchmarks.vendorSources || emptyBenchmarks.vendorSources,
     asOf: parsedBenchmarks.asOf || null,
     sourceMode: parsedBenchmarks.sourceMode,
     coverage: parsedBenchmarks.coverage || emptyBenchmarks.coverage,
     attributions: parsedBenchmarks.attributions || emptyBenchmarks.attributions,
+  };
+}
+
+function priorOfficialVendorCards(benchmarks) {
+  if (benchmarks?.sourceMode !== 'official-model-cards') return new Map();
+  const metrics = new Map((benchmarks.metrics || []).map((metric) => [metric.key, metric]));
+  const sources = new Map((benchmarks.vendorSources || []).map((source) => [source.vendor, source]));
+  return new Map((benchmarks.models || []).map((model) => {
+    const source = sources.get(model.vendor) || {};
+    const scores = Object.entries(model.scores || {}).flatMap(([key, score]) => {
+      const metric = metrics.get(key);
+      if (!metric || !Number.isFinite(score?.value)) return [];
+      return [{
+        testName: metric.testName || metric.testFamily || metric.label,
+        testVersion: metric.testVersion || null,
+        split: metric.split || null,
+        scoreName: metric.scoreName || score.metric || 'Score',
+        value: score.value,
+        unit: metric.unit || score.unit || 'number',
+        direction: metric.direction || score.direction || 'higher',
+        agent: metric.agent || null,
+        harness: metric.harness || null,
+        effort: metric.effort || null,
+        shots: metric.shots ?? null,
+        passK: metric.passK ?? null,
+        tools: metric.tools || null,
+        configurationComplete: metric.comparable === true,
+        comparisonNote: metric.comparisonNote || score.comparisonNote || null,
+        sourceUrl: score.sourceUrl || metric.sourceUrl || source.sourceUrl || null,
+        publishedAt: score.publishedAt || model.releasedAt || null,
+        retrievedAt: score.retrievedAt || source.retrievedAt || null,
+        sourceOrder: metric.sourceOrder ?? 0,
+      }];
+    });
+    return [model.vendor, {
+      vendor: model.vendor,
+      model: model.model,
+      releasedAt: model.releasedAt || source.releasedAt || null,
+      status: model.status || source.status || 'ready',
+      stale: Boolean(model.stale || source.stale),
+      sourceUrl: model.sourceUrl || source.sourceUrl || null,
+      sourceLabel: model.sourceLabel || `${model.vendor} 官网模型卡`,
+      discoveryMode: model.discoveryMode || source.discoveryMode || null,
+      retrievedAt: source.retrievedAt || null,
+      scores,
+    }];
+  }));
+}
+
+export function createOfficialBenchmarkCollector({ officialBenchmarkClient } = {}) {
+  if (!officialBenchmarkClient || typeof officialBenchmarkClient.readAll !== 'function') {
+    throw new Error('officialBenchmarkClient.readAll is required');
+  }
+  return async ({ previous, generatedAt }) => {
+    const incoming = await officialBenchmarkClient.readAll();
+    if (!Array.isArray(incoming) || incoming.length === 0) throw new Error('官网模型卡读取未返回厂商记录');
+    const prior = priorOfficialVendorCards(previous.benchmarks);
+    const cards = incoming.map((card) => {
+      if (card.status === 'ready') return card;
+      const lastGood = prior.get(card.vendor);
+      if (!lastGood || lastGood.scores.length === 0) return card;
+      return {
+        ...lastGood,
+        status: card.status || 'error',
+        stale: true,
+        discoveryMode: card.discoveryMode || lastGood.discoveryMode,
+        retrievedAt: card.retrievedAt || generatedAt,
+        error: card.error || '本次官网读取失败，保留该厂商上次官网模型卡结果',
+      };
+    });
+    const benchmarks = normalizeOfficialBenchmarks({ vendorCards: cards, asOf: generatedAt });
+    const successful = cards.filter((card) => card.status === 'ready').length;
+    const disclosed = benchmarks.coverage.disclosedVendors;
+    const stale = cards.some((card) => card.stale || card.status !== 'ready' || card.discoveryMode === 'manual-registry');
+    return {
+      payload: { benchmarks },
+      source: {
+        status: successful > 0 ? 'ready' : 'error',
+        stale,
+        asOf: generatedAt.slice(0, 10),
+        url: benchmarks.attributions[0]?.url || null,
+        message: `官网模型卡同步：${successful}/${cards.length} 家成功 · ${disclosed} 家披露评分`,
+      },
+    };
   };
 }
 
@@ -284,8 +372,13 @@ export function createAiDashboardService({
   collectors = {},
   openRouterClient,
   openRouterPublicClient,
+  officialBenchmarkClient,
   now = () => new Date(),
 } = {}) {
+  const activeCollectors = { ...collectors };
+  if (typeof activeCollectors.benchmarks !== 'function' && officialBenchmarkClient) {
+    activeCollectors.benchmarks = createOfficialBenchmarkCollector({ officialBenchmarkClient });
+  }
   let refreshQueue = Promise.resolve();
   let benchmarkRefreshInFlight = null;
 
@@ -315,7 +408,7 @@ export function createAiDashboardService({
 
     const genericSources = sources.filter((source) => source !== 'openRouter');
     const genericResults = await Promise.all(genericSources.map(async (sourceKey) => {
-      const collector = collectors[sourceKey];
+      const collector = activeCollectors[sourceKey];
       if (typeof collector !== 'function') return { sourceKey, skipped: true };
       try {
         const result = await collector({ previous, now: nowDate, generatedAt, force });
@@ -428,6 +521,7 @@ export function createAiDashboardServiceFromEnv({
   pricingSourceIds,
   capitalSourceIds,
   computeSourceIds,
+  officialBenchmarkClient,
   now = () => new Date(),
 } = {}) {
   const openRouterClient = process.env.OPENROUTER_API_KEY
@@ -476,12 +570,23 @@ export function createAiDashboardServiceFromEnv({
       registry: computeRegistry,
     });
   }
+  if (typeof mergedCollectors.benchmarks !== 'function') {
+    const benchmarkDocumentClient = createOfficialDocumentClient({
+      fetchImpl, now, maxBytes: 24 * 1024 * 1024, timeoutMs: 45_000,
+    });
+    const benchmarkClient = officialBenchmarkClient || createOfficialModelCardRegistry({
+      documentClient: benchmarkDocumentClient,
+      now,
+    });
+    mergedCollectors.benchmarks = createOfficialBenchmarkCollector({ officialBenchmarkClient: benchmarkClient });
+  }
   return createAiDashboardService({
     dataFile,
     cdsFile,
     collectors: mergedCollectors,
     openRouterClient,
     openRouterPublicClient,
+    officialBenchmarkClient,
     now,
   });
 }

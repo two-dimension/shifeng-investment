@@ -12,7 +12,33 @@ export const TRACKED_OFFICIAL_VENDORS = Object.freeze([
   'Mimo', 'DeepSeek', 'Kimi', 'Meta', 'Tencent', 'xAI',
 ]);
 
-const BANNED_SCORE_PATTERN = /Artificial Analysis|AA Intelligence Index|Design Arena|OpenRouter|Arena Elo/i;
+const BANNED_SCORE_PATTERN = /Artificial Analysis|AA Intelligence Index|^AA[- ]|Design Arena|OpenRouter|Arena Elo|(?:input|output) price|pricing|价格|上下文|最大输出|^特点$|^date$|release(?:d)? date|system card|context length|parameters?|architecture|training stage|vocabulary|number of|hidden size/i;
+
+const TEXT_SCORE_PATTERNS = Object.freeze({
+  MiniMax: Object.freeze([
+    ['MLE Bench Lite', null, 'Medal rate', /MLE Bench Lite[^.\n]*?([\d.]+)%[*_\s]+medal rate/i, 'percent-point'],
+    ['SWE-Pro', null, 'Accuracy', /SWE-Pro[^.\n]*?([\d.]+)%/i, 'percent-point'],
+    ['SWE Multilingual', null, 'Accuracy', /SWE Multilingual\s*\(([\d.]+)\)/i, 'percent-point'],
+    ['Multi SWE Bench', null, 'Accuracy', /Multi SWE Bench\s*\(([\d.]+)\)/i, 'percent-point'],
+    ['VIBE-Pro', null, 'Accuracy', /VIBE-Pro\s*\(([\d.]+)%\)/i, 'percent-point'],
+    ['Terminal-Bench', '2.0', 'Accuracy', /Terminal Bench\s*2\s*\(([\d.]+)%\)/i, 'percent-point'],
+    ['NL2Repo', null, 'Accuracy', /NL2Repo\s*\(([\d.]+)%\)/i, 'percent-point'],
+    ['Toolathon', null, 'Accuracy', /Toolathon[^.\n]*?([\d.]+)%/i, 'percent-point'],
+    ['MM Claw', null, 'Accuracy', /MM Claw[^.\n]*?([\d.]+)%/i, 'percent-point'],
+  ]),
+  Tencent: Object.freeze([
+    ['Expert blind evaluation', '2026-07', 'Mean score', /blind evaluation[^.\n]*?scored\s*([\d.]+)\s*\/\s*4/i, 'number'],
+  ]),
+  xAI: Object.freeze([
+    ['CursorBench', '3.2', 'Accuracy', /CursorBench\s+v?3\.2\s+([\d.]+)%/i, 'percent-point'],
+    ['DeepSWE', '1.1', 'Accuracy', /DeepSWE\s+v?1\.1\s+([\d.]+)%/i, 'percent-point'],
+    ['FrontierCode', '1.1 Extended', 'Accuracy', /FrontierCode\s+v?1\.1\s*\(Extended\)\s+([\d.]+)%/i, 'percent-point'],
+    ['APEX-Agents', null, 'Accuracy', /APEX-Agents\s+([\d.]+)%/i, 'percent-point'],
+    ['Terminal-Bench', '3.0', 'Accuracy', /Terminal-Bench\s+v?3\.0\s+([\d.]+)%/i, 'percent-point'],
+    ['APEX-SWE', null, 'Accuracy', /APEX-SWE\s+([\d.]+)%/i, 'percent-point'],
+    ['Harvey LAB', 'Vals', 'Accuracy', /Harvey LAB\s*\(Vals\)\s+([\d.]+)%/i, 'percent-point'],
+  ]),
+});
 
 function text(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim() || null;
@@ -63,10 +89,17 @@ function validateDefinition(definition) {
     if (!allowedHosts.includes(cardUrl.hostname.toLowerCase())) throw new Error(`${definition.vendor} card host is not allowlisted`);
     assertOfficialOwner(definition, cardUrl, 'card URL');
   }
+  let fetchUrl = null;
+  if (definition.fetchUrl) {
+    fetchUrl = parseUrl(definition.fetchUrl, `${definition.vendor} fetchUrl`);
+    if (!allowedHosts.includes(fetchUrl.hostname.toLowerCase())) throw new Error(`${definition.vendor} fetch host is not allowlisted`);
+    assertOfficialOwner(definition, fetchUrl, 'fetch URL');
+  }
   return Object.freeze({
     ...definition,
     indexUrl: indexUrl.toString(),
     cardUrl: cardUrl?.toString() || null,
+    fetchUrl: fetchUrl?.toString() || null,
     allowedHosts: Object.freeze(allowedHosts),
     modelAliases: Object.freeze([definition.model, ...(definition.modelAliases || [])].filter(Boolean)),
   });
@@ -235,7 +268,10 @@ function standardizedTableScores(matrix, context) {
 function modelColumnScores(matrix, definition, context) {
   const headers = matrix[0];
   const aliases = definition.modelAliases.map(compact);
-  const modelColumn = headers.findIndex((header) => aliases.some((alias) => compact(header).includes(alias) || alias.includes(compact(header))));
+  const modelColumn = headers.findIndex((header) => {
+    const candidate = compact(header);
+    return candidate && aliases.some((alias) => candidate.includes(alias) || alias.includes(candidate));
+  });
   if (modelColumn <= 0) return null;
   return matrix.slice(1).flatMap((row, rowIndex) => {
     const score = scoreRecord({ testName: row[0], value: row[modelColumn] }, { ...context, sourceOrder: context.sourceOrder + rowIndex });
@@ -245,7 +281,10 @@ function modelColumnScores(matrix, definition, context) {
 
 function modelRowScores(matrix, definition, context) {
   const aliases = definition.modelAliases.map(compact);
-  const modelRow = matrix.slice(1).find((row) => aliases.some((alias) => compact(row[0]).includes(alias) || alias.includes(compact(row[0]))));
+  const modelRow = matrix.slice(1).find((row) => {
+    const candidate = compact(row[0]);
+    return candidate && aliases.some((alias) => candidate.includes(alias) || alias.includes(candidate));
+  });
   if (!modelRow) return null;
   return matrix[0].slice(1).flatMap((header, columnOffset) => {
     const score = scoreRecord({ testName: header, value: modelRow[columnOffset + 1] }, { ...context, sourceOrder: context.sourceOrder + columnOffset });
@@ -268,6 +307,18 @@ function parseScores(matrices, definition, context) {
   )) === index);
 }
 
+function parseTextScores(rawText, definition, context) {
+  return (TEXT_SCORE_PATTERNS[definition.vendor] || []).flatMap(([
+    testName, testVersion, scoreName, pattern, unit,
+  ], sourceOrder) => {
+    const value = String(rawText || '').replace(/\s+/g, ' ').match(pattern)?.[1];
+    const score = scoreRecord({
+      testName, testVersion, scoreName, value, unit, direction: 'higher', configurationComplete: false,
+    }, { ...context, sourceOrder });
+    return score ? [score] : [];
+  });
+}
+
 function documentMetadata(document, format, definition) {
   if (format === 'html') {
     const $ = load(String(document.text || ''));
@@ -282,7 +333,7 @@ function documentMetadata(document, format, definition) {
     return {
       model: text(markdown.match(/^Model:\s*(.+)$/mi)?.[1]) || definition.model,
       releasedAt: text(markdown.match(/^Released:\s*(.+)$/mi)?.[1]) || definition.releasedAt,
-      matrices: tableMatrixFromMarkdown(markdown),
+      matrices: [...tableMatrixFromMarkdown(markdown), ...tableMatrixFromHtml(markdown)],
     };
   }
   return { model: definition.model, releasedAt: definition.releasedAt, matrices: [] };
@@ -309,14 +360,15 @@ export function createOfficialModelCardRegistry({
 
   async function readOne(definition) {
     const sourceUrl = definition.cardUrl || definition.indexUrl;
+    const entryUrl = definition.fetchUrl || sourceUrl;
     try {
       const document = await documentClient.fetchDocument({
         vendor: definition.vendor,
-        entryUrl: sourceUrl,
+        entryUrl,
         allowedHosts: definition.allowedHosts,
         format: definition.format,
       });
-      validateFinalDocumentUrl(definition, document.finalUrl || sourceUrl);
+      validateFinalDocumentUrl(definition, document.finalUrl || entryUrl);
       const format = formatFromDocument(document, definition.format);
       if (format === 'pdf') await decodeOfficialDocument(document, 'pdf');
       const metadata = documentMetadata(document, format, definition);
@@ -329,9 +381,17 @@ export function createOfficialModelCardRegistry({
           retrievedAt, scores: [], error: '官网发现入口尚未提供稳定的当前旗舰模型卡链接',
         };
       }
-      const scores = parseScores(metadata.matrices, definition, {
+      const scoreContext = {
         sourceUrl, releasedAt: metadata.releasedAt || null, retrievedAt, sourceOrder: 0,
-      });
+      };
+      const scores = parseScores(metadata.matrices, definition, scoreContext);
+      const rawText = format === 'html'
+        ? await decodeOfficialDocument(document, 'html')
+        : String(document.text || '');
+      const narrativeScores = parseTextScores(rawText, definition, { ...scoreContext, sourceOrder: scores.length });
+      scores.push(...narrativeScores.filter((score) => !scores.some((existing) => (
+        existing.testName === score.testName && existing.testVersion === score.testVersion
+      ))));
       return {
         vendor: definition.vendor, status: 'ready', stale: definition.discoveryMode === 'manual-registry',
         model: metadata.model, releasedAt: metadata.releasedAt || null, sourceUrl,

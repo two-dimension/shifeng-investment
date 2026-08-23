@@ -331,6 +331,75 @@ test('official Benchmark collector refresh is fresh for 15 minutes and force byp
   assert.equal(calls, 2);
 });
 
+test('official Benchmark client publishes only first-party model-card records', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-official-benchmark-');
+  let rankingCalls = 0;
+  const service = createAiDashboardService({
+    dataFile,
+    openRouterClient: { async fetchRankings() { rankingCalls += 1; throw new Error('rankings must not be called'); } },
+    officialBenchmarkClient: {
+      async readAll() {
+        return [{
+          vendor: 'OpenAI', model: 'GPT-5.6 Sol', releasedAt: '2026-07-09', status: 'ready', stale: false,
+          sourceUrl: 'https://deploymentsafety.openai.com/gpt-5-6', discoveryMode: 'html-index',
+          retrievedAt: '2026-08-23T00:00:00.000Z',
+          scores: [{
+            testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', value: 88.8,
+            unit: 'percent-point', direction: 'higher', harness: 'Codex', effort: 'xhigh', configurationComplete: true,
+          }],
+        }];
+      },
+    },
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['benchmarks'], force: true });
+
+  assert.equal(rankingCalls, 0);
+  assert.equal(snapshot.sources.benchmarks.status, 'ready');
+  assert.equal(snapshot.benchmarks.sourceMode, 'official-model-cards');
+  assert.equal(snapshot.benchmarks.models[0].model, 'GPT-5.6 Sol');
+  assert.equal(snapshot.benchmarks.attributions.every((row) => row.source === 'official-model-card'), true);
+  assert.deepEqual(Object.values(snapshot.benchmarks.winners)[0], { models: ['GPT-5.6 Sol'], value: 88.8 });
+});
+
+test('a failed official vendor retains only that vendor last-good card and becomes stale', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-last-good-');
+  let round = 0;
+  const terminal = (value) => ({
+    testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', value,
+    unit: 'percent-point', direction: 'higher', harness: 'official', effort: 'xhigh', configurationComplete: true,
+  });
+  const service = createAiDashboardService({
+    dataFile,
+    officialBenchmarkClient: {
+      async readAll() {
+        round += 1;
+        return round === 1 ? [
+          { vendor: 'OpenAI', model: 'GPT-5.6 Sol', status: 'ready', stale: false, sourceUrl: 'https://openai.com/card', scores: [terminal(88)] },
+          { vendor: 'Gemini', model: 'Gemini 3.7 Flash', status: 'ready', stale: false, sourceUrl: 'https://deepmind.google/card', scores: [terminal(80)] },
+        ] : [
+          { vendor: 'OpenAI', model: 'GPT-5.6 Sol', status: 'error', stale: true, sourceUrl: 'https://openai.com/card', scores: [], error: 'temporary failure' },
+          { vendor: 'Gemini', model: 'Gemini 3.7 Flash', status: 'ready', stale: false, sourceUrl: 'https://deepmind.google/card', scores: [terminal(89)] },
+        ];
+      },
+    },
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  await service.refresh({ sources: ['benchmarks'], force: true });
+  const snapshot = await service.refresh({ sources: ['benchmarks'], force: true });
+  const openai = snapshot.benchmarks.models.find((model) => model.vendor === 'OpenAI');
+  const gemini = snapshot.benchmarks.models.find((model) => model.vendor === 'Gemini');
+
+  assert.equal(openai.status, 'error');
+  assert.equal(openai.stale, true);
+  assert.equal(Object.values(openai.scores)[0].value, 88);
+  assert.equal(Object.values(gemini.scores)[0].value, 89);
+  assert.deepEqual(Object.values(snapshot.benchmarks.winners)[0], { models: ['Gemini 3.7 Flash'], value: 89 });
+  assert.equal(snapshot.sources.benchmarks.stale, true);
+});
+
 test('overlapping forced Benchmark refreshes share a single official collector request', async (t) => {
   const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-dedupe-');
   let release;

@@ -2,22 +2,36 @@
 
 ## AI 投资看板配置
 
-AI 看板位于 `/ai-dashboard`，沿用网站现有访问边界，不再要求单独输入访问口令。实时数据源可配置：
+AI 看板位于 `/ai-dashboard`，沿用网站现有访问边界，不再要求单独输入访问口令。看板已停止读取飞书；增长、价格、融资、官网模型卡、算力租赁等板块由服务端从登记过的公开网页读取，每条记录保留来源、口径、数据日期和同步状态。
+
+OpenRouter 只用于公开 Token 流量。若要读取完整的日度排名数据并计算周环比，可配置：
 
 ```bash
-export FEISHU_APP_ID='cli_xxx'
-export FEISHU_APP_SECRET='xxx'
-export FEISHU_AI_SHEET_TOKEN='F9W3s5BBEhRRV8tdZvCchEAfnCf'
 export OPENROUTER_API_KEY='sk-or-v1-xxx'
 ```
 
-本地开发也可以将同名变量写入仓库根目录的 `.env.local`；`npm run server` 会自动加载该文件，且该文件已被 Git 忽略。系统环境变量优先于 `.env.local` 中的同名配置。没有飞书 API 凭证时，服务会读取 `server/data/ai-dashboard/feishu-export.json` 作为本地只读快照。
+本地开发也可以将同名变量写入仓库根目录的 `.env.local`；`npm run server` 会自动加载该文件，且该文件已被 Git 忽略。系统环境变量优先于 `.env.local` 中的同名配置。未配置 OpenRouter key 时，页面可以读取本地保存的公开榜单 Top 10，但不会把 Top 10 合计冒充全平台总量，也不会伪造周环比。
 
-飞书应用只需电子表格读取权限，并需要作为协作者加入源表。服务端会按工作表名称发现 sheet ID。飞书每小时同步；OpenRouter 公开流量榜和 Benchmark 每日独立同步，也可以在页面手动刷新。
+### Benchmark 数据边界
 
-`OPENROUTER_API_KEY` 同时用于公开 Token 排名 Data API、文本模型目录和统一 Benchmark API。这些都是数据读取请求，不会调用模型推理，也不会产生 Token 推理费用；但需要有效的 OpenRouter key，并受 OpenRouter 接口限流与政策约束。Benchmark 只跟踪 Anthropic、OpenAI、Gemini、智谱、MiniMax、Qwen、Mimo、DeepSeek、Kimi、Meta、Tencent 和 xAI，每家只展示最新发布的文本模型，综合 OpenRouter 汇总的 Artificial Analysis、Design Arena 和 OpenRouter Evals；旧模型已有得分不会顶替最新但尚未评测的模型。进入 Benchmark 页签时会检查数据，15 分钟内已同步的快照会直接复用。
+Benchmark 不使用 OpenRouter Benchmark API、飞书、Artificial Analysis、Design Arena 或其他公开测评机构补分。它只读取 12 家厂商控制的模型卡、系统卡、发布页、官方 GitHub/Hugging Face 组织：
 
-未配置 OpenRouter key 时，页面可读取本地保存的官方公开榜单 Top 10，但不会把 Top 10 合计冒充全平台总量；Benchmark 继续显示飞书或最后一版在线快照，并明确标记过期/待授权。快照原子写入 `server/data/ai-dashboard/snapshot.json`，单一来源失败时继续返回上一版数据并标记过期。
+- Anthropic：`anthropic.com/system-cards`
+- OpenAI：`deploymentsafety.openai.com`
+- Gemini：`deepmind.google/models/model-cards`
+- 智谱：`docs.bigmodel.cn`
+- MiniMax：`github.com/MiniMax-AI`
+- Qwen：`huggingface.co/Qwen` 与 `github.com/QwenLM`
+- MiMo：`github.com/XiaomiMiMo`
+- DeepSeek：`github.com/deepseek-ai`
+- Kimi：`github.com/MoonshotAI`
+- Meta：`developer.meta.com/ai/models`
+- Tencent：`github.com/Tencent-Hunyuan`
+- xAI：`x.ai/news`
+
+每家只展示当前确认的最新旗舰/通用文本模型。官网未披露分数时显示“未披露”，读取失败时仅保留该厂商上一版官网结果并标旧，不会拿旧模型或另一家数据顶替。冠军计算要求测试名、版本、split、分数口径、Agent/Harness、推理强度、shots/Pass@k 和工具策略一致；配置不完整的分数仍可查看，但不参与冠军。Terminal-Bench 始终放在 Agent 类别首位，2.0、2.1、3.0 不合并。Fable 与 Mythos 不做名称排除。
+
+进入 Benchmark 页签时会触发一次范围限定的检查；15 分钟内已有同步结果则复用，强制刷新可绕过该窗口。所有公开来源每日检查一次，快照原子写入 `server/data/ai-dashboard/snapshot.json`。这些同步请求只读网页，不调用模型推理，也不产生模型 Token 费用。
 
 ## 本地公网访问
 

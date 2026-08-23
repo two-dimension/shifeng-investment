@@ -1,6 +1,7 @@
 import type {
   BenchmarkMetricDefinition,
   BenchmarkScore,
+  AiDashboardSnapshot,
   DashboardSourceKey,
   MetricProvenance,
   SourceStatus,
@@ -158,4 +159,61 @@ export function formatBenchmarkValue(
   if (metric.unit === 'usd') return formatUsd(score.value, score.value < 0.01 ? 4 : 2);
   if (metric.unit === 'index') return `${score.value.toFixed(1)}%`;
   return Number.isInteger(score.value) ? score.value.toLocaleString('en-US') : score.value.toFixed(1);
+}
+
+const OFFICIAL_BENCHMARK_CATEGORY_ORDER = [
+  'Agent', 'Coding', 'Search & Tool Use', 'Reasoning & Knowledge', 'Multimodal', '其他',
+] as const;
+
+function benchmarkMetricSort(left: BenchmarkMetricDefinition, right: BenchmarkMetricDefinition): number {
+  const leftCategory = left.category || left.group || '其他';
+  const rightCategory = right.category || right.group || '其他';
+  const leftIndex = OFFICIAL_BENCHMARK_CATEGORY_ORDER.indexOf(leftCategory as typeof OFFICIAL_BENCHMARK_CATEGORY_ORDER[number]);
+  const rightIndex = OFFICIAL_BENCHMARK_CATEGORY_ORDER.indexOf(rightCategory as typeof OFFICIAL_BENCHMARK_CATEGORY_ORDER[number]);
+  return (leftIndex < 0 ? OFFICIAL_BENCHMARK_CATEGORY_ORDER.length : leftIndex)
+    - (rightIndex < 0 ? OFFICIAL_BENCHMARK_CATEGORY_ORDER.length : rightIndex)
+    || (left.priority ?? 1) - (right.priority ?? 1)
+    || (left.sourceOrder ?? 0) - (right.sourceOrder ?? 0)
+    || left.label.localeCompare(right.label, 'en');
+}
+
+export function groupOfficialBenchmarkMetrics(metrics: BenchmarkMetricDefinition[]) {
+  const groups = new Map<string, BenchmarkMetricDefinition[]>();
+  for (const metric of [...metrics].sort(benchmarkMetricSort)) {
+    const category = metric.category || metric.group || '其他';
+    groups.set(category, [...(groups.get(category) || []), metric]);
+  }
+  return [...groups].map(([category, groupedMetrics]) => ({ category, metrics: groupedMetrics }));
+}
+
+function benchmarkRunLabel(metric: BenchmarkMetricDefinition): string {
+  const run = [metric.agent, metric.harness]
+    .filter((value): value is string => Boolean(value))
+    .filter((value, index, values) => values.indexOf(value) === index);
+  if (metric.effort) run.push(metric.effort);
+  if (metric.shots !== null && metric.shots !== undefined) run.push(`${metric.shots}-shot`);
+  if (metric.passK !== null && metric.passK !== undefined) run.push(`Pass@${metric.passK}`);
+  if (metric.tools) run.push(metric.tools);
+  return run.join(' · ') || (metric.comparable ? '官网同口径' : '配置未完整披露');
+}
+
+export function officialWinnerRows(benchmarks: AiDashboardSnapshot['benchmarks']) {
+  const metrics = [...benchmarks.metrics].sort(benchmarkMetricSort);
+  return metrics.flatMap((metric) => {
+    const winner = benchmarks.winners[metric.key];
+    if (!winner || winner.models.length === 0) return [];
+    return [{
+      category: metric.category || metric.group || '其他',
+      metricKey: metric.key,
+      label: metric.label,
+      testName: metric.testName || metric.testFamily || metric.label,
+      testVersion: metric.testVersion || null,
+      models: winner.models,
+      formattedValue: formatBenchmarkValue({ value: winner.value }, metric),
+      runLabel: benchmarkRunLabel(metric),
+      terminalBench: metric.testFamily === 'Terminal-Bench' || /terminal[- ]bench/i.test(metric.testName || ''),
+      direction: metric.direction,
+      comparable: metric.comparable !== false,
+    }];
+  });
 }

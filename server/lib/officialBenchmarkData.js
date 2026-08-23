@@ -8,8 +8,8 @@ export const BENCHMARK_CATEGORY_ORDER = Object.freeze([
 ]);
 
 const CATEGORY_RULES = Object.freeze([
-  ['Agent', /terminal[- ]bench|tau.?bench|τ.?bench|gaia|osworld|mcp|toolbench/i],
-  ['Coding', /swe[- ]bench|livecodebench|aider.*polyglot|humaneval|mbpp/i],
+  ['Agent', /terminal[- ]bench|tau.?bench|τ.?bench|gaia|osworld|mcp|toolbench|apex-agents|toolathlon|coworkbench|workspacebench|jobbench|skillsbench|automation-bench/i],
+  ['Coding', /swe[- ]bench|swe-pro|deepswe|frontiercode|cursorbench|programbench|scicode|nl2repo|paperbench|androidbench|vibe-pro|livecodebench|aider.*polyglot|humaneval|mbpp/i],
   ['Search & Tool Use', /browsecomp|webarena|wide.?search|search/i],
   ['Reasoning & Knowledge', /gpqa|mmlu|aime|hle|arc[- ]/i],
   ['Multimodal', /mmmu|mathvista|chartqa|videomme/i],
