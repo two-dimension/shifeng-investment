@@ -42,6 +42,7 @@ test('fetchCninfoMarketDay reads every Shanghai and Shenzhen page and removes du
     date: '2026-08-20',
     pageSize: 2,
     attempts: 1,
+    sleepImpl: async () => {},
     fetchImpl: createPagedFetch({
       szse: [
         [announcement('sz-1', '000001'), announcement('shared', '000002')],
@@ -59,6 +60,22 @@ test('fetchCninfoMarketDay reads every Shanghai and Shenzhen page and removes du
     { column: 'sse', totalCount: 1, pages: 1 },
     { column: 'szse', totalCount: 3, pages: 2 },
   ]);
+});
+
+test('fetchCninfoMarketDay waits 600ms between successful pages by default', async () => {
+  const sleeps = [];
+  await fetchCninfoMarketDay({
+    date: '2026-08-20',
+    columns: ['szse'],
+    pageSize: 1,
+    attempts: 1,
+    sleepImpl: async (ms) => sleeps.push(ms),
+    fetchImpl: createPagedFetch({
+      szse: [[announcement('page-1', '000001')], [announcement('page-2', '000002')]],
+    }),
+  });
+
+  assert.deepEqual(sleeps, [600]);
 });
 
 test('fetchCninfoMarketDay uses CNINFO scoped defaults for Shanghai and Shenzhen', async () => {
@@ -95,6 +112,24 @@ test('fetchCninfoMarketDay retries 503 and returns the later valid response', as
       return response({ totalRecordNum: 1, totalAnnouncement: 1, announcements: [announcement('a-1', '000001')] });
     },
   });
+  assert.equal(calls, 2);
+  assert.equal(result.announcements.length, 1);
+});
+
+test('fetchCninfoMarketDay retries 403 and returns the later valid response', async () => {
+  let calls = 0;
+  const result = await fetchCninfoMarketDay({
+    date: '2026-08-20',
+    columns: ['szse'],
+    attempts: 2,
+    sleepImpl: async () => {},
+    fetchImpl: async () => {
+      calls += 1;
+      if (calls === 1) return response({}, 403);
+      return response({ totalRecordNum: 1, totalAnnouncement: 1, announcements: [announcement('a-403', '000001')] });
+    },
+  });
+
   assert.equal(calls, 2);
   assert.equal(result.announcements.length, 1);
 });

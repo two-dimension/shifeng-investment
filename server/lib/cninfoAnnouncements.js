@@ -17,16 +17,22 @@ export async function fetchCninfoMarketDay({
   timeoutMs = 10_000,
   attempts = 3,
   pageSize = 30,
+  interPageDelayMs = 600,
   columns = ['sse', 'szse'],
 } = {}) {
   assertDate(date);
   if (typeof fetchImpl !== 'function') throw new TypeError('fetchImpl must be a function');
   if (!Number.isInteger(attempts) || attempts < 1) throw new RangeError('attempts must be a positive integer');
   if (!Number.isInteger(pageSize) || pageSize < 1) throw new RangeError('pageSize must be a positive integer');
+  if (!Number.isFinite(interPageDelayMs) || interPageDelayMs < 0) {
+    throw new RangeError('interPageDelayMs must be finite and non-negative');
+  }
 
   const marketResults = [];
   for (const column of columns) {
-    marketResults.push(await fetchColumn({ date, column, fetchImpl, sleepImpl, timeoutMs, attempts, pageSize }));
+    marketResults.push(await fetchColumn({
+      date, column, fetchImpl, sleepImpl, timeoutMs, attempts, pageSize, interPageDelayMs,
+    }));
   }
   const unique = new Map();
   for (const item of marketResults.flatMap((result) => result.announcements)) {
@@ -40,7 +46,7 @@ export async function fetchCninfoMarketDay({
   };
 }
 
-async function fetchColumn({ date, column, fetchImpl, sleepImpl, timeoutMs, attempts, pageSize }) {
+async function fetchColumn({ date, column, fetchImpl, sleepImpl, timeoutMs, attempts, pageSize, interPageDelayMs }) {
   let firstTotal = null;
   const announcements = [];
   let pages = 0;
@@ -52,6 +58,7 @@ async function fetchColumn({ date, column, fetchImpl, sleepImpl, timeoutMs, atte
     if (firstTotal === null) firstTotal = total;
     announcements.push(...payload.announcements.map(normalizeAnnouncement));
     pages = page;
+    if (page < Math.ceil(firstTotal / pageSize)) await sleepImpl(interPageDelayMs);
   }
 
   if (announcements.length < firstTotal) {
@@ -93,14 +100,19 @@ async function requestPage({ date, column, page, pageSize, fetchImpl, sleepImpl,
         }
       }
     } catch (error) {
-      if (error instanceof CninfoUpstreamError && !/^CNINFO_HTTP_(429|5\d\d)$/.test(error.code)) throw error;
+      if (error instanceof CninfoUpstreamError && !/^CNINFO_HTTP_(403|429|5\d\d)$/.test(error.code)) throw error;
       lastError = error instanceof CninfoUpstreamError ? error : new CninfoUpstreamError('CNINFO request failed', {
         code: 'CNINFO_NETWORK_ERROR', column, page, cause: error,
       });
     } finally {
       if (timer !== null) clearTimeout(timer);
     }
-    if (attempt < attempts) await sleepImpl(attempt * 250);
+    if (attempt < attempts) {
+      const retryDelay = lastError?.code === 'CNINFO_HTTP_403'
+        ? Math.min(5_000, 1_000 * (2 ** (attempt - 1)))
+        : attempt * 250;
+      await sleepImpl(retryDelay);
+    }
   }
   throw new CninfoUpstreamError('CNINFO request failed after retries', {
     code: lastError?.code || 'CNINFO_UPSTREAM_ERROR', column, page, cause: lastError,
