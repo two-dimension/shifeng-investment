@@ -190,6 +190,24 @@ test('environment service ignores legacy Feishu exports and accepts public colle
   assert.equal(snapshot.arrAndValuation.companies[0].company, 'OpenAI');
 });
 
+test('environment service wires the registered official pricing collector by default', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-official-pricing-');
+  const html = await fs.promises.readFile(new URL('./fixtures/ai-pricing/openai-pricing.html', import.meta.url), 'utf8');
+  const service = createAiDashboardServiceFromEnv({
+    dataFile,
+    pricingSourceIds: ['openai-pricing'],
+    fetchImpl: async () => new Response(html, { headers: { 'content-type': 'text/html' } }),
+    now: () => new Date('2026-08-23T01:02:03.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['pricing'], force: true });
+
+  assert.equal(snapshot.sources.pricing.status, 'ready');
+  assert.equal(snapshot.modelPricing.token.some((row) => row.model === 'GPT 5.6 Sol'), true);
+  assert.equal(snapshot.modelPricing.token.some((row) => row.model === 'GPT 5.5'), false);
+  assert.equal(snapshot.modelPricing.tokenHistory.some((row) => row.model === 'GPT 5.5'), true);
+});
+
 test('public OpenRouter export seeds the visible weekly Top 10 without fabricating a platform total', async (t) => {
   const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-openrouter-public-');
   const openRouterPublicFile = path.join(dir, 'openrouter-public.json');

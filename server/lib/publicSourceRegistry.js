@@ -114,6 +114,11 @@ export const PUBLIC_SOURCE_REGISTRY = validatePublicSourceRegistry([
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
   },
   {
+    id: 'minimax-coding-plan', slice: 'pricing', entity: 'MiniMax Coding Plan',
+    entryUrl: 'https://platform.minimaxi.com/docs/guides/pricing-token-plan', allowedHosts: ['platform.minimaxi.com'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
     id: 'kimi-pricing', slice: 'pricing', entity: 'Kimi',
     entryUrl: 'https://platform.moonshot.cn/docs/pricing/chat', allowedHosts: ['platform.moonshot.cn'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
@@ -135,7 +140,12 @@ export const PUBLIC_SOURCE_REGISTRY = validatePublicSourceRegistry([
   },
   {
     id: 'seedance-pricing', slice: 'pricing', entity: 'Seedance',
-    entryUrl: 'https://www.volcengine.com/product/doubao', allowedHosts: ['www.volcengine.com'],
+    entryUrl: 'https://www.volcengine.com/docs/84458/1585097', allowedHosts: ['www.volcengine.com'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
+    id: 'kling-pricing', slice: 'pricing', entity: 'Kling',
+    entryUrl: 'https://kling.ai/document-api/apiReference%2Fmodel%2FvideoModels', allowedHosts: ['kling.ai'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
   },
   {

@@ -3,7 +3,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeCdsDataset } from './aiCdsData.js';
 import { aggregateOpenRouterWeekly } from './aiDashboardMetrics.js';
-import { DASHBOARD_SOURCE_KEYS } from './publicSourceRegistry.js';
+import { createAiPricingCollector } from './aiPricingSources.js';
+import { createOfficialDocumentClient } from './officialDocumentClient.js';
+import { DASHBOARD_SOURCE_KEYS, PUBLIC_SOURCE_REGISTRY } from './publicSourceRegistry.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -78,7 +80,16 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
       history: [],
       attribution: 'Source: OpenRouter (openrouter.ai/rankings). Licensed under CC BY 4.0.',
     },
-    modelPricing: { token: [], video: [], codingPlans: [] },
+    modelPricing: {
+      token: [],
+      tokenHistory: [],
+      priceEvents: [],
+      video: [],
+      videoHistory: [],
+      codingPlans: [],
+      codingPlanHistory: [],
+      sourceReports: [],
+    },
     benchmarks: {
       models: [],
       metrics: [],
@@ -138,6 +149,10 @@ async function readSnapshotFile(dataFile, now) {
       ...parsed,
       schemaVersion: 2,
       sources: migrateSources(parsed.sources, empty.sources),
+      modelPricing: {
+        ...empty.modelPricing,
+        ...(parsed.modelPricing || {}),
+      },
       benchmarks: migrateBenchmarks(parsed.benchmarks, empty.benchmarks),
       artificialAnalysis: {
         ...empty.artificialAnalysis,
@@ -401,6 +416,7 @@ export function createAiDashboardServiceFromEnv({
   cdsFile = DEFAULT_CDS_FILE,
   openRouterPublicFile = DEFAULT_OPENROUTER_PUBLIC_FILE,
   collectors = {},
+  pricingSourceIds,
   now = () => new Date(),
 } = {}) {
   const openRouterClient = process.env.OPENROUTER_API_KEY
@@ -420,10 +436,20 @@ export function createAiDashboardServiceFromEnv({
         },
       }
     : undefined;
+  const mergedCollectors = { ...collectors };
+  if (typeof mergedCollectors.pricing !== 'function') {
+    const pricingRegistry = PUBLIC_SOURCE_REGISTRY.filter((source) => (
+      source.slice === 'pricing' && (!pricingSourceIds || pricingSourceIds.includes(source.id))
+    ));
+    mergedCollectors.pricing = createAiPricingCollector({
+      documentClient: createOfficialDocumentClient({ fetchImpl, now }),
+      registry: pricingRegistry,
+    });
+  }
   return createAiDashboardService({
     dataFile,
     cdsFile,
-    collectors,
+    collectors: mergedCollectors,
     openRouterClient,
     openRouterPublicClient,
     now,

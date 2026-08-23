@@ -4,6 +4,8 @@ import * as dashboardViewModel from '../src/pages/AIDashboard/viewModel.ts';
 import {
   benchmarkRefreshRequest,
   formatBenchmarkValue,
+  formatCurrencyPrice,
+  formatPriceChange,
   formatTokenCount,
   formatUsd,
   sourceStatusLabel,
@@ -32,6 +34,13 @@ test('USD formatter preserves zero and distinguishes unavailable values', () => 
   assert.equal(formatUsd(0), '$0.00');
   assert.equal(formatUsd(2.5), '$2.50');
   assert.equal(formatUsd(null), '—');
+});
+
+test('pricing formatter preserves CNY/USD currency and renders official same-SKU changes', () => {
+  assert.equal(formatCurrencyPrice(29, 'CNY'), '¥29.00');
+  assert.equal(formatCurrencyPrice(2.5, 'USD'), '$2.50');
+  assert.equal(formatCurrencyPrice(null, 'CNY'), '—');
+  assert.equal(formatPriceChange({ oldPrice: 10, newPrice: 8, percentDelta: -0.2, currency: 'CNY' }), '¥10.00 → ¥8.00（-20.0%）');
 });
 
 test('ARR and Token delta formatters preserve sign, unit, percent, zero, and unavailable values', () => {

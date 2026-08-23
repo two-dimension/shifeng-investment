@@ -35,13 +35,15 @@ import type {
   BenchmarkModel,
   CdsCompanyMetric,
   ComputeRentalQuote,
+  PriceEvent,
   TokenPrice,
 } from './types';
 import {
   formatBenchmarkValue,
   formatArrDelta,
-  formatCacheHitRange,
+  formatCurrencyPrice,
   formatMultiple,
+  formatPriceChange,
   formatTokenCount,
   formatTokenDelta,
   formatUsd,
@@ -662,76 +664,117 @@ function TokenPriceCharts({ prices }: { prices: TokenPrice[] }) {
   const palette = useChartPalette();
   const screens = Grid.useBreakpoint();
   const compact = !screens.sm;
-  const priceOption = useMemo(() => {
-    const rows = prices.slice(0, 24).toReversed();
-    return {
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: (value: number) => formatUsd(value, 3) },
-      legend: { top: 0, textStyle: { color: palette.text } },
-      grid: { left: compact ? 105 : 220, right: compact ? 10 : 35, top: 44, bottom: 28 },
-      xAxis: { type: 'value', name: compact ? '' : 'USD / 1M Tokens', nameTextStyle: { color: palette.text }, axisLabel: { color: palette.text, fontSize: compact ? 8 : 12 }, splitLine: { lineStyle: { color: palette.line } } },
-      yAxis: { type: 'category', data: rows.map((row) => row.model), axisLabel: { color: palette.text, fontSize: compact ? 8 : 12, lineHeight: compact ? 11 : 15, width: compact ? 94 : 195, overflow: 'break', interval: 0 }, axisTick: { show: false } },
-      series: [
-        { name: '输入', type: 'bar', data: rows.map((row) => row.inputPrice), itemStyle: { color: palette.blue } },
-        { name: '缓存读取', type: 'bar', data: rows.map((row) => row.cacheReadPrice), itemStyle: { color: palette.cyan } },
-        { name: '输出', type: 'bar', data: rows.map((row) => row.outputPrice), itemStyle: { color: palette.orange } },
-      ],
-    };
-  }, [compact, prices, palette]);
-  const rangeRows = prices.filter((row) => row.cacheRangeValid).slice(0, 24).toReversed();
-  const cacheOption = useMemo(() => ({
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (params: Array<{ axisValue: string; seriesName: string; value: number }>) => {
-      const visible = params.find((item) => item.seriesName === '命中率区间');
-      const base = params.find((item) => item.seriesName === '下限');
-      return `${params[0]?.axisValue || ''}<br/>缓存命中率：${base?.value ?? 0}%–${(base?.value ?? 0) + (visible?.value ?? 0)}%`;
-    } },
-    grid: { left: compact ? 105 : 220, right: compact ? 10 : 35, top: 20, bottom: 28 },
-    xAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: palette.text, fontSize: compact ? 8 : 12, formatter: '{value}%' }, splitLine: { lineStyle: { color: palette.line } } },
-    yAxis: { type: 'category', data: rangeRows.map((row) => row.model), axisLabel: { color: palette.text, fontSize: compact ? 8 : 12, lineHeight: compact ? 11 : 15, width: compact ? 94 : 195, overflow: 'break', interval: 0 }, axisTick: { show: false } },
-    series: [
-      { name: '下限', type: 'bar', stack: 'range', data: rangeRows.map((row) => row.cacheHitLow), itemStyle: { color: 'transparent' }, emphasis: { disabled: true } },
-      { name: '命中率区间', type: 'bar', stack: 'range', barWidth: 12, data: rangeRows.map((row) => (row.cacheHitHigh ?? 0) - (row.cacheHitLow ?? 0)), itemStyle: { color: palette.blue, borderRadius: 6 } },
-    ],
-  }), [compact, rangeRows, palette]);
   if (prices.length === 0) return <NoData description="暂无 API Token 价格" />;
-  const height = Math.max(320, Math.min(720, prices.slice(0, 24).length * 32 + 90));
+  const grouped = prices.reduce((groups, row) => {
+    const currency = row.currency || '未标注';
+    groups.set(currency, [...(groups.get(currency) || []), row]);
+    return groups;
+  }, new Map<string, TokenPrice[]>());
   return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} xl={14}><ChartCard title="输入 / 缓存读取 / 输出价格"><ReactECharts option={priceOption} style={{ height }} notMerge /></ChartCard></Col>
-      <Col xs={24} xl={10}><ChartCard title="实际缓存命中率区间"><ReactECharts option={cacheOption} style={{ height }} notMerge /></ChartCard></Col>
-    </Row>
+    <div className="ai-section-stack">
+      {[...grouped.entries()].map(([currency, currencyPrices]) => {
+        const rows = currencyPrices.slice(0, 30).toReversed();
+        const labels = rows.map((row) => [
+          row.model,
+          row.contextTier && row.contextTier !== 'standard' ? row.contextTier : null,
+          row.serviceTier && row.serviceTier !== 'standard' ? row.serviceTier : null,
+        ].filter(Boolean).join(' · '));
+        const height = Math.max(320, Math.min(760, rows.length * 34 + 90));
+        const option = {
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            valueFormatter: (value: number) => formatCurrencyPrice(value, currency, 3),
+          },
+          legend: { top: 0, textStyle: { color: palette.text } },
+          grid: { left: compact ? 112 : 230, right: compact ? 10 : 35, top: 44, bottom: 28 },
+          xAxis: {
+            type: 'value',
+            name: compact ? '' : `${currency} / 1M Tokens`,
+            nameTextStyle: { color: palette.text },
+            axisLabel: { color: palette.text, fontSize: compact ? 8 : 12 },
+            splitLine: { lineStyle: { color: palette.line } },
+          },
+          yAxis: {
+            type: 'category',
+            data: labels,
+            axisLabel: { color: palette.text, fontSize: compact ? 8 : 12, lineHeight: compact ? 11 : 15, width: compact ? 100 : 205, overflow: 'break', interval: 0 },
+            axisTick: { show: false },
+          },
+          series: [
+            { name: '输入', type: 'bar', data: rows.map((row) => row.inputPrice), itemStyle: { color: palette.blue } },
+            { name: '缓存读取', type: 'bar', data: rows.map((row) => row.cacheReadPrice), itemStyle: { color: palette.cyan } },
+            { name: '缓存写入', type: 'bar', data: rows.map((row) => row.cacheWritePrice), itemStyle: { color: '#722ed1' } },
+            { name: '输出', type: 'bar', data: rows.map((row) => row.outputPrice), itemStyle: { color: palette.orange } },
+          ],
+        };
+        return <ChartCard key={currency} title={`当前代际公开价 · ${currency}`}><ReactECharts option={option} style={{ height }} notMerge /></ChartCard>;
+      })}
+    </div>
+  );
+}
+
+const PRICE_FIELD_LABELS: Record<PriceEvent['priceField'], string> = {
+  inputPrice: '输入',
+  cacheReadPrice: '缓存读取',
+  cacheWritePrice: '缓存写入',
+  outputPrice: '输出',
+};
+
+function PriceEventsCard({ events }: { events: PriceEvent[] }) {
+  return (
+    <ChartCard title="近期官方调价" extra={<Text type="secondary">仅同一 SKU 可比</Text>}>
+      <Table
+        rowKey="id"
+        size="small"
+        pagination={{ pageSize: 8, showSizeChanger: false }}
+        locale={{ emptyText: <NoData description="尚无可确认的同 SKU 调价记录" /> }}
+        dataSource={events}
+        columns={[
+          { title: '日期', dataIndex: 'asOf', width: 100, render: dateLabel },
+          { title: '模型 / 价格项', render: (_, row) => <><Text strong>{row.model}</Text><br /><Text type="secondary">{PRICE_FIELD_LABELS[row.priceField]} · {row.contextTier}</Text></> },
+          { title: '变化', width: 190, render: (_, row) => <Text className={row.absoluteDelta > 0 ? 'ai-change-up' : 'ai-change-down'}>{formatPriceChange(row)}</Text> },
+          { title: '原始来源', width: 90, render: (_, row) => <a href={row.sourceUrl} target="_blank" rel="noreferrer">官网</a> },
+        ]}
+      />
+    </ChartCard>
   );
 }
 
 function TokenPricing({ data }: DashboardProps) {
-  const invalidCount = data.modelPricing.token.filter((row) => !row.cacheRangeValid && (row.cacheHitLow !== null || row.cacheHitHigh !== null)).length;
   return (
     <div className="ai-section-stack">
-      {invalidCount > 0 && <Alert type="warning" showIcon title={`${invalidCount} 行缓存命中率区间异常`} description="异常行保留在表格中并标记，不进入区间图。有效范围需满足 0 ≤ 下限 ≤ 上限 ≤ 100。" />}
-      <TokenPriceCharts prices={data.modelPricing.token} />
-      <ChartCard title="API Token 价格明细" extra={<Text type="secondary">统一单位：USD / 1M Tokens</Text>}>
+      <Alert
+        type="info"
+        showIcon
+        title="最新代际与可比口径"
+        description="主图只展示各厂商当前代际、标准服务档的官网公开价；上下文档位分别保留。USD 与 CNY 分图展示，不做隐含汇率换算。旧代际保存在历史中，仅用于识别同 SKU 调价。"
+      />
+      <Row gutter={[16, 16]}>
+        <Col xs={24} xl={15}><TokenPriceCharts prices={data.modelPricing.token} /></Col>
+        <Col xs={24} xl={9}><PriceEventsCard events={data.modelPricing.priceEvents || []} /></Col>
+      </Row>
+      <ChartCard title="当前代际 API Token 价格明细" extra={<Text type="secondary">各币种 / 1M Tokens</Text>}>
         <Table
-          rowKey={(row) => `${row.vendor}-${row.model}-${row.asOf}`}
+          rowKey={(row) => `${row.vendor}-${row.model}-${row.contextTier}-${row.serviceTier}-${row.currency}-${row.asOf}`}
           size="small"
           pagination={{ pageSize: 15, showSizeChanger: false }}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1480 }}
           locale={{ emptyText: <NoData description="暂无 API Token 价格" /> }}
           dataSource={data.modelPricing.token}
           columns={[
             { title: '厂商', dataIndex: 'vendor', fixed: 'left', width: 110 },
-            { title: '模型', dataIndex: 'model', fixed: 'left', width: 230, className: 'ai-model-name' },
-            { title: '输入', dataIndex: 'inputPrice', width: 110, align: 'right', render: (value) => formatUsd(value, 3) },
-            { title: '缓存读取', dataIndex: 'cacheReadPrice', width: 110, align: 'right', render: (value) => formatUsd(value, 3) },
-            { title: '输出', dataIndex: 'outputPrice', width: 110, align: 'right', render: (value) => formatUsd(value, 3) },
-            {
-              title: '缓存命中率',
-              width: 155,
-              render: (_, row) => row.cacheRangeValid
-                ? formatCacheHitRange(row.cacheHitLow, row.cacheHitHigh, true)
-                : <Tag color={row.cacheHitLow === null && row.cacheHitHigh === null ? 'default' : 'error'}>{formatCacheHitRange(row.cacheHitLow, row.cacheHitHigh, false)}</Tag>,
-            },
+            { title: '模型', dataIndex: 'model', fixed: 'left', width: 220, className: 'ai-model-name' },
+            { title: '币种', dataIndex: 'currency', width: 80 },
+            { title: '上下文档', dataIndex: 'contextTier', width: 105 },
+            { title: '服务档', dataIndex: 'serviceTier', width: 100 },
+            { title: '输入', dataIndex: 'inputPrice', width: 110, align: 'right', render: (value, row) => formatCurrencyPrice(value, row.currency, 3) },
+            { title: '缓存读取', dataIndex: 'cacheReadPrice', width: 115, align: 'right', render: (value, row) => formatCurrencyPrice(value, row.currency, 3) },
+            { title: '缓存写入', dataIndex: 'cacheWritePrice', width: 115, align: 'right', render: (value, row) => formatCurrencyPrice(value, row.currency, 3) },
+            { title: '输出', dataIndex: 'outputPrice', width: 110, align: 'right', render: (value, row) => formatCurrencyPrice(value, row.currency, 3) },
             { title: '日期', dataIndex: 'asOf', width: 112, render: dateLabel },
-            { title: '来源', dataIndex: 'sourceLabel', width: 120 },
-            { title: '点评', dataIndex: 'note' },
+            { title: '来源', width: 120, render: (_, row) => <a href={row.sourceUrl} target="_blank" rel="noreferrer">{row.sourceLabel}</a> },
+            { title: '说明', dataIndex: 'note', render: (value) => value || '—' },
           ]}
         />
       </ChartCard>
@@ -741,13 +784,13 @@ function TokenPricing({ data }: DashboardProps) {
 
 function VideoPricing({ data }: DashboardProps) {
   return (
-    <ChartCard title="视频模型价格" extra={<Text type="secondary">独立口径：USD / 秒</Text>}>
+    <ChartCard title="视频模型 API 价格" extra={<Text type="secondary">保留官网原始币种与计费单位</Text>}>
       <Table
         rowKey={(row) => `${row.vendor}-${row.model}-${row.mode}-${row.resolution}-${row.durationTier}`}
         size="small"
         pagination={{ pageSize: 15, showSizeChanger: false }}
-        scroll={{ x: 900 }}
-        locale={{ emptyText: <NoData description="暂无视频模型价格，请在飞书新表录入" /> }}
+        scroll={{ x: 1250 }}
+        locale={{ emptyText: <NoData description="尚未从厂商官网确认可展示的视频 API 价格" /> }}
         dataSource={data.modelPricing.video}
         columns={[
           { title: '厂商', dataIndex: 'vendor', fixed: 'left', width: 120 },
@@ -755,9 +798,12 @@ function VideoPricing({ data }: DashboardProps) {
           { title: '生成模式', dataIndex: 'mode', width: 150 },
           { title: '分辨率', dataIndex: 'resolution', width: 130 },
           { title: '时长档', dataIndex: 'durationTier', width: 130 },
-          { title: 'USD / 秒', dataIndex: 'pricePerSecond', width: 120, align: 'right', render: (value) => <Text strong>{formatUsd(value, 4)}</Text> },
+          { title: '公开价格', width: 140, align: 'right', render: (_, row) => row.pricingMode === 'fixed' ? <Text strong>{formatCurrencyPrice(row.price, row.currency, 3)}</Text> : <Tag>{row.pricingMode === 'inquiry' ? '询价' : '未公开'}</Tag> },
+          { title: '官网计费单位', dataIndex: 'displayUnit', width: 160 },
+          { title: '可比 USD / 秒', dataIndex: 'comparableUsdPerSecond', width: 140, align: 'right', render: (value) => formatUsd(value, 4) },
           { title: '日期', dataIndex: 'asOf', width: 112, render: dateLabel },
-          { title: '来源', dataIndex: 'sourceLabel' },
+          { title: '来源', width: 150, render: (_, row) => <a href={row.sourceUrl} target="_blank" rel="noreferrer">{row.sourceLabel}</a> },
+          { title: '说明', dataIndex: 'note', render: (value) => value || '—' },
         ]}
       />
     </ChartCard>
@@ -771,18 +817,19 @@ function CodingPlanPricing({ data }: DashboardProps) {
         rowKey={(row) => `${row.vendor}-${row.plan}`}
         size="small"
         pagination={{ pageSize: 15, showSizeChanger: false }}
-        scroll={{ x: 980 }}
-        locale={{ emptyText: <NoData description="暂无 Coding Plan 价格，请在飞书新表录入" /> }}
+        scroll={{ x: 1200 }}
+        locale={{ emptyText: <NoData description="尚未从厂商官网确认 Coding Plan 价格" /> }}
         dataSource={data.modelPricing.codingPlans}
         columns={[
           { title: '厂商', dataIndex: 'vendor', fixed: 'left', width: 120 },
           { title: '套餐', dataIndex: 'plan', width: 180 },
-          { title: '月付', dataIndex: 'monthlyPrice', width: 115, align: 'right', render: (value) => formatUsd(value) },
-          { title: '年付折算/月', dataIndex: 'annualMonthlyPrice', width: 145, align: 'right', render: (value) => formatUsd(value) },
-          { title: '额度限制', dataIndex: 'limits', width: 250 },
-          { title: '超量计费', dataIndex: 'overage', width: 220 },
+          { title: '计价状态', dataIndex: 'pricingMode', width: 100, render: (value) => <Tag>{value === 'fixed' ? '公开价' : value === 'inquiry' ? '询价' : '未公开'}</Tag> },
+          { title: '月付', dataIndex: 'monthlyPrice', width: 120, align: 'right', render: (value, row) => row.pricingMode === 'fixed' ? formatCurrencyPrice(value, row.currency) : '—' },
+          { title: '年付折算/月', dataIndex: 'annualMonthlyPrice', width: 145, align: 'right', render: (value, row) => row.pricingMode === 'fixed' ? formatCurrencyPrice(value, row.currency) : '—' },
+          { title: '额度限制', dataIndex: 'allowanceText', width: 260, render: (value) => value || '未公布' },
+          { title: '超量计费', dataIndex: 'overage', width: 180, render: (value) => value || '未公布' },
           { title: '日期', dataIndex: 'asOf', width: 112, render: dateLabel },
-          { title: '来源', dataIndex: 'sourceLabel' },
+          { title: '来源', width: 150, render: (_, row) => <a href={row.sourceUrl} target="_blank" rel="noreferrer">{row.sourceLabel}</a> },
         ]}
       />
     </ChartCard>
@@ -790,11 +837,32 @@ function CodingPlanPricing({ data }: DashboardProps) {
 }
 
 export function ModelPricingSection({ data }: DashboardProps) {
-  return <Tabs className="ai-inner-tabs" items={[
-    { key: 'token', label: 'API Token', children: <TokenPricing data={data} /> },
-    { key: 'video', label: '视频模型', children: <VideoPricing data={data} /> },
-    { key: 'coding', label: 'Coding Plan', children: <CodingPlanPricing data={data} /> },
-  ]} />;
+  return (
+    <div className="ai-section-stack">
+      <Tabs className="ai-inner-tabs" items={[
+        { key: 'token', label: 'API Token', children: <TokenPricing data={data} /> },
+        { key: 'video', label: '视频模型', children: <VideoPricing data={data} /> },
+        { key: 'coding', label: 'Coding Plan', children: <CodingPlanPricing data={data} /> },
+      ]} />
+      <ChartCard title="厂商官网价格源状态" extra={<Text type="secondary">失败源会沿用上一版，不跨来源补值</Text>}>
+        <Table
+          rowKey="sourceId"
+          size="small"
+          pagination={false}
+          locale={{ emptyText: <NoData description="等待首次厂商官网价格同步" /> }}
+          dataSource={data.modelPricing.sourceReports || []}
+          columns={[
+            { title: '来源', dataIndex: 'entity' },
+            { title: '状态', dataIndex: 'status', width: 100, render: (value) => <Tag color={value === 'ready' ? 'success' : 'error'}>{value === 'ready' ? '已同步' : '失败'}</Tag> },
+            { title: '有效行', dataIndex: 'rows', width: 90, align: 'right' },
+            { title: '日期', dataIndex: 'asOf', width: 112, render: dateLabel },
+            { title: '详情', dataIndex: 'message', render: (value) => value || '—' },
+            { title: '官网', width: 80, render: (_, row) => <a href={row.url} target="_blank" rel="noreferrer">打开</a> },
+          ]}
+        />
+      </ChartCard>
+    </div>
+  );
 }
 
 function benchmarkMetrics(models: BenchmarkModel[]) {

@@ -77,6 +77,27 @@ export function formatUsd(value: number | null | undefined, digits = 2): string 
     : `$${value.toFixed(digits)}`;
 }
 
+export function formatCurrencyPrice(
+  value: number | null | undefined,
+  currency: string | null | undefined,
+  digits = 2,
+): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+  const code = String(currency || '').toUpperCase();
+  const prefix = code === 'USD' ? '$' : code === 'CNY' ? '¥' : code ? `${code} ` : '';
+  return `${prefix}${value.toFixed(digits)}`;
+}
+
+export function formatPriceChange(event: {
+  oldPrice: number;
+  newPrice: number;
+  percentDelta: number | null;
+  currency: string;
+}): string {
+  const percent = signedPercent(event.percentDelta);
+  return `${formatCurrencyPrice(event.oldPrice, event.currency)} → ${formatCurrencyPrice(event.newPrice, event.currency)}${percent ? `（${percent}）` : ''}`;
+}
+
 export function formatMultiple(low: number | null, high: number | null): string {
   if (low === null || high === null) return '—';
   return Math.abs(low - high) < 0.001 ? `${low.toFixed(1)}x` : `${low.toFixed(1)}–${high.toFixed(1)}x`;

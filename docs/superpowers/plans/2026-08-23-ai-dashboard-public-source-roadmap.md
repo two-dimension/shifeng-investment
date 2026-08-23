@@ -332,37 +332,37 @@ git commit -m "feat: make AI growth metrics change-oriented"
 - `normalizeVideoPrice` preserves original unit and derives comparable USD/second only when duration and currency are known.
 - `normalizeCodingPlan` supports fixed price, inquiry-only, allowance text, overage, region, and source.
 
-- [ ] **Step 1: Write failing normalization and latest-generation tests**
+- [x] **Step 1: Write failing normalization and latest-generation tests**
 
 Fixtures must cover OpenAI, Anthropic, Gemini, 智谱, MiniMax, Kimi, DeepSeek, Mimo, and Qwen. Test short/long context tiers, absent cached input, CNY and USD, and a vendor generation containing flagship/balanced/light SKUs.
 
-- [ ] **Step 2: Write failing price-event tests**
+- [x] **Step 2: Write failing price-event tests**
 
 Assert only the same vendor/model/tier/context/currency/price-field forms a change event; a renamed model or currency change does not fabricate a percentage.
 
-- [ ] **Step 3: Write failing video and Coding Plan tests**
+- [x] **Step 3: Write failing video and Coding Plan tests**
 
 Cover Kling and Seedance resolution/duration modes, an API without public price, a fixed monthly Coding Plan, annual effective monthly price, inquiry-only price, and missing overage.
 
-- [ ] **Step 4: Run tests and verify RED**
+- [x] **Step 4: Run tests and verify RED**
 
 Run: `node --test server/lib/aiPricingData.test.js server/lib/aiPricingSources.test.js`
 
 Expected: FAIL because pricing modules do not exist.
 
-- [ ] **Step 5: Implement source adapters using only registered official pages**
+- [x] **Step 5: Implement source adapters using only registered official pages**
 
 Each adapter exports `discoverCurrentGeneration(document)` and `parsePricing(document)`. It rejects a parsed row if model identity, price unit, currency, or source date cannot be established. It never falls back to Feishu or OpenRouter model prices.
 
-- [ ] **Step 6: Implement price history and events**
+- [x] **Step 6: Implement price history and events**
 
 Preserve prior normalized records in the slice, deduplicate by full SKU key and `asOf`, and derive events at read time so a re-fetch of the same price is idempotent.
 
-- [ ] **Step 7: Redesign the pricing page**
+- [x] **Step 7: Redesign the pricing page**
 
 Keep Token/视频/Coding tabs. The Token main chart shows only latest-generation standard public prices; a side card lists recent official price changes. Video and Coding tables remove all “请在飞书录入” copy and show official source status.
 
-- [ ] **Step 8: Run focused tests, build, and commit**
+- [x] **Step 8: Run focused tests, build, and commit**
 
 Run: `node --test server/lib/aiPricingData.test.js server/lib/aiPricingSources.test.js tests/aiDashboardViewModel.test.ts`
 

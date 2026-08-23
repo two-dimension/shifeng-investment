@@ -99,20 +99,54 @@ export interface OpenRouterHistoryPoint {
 }
 
 export interface TokenPrice {
-  region?: string;
+  region: string;
   vendor: string;
   model: string;
+  generation?: string | null;
   releasedAt?: string | null;
   category?: string;
+  contextTier: string;
+  serviceTier: string;
+  currency: string;
+  priceUnit: 'per_million_tokens';
+  originalUnit?: string | null;
+  publicPrice?: boolean;
+  currentGeneration?: boolean | null;
   inputPrice: number | null;
   cacheReadPrice: number | null;
+  cacheWritePrice: number | null;
   outputPrice: number | null;
-  cacheHitLow: number | null;
-  cacheHitHigh: number | null;
-  cacheRangeValid: boolean;
+  cacheHitLow?: number | null;
+  cacheHitHigh?: number | null;
+  cacheRangeValid?: boolean;
   sourceLabel: string;
-  asOf?: string | null;
-  note?: string;
+  sourceUrl: string;
+  sourceKind: 'official';
+  asOf: string;
+  retrievedAt: string;
+  note?: string | null;
+  provenance: MetricProvenance;
+}
+
+export interface PriceEvent {
+  id: string;
+  vendor: string;
+  model: string;
+  contextTier: string;
+  serviceTier: string;
+  region: string;
+  currency: string;
+  priceUnit: 'per_million_tokens';
+  priceField: 'inputPrice' | 'cacheReadPrice' | 'cacheWritePrice' | 'outputPrice';
+  oldPrice: number;
+  newPrice: number;
+  absoluteDelta: number;
+  percentDelta: number | null;
+  previousAsOf: string;
+  asOf: string;
+  sourceLabel: string;
+  sourceUrl: string;
+  provenance: MetricProvenance;
 }
 
 export interface VideoPrice {
@@ -121,20 +155,53 @@ export interface VideoPrice {
   mode: string;
   resolution: string;
   durationTier: string;
-  pricePerSecond: number;
+  durationSeconds: number | null;
+  pricingMode: 'fixed' | 'inquiry' | 'unpublished';
+  price: number | null;
+  currency: string | null;
+  priceUnit: 'per_million_tokens' | 'per_video' | 'per_second' | 'inquiry' | 'unpublished';
+  displayUnit: string;
+  comparableUsdPerSecond: number | null;
+  pricePerSecond?: number | null;
+  region: string;
   sourceLabel: string;
-  asOf?: string | null;
+  sourceUrl: string;
+  sourceKind: 'official';
+  asOf: string;
+  retrievedAt: string;
+  note?: string | null;
+  provenance: MetricProvenance;
 }
 
 export interface CodingPlan {
   vendor: string;
   plan: string;
-  monthlyPrice: number;
+  pricingMode: 'fixed' | 'inquiry' | 'unpublished';
+  currency: string | null;
+  monthlyPrice: number | null;
+  annualPrice: number | null;
   annualMonthlyPrice: number | null;
-  limits: string;
-  overage: string;
+  allowanceText: string | null;
+  limits?: string | null;
+  overage: string | null;
+  region: string;
   sourceLabel: string;
-  asOf?: string | null;
+  sourceUrl: string;
+  sourceKind: 'official';
+  asOf: string;
+  retrievedAt: string;
+  note?: string | null;
+  provenance: MetricProvenance;
+}
+
+export interface PricingSourceReport {
+  sourceId: string;
+  entity: string;
+  url: string;
+  status: 'ready' | 'error';
+  asOf: string | null;
+  rows: number;
+  message: string | null;
 }
 
 export interface BenchmarkScore {
@@ -238,8 +305,13 @@ export interface AiDashboardSnapshot {
   };
   modelPricing: {
     token: TokenPrice[];
+    tokenHistory: TokenPrice[];
+    priceEvents: PriceEvent[];
     video: VideoPrice[];
+    videoHistory: VideoPrice[];
     codingPlans: CodingPlan[];
+    codingPlanHistory: CodingPlan[];
+    sourceReports: PricingSourceReport[];
   };
   benchmarks: {
     models: BenchmarkModel[];
