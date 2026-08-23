@@ -2,6 +2,7 @@ import type {
   BenchmarkMetricDefinition,
   BenchmarkScore,
   AiDashboardSnapshot,
+  ArtificialAnalysisTaskCost,
   DashboardSourceKey,
   MetricProvenance,
   SourceStatus,
@@ -216,4 +217,24 @@ export function officialWinnerRows(benchmarks: AiDashboardSnapshot['benchmarks']
       comparable: metric.comparable !== false,
     }];
   });
+}
+
+export function formatTaskTokenBreakdown(row: Pick<ArtificialAnalysisTaskCost, 'answerTokens' | 'reasoningTokens' | 'outputTokens'>): string {
+  if (row.outputTokens === null) return 'Token 明细未公开';
+  const answer = row.answerTokens === null ? '—' : Math.round(row.answerTokens).toLocaleString('en-US');
+  const reasoning = row.reasoningTokens === null ? '—' : Math.round(row.reasoningTokens).toLocaleString('en-US');
+  return `Answer ${answer} + Reasoning ${reasoning} = ${Math.round(row.outputTokens).toLocaleString('en-US')} Tokens`;
+}
+
+export function formatTaskCostComponents(row: Pick<ArtificialAnalysisTaskCost,
+  'inputCost' | 'cacheHitCost' | 'cacheWriteCost' | 'reasoningCost' | 'answerCost' | 'totalCost' | 'currency'>): string {
+  if (row.totalCost === null) return '成本未公开';
+  const components = [
+    ['Input', row.inputCost],
+    ['Cache hit', row.cacheHitCost],
+    ['Cache write', row.cacheWriteCost],
+    ['Reasoning', row.reasoningCost],
+    ['Answer', row.answerCost],
+  ].filter((entry): entry is [string, number] => entry[1] !== null);
+  return `${components.map(([label, value]) => `${label} ${formatCurrencyPrice(value, row.currency, 4)}`).join(' + ')} = ${formatCurrencyPrice(row.totalCost, row.currency, 4)}`;
 }

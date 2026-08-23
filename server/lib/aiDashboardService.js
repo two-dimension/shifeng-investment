@@ -6,6 +6,7 @@ import { AI_CAPITAL_SOURCE_REGISTRY, createAiCapitalCollector } from './aiCapita
 import { AI_COMPUTE_SOURCE_REGISTRY, createAiComputeCollector } from './aiComputeSources.js';
 import { aggregateOpenRouterWeekly } from './aiDashboardMetrics.js';
 import { createAiPricingCollector } from './aiPricingSources.js';
+import { createArtificialAnalysisCollector } from './artificialAnalysisSource.js';
 import { normalizeOfficialBenchmarks } from './officialBenchmarkData.js';
 import { createOfficialDocumentClient } from './officialDocumentClient.js';
 import { createOfficialModelCardRegistry } from './officialModelCardRegistry.js';
@@ -107,6 +108,7 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
     artificialAnalysis: {
       intelligenceIndex: [],
       taskCosts: [],
+      indexVersion: null,
     },
     computeRental: [],
     computeSourceReports: [],
@@ -568,6 +570,11 @@ export function createAiDashboardServiceFromEnv({
     mergedCollectors.compute = createAiComputeCollector({
       documentClient: officialDocumentClient,
       registry: computeRegistry,
+    });
+  }
+  if (typeof mergedCollectors.artificialAnalysis !== 'function') {
+    mergedCollectors.artificialAnalysis = createArtificialAnalysisCollector({
+      documentClient: officialDocumentClient,
     });
   }
   if (typeof mergedCollectors.benchmarks !== 'function') {

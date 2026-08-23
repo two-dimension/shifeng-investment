@@ -150,7 +150,7 @@ export const PUBLIC_SOURCE_REGISTRY = validatePublicSourceRegistry([
   },
   {
     id: 'artificial-analysis-index', slice: 'artificialAnalysis', entity: 'Artificial Analysis',
-    entryUrl: 'https://artificialanalysis.ai/', allowedHosts: ['artificialanalysis.ai'],
+    entryUrl: 'https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index', allowedHosts: ['artificialanalysis.ai'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'named-third-party',
   },
   {

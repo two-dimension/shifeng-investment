@@ -6,6 +6,8 @@ import {
   formatBenchmarkValue,
   formatCurrencyPrice,
   formatPriceChange,
+  formatTaskCostComponents,
+  formatTaskTokenBreakdown,
   formatTokenCount,
   formatUsd,
   groupOfficialBenchmarkMetrics,
@@ -79,6 +81,15 @@ test('winner rows retain exact tests, winning scores, ties, and run configuratio
   });
   assert.deepEqual(rows[1].models, ['Claude Opus 5', 'GPT-5.6 Sol']);
   assert.equal(rows.some((row) => /Artificial Analysis|Design Arena|OpenRouter Evals|飞书口径/.test(row.label)), false);
+});
+
+test('single-task formatters expose token and cost formulas without inventing missing values', () => {
+  assert.equal(formatTaskTokenBreakdown({ answerTokens: 3200, reasoningTokens: 6800, outputTokens: 10000 }), 'Answer 3,200 + Reasoning 6,800 = 10,000 Tokens');
+  assert.equal(formatTaskTokenBreakdown({ answerTokens: null, reasoningTokens: null, outputTokens: null }), 'Token 明细未公开');
+  assert.equal(formatTaskCostComponents({
+    inputCost: 0.02, cacheHitCost: 0.03, cacheWriteCost: 0.01,
+    reasoningCost: 0.12, answerCost: 0.08, totalCost: 0.26, currency: 'USD',
+  }), 'Input $0.0200 + Cache hit $0.0300 + Cache write $0.0100 + Reasoning $0.1200 + Answer $0.0800 = $0.2600');
 });
 
 test('token formatter keeps 64-bit values readable without converting through Number first', () => {

@@ -32,6 +32,7 @@ import {
 } from './viewModel';
 import {
   ArrValuationSection,
+  ArtificialAnalysisSection,
   BenchmarkSection,
   ComputeRentalSection,
   DebtFinancingSection,
@@ -220,6 +221,7 @@ export const AIDashboardPanel: React.FC = () => {
     { key: 'openrouter', label: 'OpenRouter', children: <OpenRouterSection data={data} /> },
     { key: 'pricing', label: '模型价格', children: <ModelPricingSection data={data} /> },
     { key: 'benchmark', label: 'Benchmark', children: <BenchmarkSection data={data} refreshing={benchmarkRefreshing} /> },
+    { key: 'aa', label: 'AA 指数与成本', children: <ArtificialAnalysisSection data={data} /> },
     { key: 'compute', label: '算力租赁', children: <ComputeRentalSection data={data} /> },
     { key: 'debt', label: '融资与债务', children: <DebtFinancingSection data={data} /> },
   ] : [], [benchmarkRefreshing, data]);

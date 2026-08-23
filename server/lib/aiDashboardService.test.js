@@ -228,6 +228,24 @@ test('environment service wires official capital and exact-SKU compute collector
   assert.equal(snapshot.computeRental[0].quoteKey.includes('on_demand') || snapshot.computeRental[1].quoteKey.includes('on_demand'), true);
 });
 
+test('environment service keeps Artificial Analysis in its independent named-third-party slice', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-aa-');
+  const html = await fs.promises.readFile(new URL('./fixtures/artificial-analysis/index.html', import.meta.url), 'utf8');
+  const service = createAiDashboardServiceFromEnv({
+    dataFile,
+    fetchImpl: async () => new Response(html, { headers: { 'content-type': 'text/html' } }),
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['artificialAnalysis'], force: true });
+
+  assert.equal(snapshot.sources.artificialAnalysis.status, 'ready');
+  assert.equal(snapshot.artificialAnalysis.intelligenceIndex[0].sourceKind, 'named-third-party');
+  assert.equal(snapshot.artificialAnalysis.taskCosts[0].totalCost, 0.26);
+  assert.deepEqual(snapshot.benchmarks.metrics, []);
+  assert.deepEqual(snapshot.benchmarks.winners, {});
+});
+
 test('public OpenRouter export seeds the visible weekly Top 10 without fabricating a platform total', async (t) => {
   const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-openrouter-public-');
   const openRouterPublicFile = path.join(dir, 'openrouter-public.json');

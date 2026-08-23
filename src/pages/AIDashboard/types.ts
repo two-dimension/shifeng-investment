@@ -280,6 +280,46 @@ export interface BenchmarkVendorSource {
   disclosedScores: number;
 }
 
+export interface ArtificialAnalysisIndexRow {
+  model: string;
+  modelUrl: string | null;
+  score: number;
+  rank: number;
+  indexVersion: string;
+  sourceLabel: string;
+  sourceUrl: string;
+  sourceKind: 'named-third-party';
+  asOf: string;
+  retrievedAt: string;
+  methodology: string;
+  stale: boolean;
+}
+
+export interface ArtificialAnalysisTaskCost {
+  model: string;
+  modelUrl: string | null;
+  taskName: string;
+  taskVersion: string;
+  harness: string;
+  answerTokens: number | null;
+  reasoningTokens: number | null;
+  outputTokens: number | null;
+  inputCost: number | null;
+  cacheHitCost: number | null;
+  cacheWriteCost: number | null;
+  reasoningCost: number | null;
+  answerCost: number | null;
+  totalCost: number | null;
+  currency: 'USD';
+  sourceLabel: string;
+  sourceUrl: string;
+  sourceKind: 'named-third-party';
+  asOf: string;
+  retrievedAt: string;
+  methodology: string;
+  stale: boolean;
+}
+
 export interface ComputeRentalQuote {
   platform: string;
   gpu: string;
@@ -427,8 +467,9 @@ export interface AiDashboardSnapshot {
     attributions: Array<{ source: string; label: string; url?: string }>;
   };
   artificialAnalysis: {
-    intelligenceIndex: Array<Record<string, unknown>>;
-    taskCosts: Array<Record<string, unknown>>;
+    intelligenceIndex: ArtificialAnalysisIndexRow[];
+    taskCosts: ArtificialAnalysisTaskCost[];
+    indexVersion: string | null;
   };
   computeRental: ComputeRentalQuote[];
   computeSourceReports: PublicSourceReport[];

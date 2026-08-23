@@ -46,6 +46,8 @@ import {
   formatCurrencyPrice,
   formatMultiple,
   formatPriceChange,
+  formatTaskCostComponents,
+  formatTaskTokenBreakdown,
   formatTokenCount,
   formatTokenDelta,
   formatUsd,
@@ -1073,6 +1075,93 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
             </div>
           ))}
         </div>
+      </ChartCard>
+    </div>
+  );
+}
+
+export function ArtificialAnalysisSection({ data }: DashboardProps) {
+  const palette = useChartPalette();
+  const screens = Grid.useBreakpoint();
+  const compact = !screens.sm;
+  const indexRows = data.artificialAnalysis.intelligenceIndex || [];
+  const taskCosts = data.artificialAnalysis.taskCosts || [];
+  const scatterRows = taskCosts.filter((row) => row.outputTokens !== null && row.totalCost !== null);
+  const indexOption = useMemo(() => ({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: Array<{ dataIndex: number; value: number }>) => {
+        const point = params[0];
+        const row = indexRows[point?.dataIndex];
+        return row ? `<b>#${row.rank} ${row.model}</b><br/>AA Intelligence Index: ${row.score.toFixed(1)}<br/>v${row.indexVersion} · ${row.asOf}` : '';
+      },
+    },
+    grid: { left: compact ? 128 : 250, right: 28, top: 16, bottom: 36 },
+    xAxis: { type: 'value', name: 'Index', axisLabel: { color: palette.text }, splitLine: { lineStyle: { color: palette.line } } },
+    yAxis: {
+      type: 'category', inverse: true, data: indexRows.map((row) => row.model),
+      axisLabel: { color: palette.text, width: compact ? 112 : 230, overflow: 'truncate', fontSize: compact ? 9 : 11 },
+      axisTick: { show: false },
+    },
+    series: [{ type: 'bar', data: indexRows.map((row) => row.score), itemStyle: { color: palette.blue, borderRadius: [0, 5, 5, 0] } }],
+  }), [compact, indexRows, palette]);
+  const taskOption = useMemo(() => ({
+    tooltip: {
+      trigger: 'item',
+      formatter: ({ data }: { data: { value: [number, number]; model: string } }) => `<b>${data.model}</b><br/>Output Tokens / task: ${Math.round(data.value[0]).toLocaleString('en-US')}<br/>Cost / task: $${data.value[1].toFixed(4)}`,
+    },
+    grid: { left: compact ? 54 : 78, right: 24, top: 20, bottom: 52 },
+    xAxis: { type: 'value', name: 'Output Tokens / task', nameLocation: 'middle', nameGap: 32, axisLabel: { color: palette.text }, splitLine: { lineStyle: { color: palette.line } } },
+    yAxis: { type: 'value', name: 'USD / task', axisLabel: { color: palette.text }, splitLine: { lineStyle: { color: palette.line } } },
+    series: [{
+      type: 'scatter', symbolSize: compact ? 11 : 15,
+      data: scatterRows.map((row) => ({ value: [row.outputTokens, row.totalCost], model: row.model })),
+      itemStyle: { color: palette.orange },
+    }],
+  }), [compact, palette, scatterRows]);
+
+  return (
+    <div className="ai-section-stack">
+      <Alert
+        showIcon
+        type="warning"
+        title="Artificial Analysis 为独立第三方参考，不参与厂商官网模型卡冠军"
+        description="指数、每任务输出 Token 与成本直接读取 AA 公共页面 JSON-LD；缺失组件保持为空，不使用 OpenRouter 或飞书补数。"
+      />
+      <Row gutter={[16, 16]}>
+        <Col xs={24} xl={12}>
+          <ChartCard title="Artificial Analysis Intelligence Index（第三方参考）" extra={<Tag color="warning">v{data.artificialAnalysis.indexVersion || '—'}</Tag>}>
+            {indexRows.length === 0 ? <NoData description="暂无 AA Intelligence Index 公共数据" /> : (
+              <ReactECharts option={indexOption} style={{ height: Math.max(420, indexRows.length * 27 + 80) }} notMerge />
+            )}
+          </ChartCard>
+        </Col>
+        <Col xs={24} xl={12}>
+          <ChartCard title="单任务输出 Token 与成本" extra={<Text type="secondary">同一 AA Index 任务口径</Text>}>
+            {scatterRows.length === 0 ? <NoData description="暂无同时披露 Token 与成本的模型" /> : (
+              <ReactECharts option={taskOption} style={{ height: Math.max(420, scatterRows.length * 22 + 100) }} notMerge />
+            )}
+          </ChartCard>
+        </Col>
+      </Row>
+      <ChartCard title="单任务 Token / 成本明细" extra={<Text type="secondary">组件成本求和，不跨币种换算</Text>}>
+        <Table
+          rowKey={(row) => `${row.model}-${row.taskVersion}`}
+          size="small"
+          pagination={false}
+          scroll={{ x: 1080 }}
+          locale={{ emptyText: <NoData description="暂无单任务成本明细" /> }}
+          dataSource={taskCosts}
+          columns={[
+            { title: '模型', dataIndex: 'model', fixed: 'left', width: 220, className: 'ai-model-name', render: (value, row) => row.modelUrl ? <a href={row.modelUrl} target="_blank" rel="noreferrer">{value}</a> : value },
+            { title: '任务 / 版本', width: 230, render: (_, row) => <><Text>{row.taskName}</Text><Text className="ai-benchmark-run-label" type="secondary">v{row.taskVersion} · {row.harness}</Text></> },
+            { title: '输出 Token / task', width: 190, render: (_, row) => <Tooltip title={formatTaskTokenBreakdown(row)}>{row.outputTokens === null ? '—' : Math.round(row.outputTokens).toLocaleString('en-US')}</Tooltip> },
+            { title: '成本 / task', width: 130, align: 'right', render: (_, row) => <Tooltip title={formatTaskCostComponents(row)}><Text strong>{formatCurrencyPrice(row.totalCost, row.currency, 4)}</Text></Tooltip> },
+            { title: '数据日期', dataIndex: 'asOf', width: 112, render: dateLabel },
+            { title: '来源', width: 130, render: (_, row) => <a href={row.sourceUrl} target="_blank" rel="noreferrer">Artificial Analysis</a> },
+          ]}
+        />
       </ChartCard>
     </div>
   );
