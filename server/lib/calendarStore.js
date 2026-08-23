@@ -6,6 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const DEFAULT_CALENDAR_FILE = path.join(__dirname, '../data/calendar/events.json');
+export const DEFAULT_MANUAL_CALENDAR_FILE = path.join(__dirname, '../data/calendar/manual-events.json');
 export const DEFAULT_FUNDS_FILE = path.join(__dirname, '../data/funds.json');
 
 export const CALENDAR_KINDS = Object.freeze(['macro', 'us_earnings', 'a_share']);
@@ -55,9 +56,9 @@ const US_COMPANY_ALIAS_CANONICAL_SYMBOLS = new Set(US_COMPANY_SYMBOL_ALIASES.val
 
 const DEFAULT_SOURCE_STATUS = Object.freeze({
   jin10: {
-    status: 'authorization_required',
+    status: 'manual_import',
     updatedAt: null,
-    message: '需取得金十数据授权后才能启用自动同步',
+    message: '通过已登录金十网页人工核验并导入快照；未接入后台自动登录或授权 API',
   },
   earningshub: {
     status: 'authorization_required',
@@ -75,9 +76,9 @@ const DEFAULT_SOURCE_STATUS = Object.freeze({
     message: 'A 股投资日历当前采用结构化文件人工导入',
   },
   company_ir: {
-    status: 'ready',
+    status: 'manual_import',
     updatedAt: null,
-    message: '公司投资者关系或公告页面直接核验',
+    message: '公司投资者关系或公告页面仅用于人工核验，尚未接入自动同步',
   },
   official: {
     status: 'ready',
@@ -92,6 +93,7 @@ const DEFAULT_SOURCE_STATUS = Object.freeze({
  * @property {'macro'|'us_earnings'|'a_share'} kind
  * @property {string} title
  * @property {'CN'|'US'} region
+ * @property {string=} country Source country or region label
  * @property {string} date YYYY-MM-DD in the source business timezone
  * @property {string=} endDate YYYY-MM-DD inclusive end date for multi-day events
  * @property {string=} startAt ISO 8601 timestamp when timePrecision is exact
@@ -387,12 +389,14 @@ export function normalizeCalendarEvent(value, index = 0) {
   const metrics = normalizeMetrics(value.metrics, `${field}.metrics`);
   const tags = normalizeStringList(value.tags, `${field}.tags`);
   const summary = optionalString(value.summary, `${field}.summary`);
+  const country = optionalString(value.country, `${field}.country`);
 
   return {
     id: requireString(value.id, `${field}.id`),
     kind,
     title: requireString(value.title, `${field}.title`),
     region,
+    ...(country ? { country } : {}),
     date: value.date,
     ...(endDate ? { endDate } : {}),
     ...(startAt ? { startAt } : {}),
@@ -415,14 +419,17 @@ function normalizeSourceStatuses(value) {
   for (const sourceName of CALENDAR_SOURCE_NAMES) {
     const fallback = DEFAULT_SOURCE_STATUS[sourceName];
     const current = isPlainObject(raw[sourceName]) ? raw[sourceName] : {};
-    const status = CALENDAR_SOURCE_STATUSES.includes(current.status) ? current.status : fallback.status;
-    const updatedAt = current.updatedAt === null || current.updatedAt === undefined
+    const forceManualStatus = sourceName === 'company_ir';
+    const status = !forceManualStatus && CALENDAR_SOURCE_STATUSES.includes(current.status)
+      ? current.status
+      : fallback.status;
+    const updatedAt = forceManualStatus || current.updatedAt === null || current.updatedAt === undefined
       ? fallback.updatedAt
       : validateIsoTimestamp(current.updatedAt, `sources.${sourceName}.updatedAt`);
     result[sourceName] = {
       status,
       updatedAt,
-      message: typeof current.message === 'string' && current.message.trim()
+      message: !forceManualStatus && typeof current.message === 'string' && current.message.trim()
         ? current.message.trim()
         : fallback.message,
     };
@@ -469,31 +476,46 @@ export function enrichEventsWithSubsetHits(events, subsetIndex) {
 
 export async function readCalendarStore({
   dataFile = DEFAULT_CALENDAR_FILE,
+  manualFile,
   fundsFile = DEFAULT_FUNDS_FILE,
 } = {}) {
-  const [dataStat, fundsStat] = await Promise.all([
+  const resolvedManualFile = manualFile || (dataFile === DEFAULT_CALENDAR_FILE
+    ? DEFAULT_MANUAL_CALENDAR_FILE
+    : path.join(path.dirname(dataFile), 'manual-events.json'));
+  const [dataStat, manualStat, fundsStat] = await Promise.all([
     fs.promises.stat(dataFile).catch(() => null),
+    fs.promises.stat(resolvedManualFile).catch(() => null),
     fs.promises.stat(fundsFile).catch(() => null),
   ]);
-  const cacheKey = `${dataFile}\u0000${fundsFile}`;
+  const cacheKey = `${dataFile}\u0000${resolvedManualFile}\u0000${fundsFile}`;
   const cacheSignature = [
     dataStat?.mtimeMs || 0,
     dataStat?.size || 0,
+    manualStat?.mtimeMs || 0,
+    manualStat?.size || 0,
     fundsStat?.mtimeMs || 0,
     fundsStat?.size || 0,
   ].join(':');
   const cached = CALENDAR_STORE_CACHE.get(cacheKey);
   if (cached?.signature === cacheSignature) return cached.value;
 
-  const [data, fundsData] = await Promise.all([
-    readJsonFile(dataFile, 'CALENDAR_STORE_UNAVAILABLE'),
+  const [data, manualData, fundsData] = await Promise.all([
+    dataStat
+      ? readJsonFile(dataFile, 'CALENDAR_STORE_UNAVAILABLE')
+      : Promise.resolve({ schemaVersion: 1, updatedAt: null, sources: {}, events: [] }),
+    manualStat
+      ? readJsonFile(resolvedManualFile, 'CALENDAR_MANUAL_STORE_UNAVAILABLE')
+      : Promise.resolve({ schemaVersion: 1, updatedAt: null, sources: {}, events: [] }),
     readJsonFile(fundsFile, 'CALENDAR_FUNDS_UNAVAILABLE'),
   ]);
   if (!isPlainObject(data) || !Array.isArray(data.events)) {
     throw new CalendarDataError('events.json must contain an events array');
   }
+  if (!isPlainObject(manualData) || !Array.isArray(manualData.events)) {
+    throw new CalendarDataError('manual-events.json must contain an events array');
+  }
 
-  const normalizedEvents = data.events.map((event, index) => {
+  const normalizeStoredEvent = (event, index) => {
     try {
       return normalizeCalendarEvent(event, index);
     } catch (error) {
@@ -503,17 +525,37 @@ export async function readCalendarStore({
       }
       throw error;
     }
-  });
+  };
+  const normalizedManualEvents = manualData.events.map(normalizeStoredEvent);
+  const normalizedRuntimeEvents = data.events.map((event, index) => (
+    normalizeStoredEvent(event, normalizedManualEvents.length + index)
+  ));
+  const mergedEvents = new Map(normalizedManualEvents.map((event) => [event.id, event]));
+  for (const event of normalizedRuntimeEvents) mergedEvents.set(event.id, event);
+  const normalizedEvents = [...mergedEvents.values()];
   const subsetIndex = buildUsSubsetIndex(fundsData);
   const events = enrichEventsWithSubsetHits(normalizedEvents, subsetIndex);
-  const updatedAt = data.updatedAt
+  const runtimeUpdatedAt = data.updatedAt
     ? validateIsoTimestamp(data.updatedAt, 'updatedAt')
     : dataStat?.mtime?.toISOString() || null;
+  const manualUpdatedAt = manualData.updatedAt
+    ? validateIsoTimestamp(manualData.updatedAt, 'manualUpdatedAt')
+    : manualStat?.mtime?.toISOString() || null;
+  const updatedAt = [runtimeUpdatedAt, manualUpdatedAt]
+    .filter(Boolean)
+    .sort((left, right) => Date.parse(left) - Date.parse(right))
+    .at(-1) || null;
 
   const value = {
-    schemaVersion: Number.isInteger(data.schemaVersion) ? data.schemaVersion : 1,
+    schemaVersion: Math.max(
+      Number.isInteger(data.schemaVersion) ? data.schemaVersion : 1,
+      Number.isInteger(manualData.schemaVersion) ? manualData.schemaVersion : 1,
+    ),
     updatedAt,
-    sources: normalizeSourceStatuses(data.sources),
+    sources: normalizeSourceStatuses({
+      ...(isPlainObject(data.sources) ? data.sources : {}),
+      ...(isPlainObject(manualData.sources) ? manualData.sources : {}),
+    }),
     events,
   };
   CALENDAR_STORE_CACHE.set(cacheKey, { signature: cacheSignature, value });

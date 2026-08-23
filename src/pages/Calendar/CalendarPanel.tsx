@@ -723,7 +723,7 @@ export const CalendarPanel = () => {
           } else if (refreshedRecord.coverageComplete === false) {
             setRefreshNotice({
               type: 'warning',
-              title: '官方宏观实际值和美股财报已刷新；宏观日程与A股事件没有在线同步源，继续使用最近导入快照。',
+              title: '官方宏观实际值和美股财报已刷新；金十宏观日程与A股题材沿用已人工核验快照。',
             });
           } else {
             setRefreshNotice({ type: 'success', title: '日历数据刷新完成。' });
