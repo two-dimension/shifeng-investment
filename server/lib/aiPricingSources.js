@@ -41,7 +41,7 @@ const ADAPTER_CONFIG = Object.freeze({
   },
   'kimi-pricing': {
     vendor: 'Kimi', kinds: ['token'], currency: 'CNY', tokenUnit: 'per_million_tokens',
-    currentPattern: /Kimi[- ]K2\.5/gi,
+    currentPattern: /Kimi[- ]K3/gi,
   },
   'deepseek-pricing': {
     vendor: 'DeepSeek', kinds: ['token'], currency: 'USD', tokenUnit: 'per_million_tokens',
@@ -60,6 +60,30 @@ const ADAPTER_CONFIG = Object.freeze({
   },
   'kling-pricing': {
     vendor: 'Kling', kinds: ['video'], currency: 'CNY', currentPattern: /Kling[- ]3\.0(?:[- ](?:Omni|Turbo))?/gi,
+  },
+  'openai-codex-plan': {
+    vendor: 'OpenAI', kinds: ['coding'], currency: 'USD', currentPattern: /Codex/gi,
+  },
+  'anthropic-claude-code-plan': {
+    vendor: 'Anthropic', kinds: ['coding'], currency: 'USD', currentPattern: /Claude Code/gi,
+  },
+  'gemini-code-assist-plan': {
+    vendor: 'Gemini', kinds: ['coding'], currency: 'USD', currentPattern: /Gemini Code Assist/gi,
+  },
+  'zhipu-coding-plan': {
+    vendor: '智谱', kinds: ['coding'], currency: 'CNY', currentPattern: /GLM Coding Plan/gi,
+  },
+  'mimo-token-plan': {
+    vendor: 'MiMo', kinds: ['coding'], currency: 'CNY', currentPattern: /Token Plan/gi,
+  },
+  'qwen-code-plan': {
+    vendor: 'Qwen', kinds: ['coding'], currency: 'CNY', currentPattern: /Qwen Code/gi,
+  },
+  'kimi-coding-plan': {
+    vendor: 'Kimi', kinds: ['coding'], currency: 'USD', currentPattern: /Kimi K2\.7 Code/gi,
+  },
+  'deepseek-coding-plan': {
+    vendor: 'DeepSeek', kinds: ['coding'], currency: 'USD', currentPattern: /DeepSeek/gi,
   },
 });
 
@@ -343,6 +367,27 @@ function parseCodingTables(html, definition, document, config) {
   return rowRecords.length > 0 ? rowRecords : parseMatrixCodingTables(html, definition, document, config);
 }
 
+function parseKimiK3Markdown(markdown, definition, document, config) {
+  const row = String(markdown || '').match(/\["kimi-k3",\s*"1M tokens"([\s\S]{0,500}?)\]/i)?.[1] || '';
+  const values = [...row.matchAll(/\{\s*"\$"\s*\}([\d.]+)/g)].map((match) => Number(match[1]));
+  if (values.length < 3) throw new Error('kimi-pricing K3 official price row not found');
+  return [normalizeTokenPrice({
+    vendor: config.vendor,
+    model: 'Kimi K3',
+    generation: 'K3',
+    currentGeneration: true,
+    contextTier: '1M context',
+    serviceTier: 'standard',
+    currency: 'USD',
+    priceUnit: 'per_million_tokens',
+    inputPrice: values[1],
+    cacheReadPrice: values[0],
+    cacheWritePrice: null,
+    outputPrice: values[2],
+    ...sourceFields(definition, document, '从 Kimi 官网 K3 Markdown 定价表读取缓存命中、缓存未命中与输出价格'),
+  })];
+}
+
 function validateOfficialDefinition(definition) {
   const registered = OFFICIAL_DEFINITIONS.get(definition?.id);
   if (!registered || !ADAPTER_CONFIG[definition.id]) {
@@ -368,7 +413,9 @@ export function createOfficialPricingAdapter(definition) {
       const generations = discoverCurrentGeneration(document.text, config);
       return {
         token: config.kinds.includes('token')
-          ? parseTokenTables(document.text, registered, document, config, generations)
+          ? (registered.id === 'kimi-pricing'
+            ? parseKimiK3Markdown(document.text, registered, document, config)
+            : parseTokenTables(document.text, registered, document, config, generations))
           : [],
         video: config.kinds.includes('video')
           ? parseVideoTables(document.text, registered, document, config)
@@ -451,17 +498,23 @@ export function createAiPricingCollector({
       ['vendor', 'plan', 'region', 'currency'],
     );
     const failed = results.length - succeeded.length;
-    const sourceReports = results.map((result) => ({
-      sourceId: result.definition.id,
-      entity: result.definition.entity,
-      url: result.definition.entryUrl,
-      status: result.status,
-      asOf: result.status === 'ready' ? generatedAt.slice(0, 10) : null,
-      rows: result.status === 'ready'
+    const previousReports = new Map((previousPricing.sourceReports || []).map((report) => [report.sourceId, report]));
+    const sourceReports = results.map((result) => {
+      const rows = result.status === 'ready'
         ? result.parsed.token.length + result.parsed.video.length + result.parsed.codingPlans.length
-        : 0,
-      message: result.error?.message || null,
-    }));
+        : 0;
+      const previousReport = previousReports.get(result.definition.id);
+      return {
+        sourceId: result.definition.id,
+        entity: result.definition.entity,
+        url: result.definition.entryUrl,
+        status: result.status,
+        asOf: result.status === 'ready' ? generatedAt.slice(0, 10) : null,
+        rows,
+        message: result.error?.message
+          || (rows === 0 ? previousReport?.message || '官网可访问，但尚未解析出可复核的结构化价格行。' : null),
+      };
+    });
     return {
       payload: {
         modelPricing: {

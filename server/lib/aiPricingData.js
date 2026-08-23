@@ -20,7 +20,7 @@ export const CURRENT_GENERATION_RULES = Object.freeze({
   Gemini: /\bGemini (?:3\.7 Flash|3\.6 Flash|3\.5 Flash(?:-Lite)?|3\.1 Pro)\b/i,
   智谱: /\bGLM-5\.2\b/i,
   MiniMax: /\bMiniMax M2\.7\b/i,
-  Kimi: /\bKimi K2\.5\b/i,
+  Kimi: /\bKimi K3\b/i,
   DeepSeek: /\bDeepSeek V4(?:\s|$)/i,
   MiMo: /\bMiMo V2\.5(?:\s|$)/i,
   Qwen: /\bQwen3\.8(?:-|\s|$)/i,

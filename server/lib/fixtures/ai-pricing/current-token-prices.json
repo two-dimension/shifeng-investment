@@ -97,13 +97,14 @@
   },
   {
     "vendor": "Kimi",
-    "model": "Kimi K2.5",
-    "generation": "K2.5",
+    "model": "Kimi K3",
+    "generation": "K3",
     "currentGeneration": true,
-    "currency": "CNY",
+    "currency": "USD",
     "perTokens": 1000000,
-    "inputPrice": 1,
-    "outputPrice": 4
+    "inputPrice": 3,
+    "cacheReadPrice": 0.3,
+    "outputPrice": 15
   },
   {
     "vendor": "DeepSeek",

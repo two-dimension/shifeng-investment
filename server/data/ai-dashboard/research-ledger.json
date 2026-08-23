@@ -1,0 +1,522 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-23T16:00:00.000Z",
+  "records": [
+    {
+      "id": "anthropic-yipit-arr-2026-07-31",
+      "entity": "Anthropic",
+      "metric": "arr_estimate",
+      "value": 73,
+      "unit": "USD billion",
+      "asOf": "2026-07-31",
+      "sourceId": "yipit-ai-revenue",
+      "sourceUrl": "https://www.yipitdata.com/",
+      "sourceKind": "estimate",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Yipit estimated ARR supplied by the dashboard owner; the public landing page does not reproduce the datapoint, so it is never merged with company disclosures.",
+      "verification": {
+        "status": "user-confirmed-estimate",
+        "checkedAt": "2026-08-23T16:00:00.000Z"
+      }
+    },
+    {
+      "id": "anthropic-run-rate-2026-02-12",
+      "entity": "Anthropic",
+      "metric": "run_rate_revenue",
+      "value": 14,
+      "unit": "USD billion",
+      "asOf": "2026-02-12",
+      "sourceId": "anthropic-series-g",
+      "sourceUrl": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed run-rate revenue in the Series G financing announcement.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-valuation-2026-02-12",
+      "entity": "Anthropic",
+      "metric": "post_money_valuation",
+      "value": 380,
+      "unit": "USD billion",
+      "asOf": "2026-02-12",
+      "sourceId": "anthropic-series-g",
+      "sourceUrl": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed post-money valuation in the Series G financing announcement.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-financing-2026-02-12",
+      "entity": "Anthropic",
+      "metric": "equity_financing_amount",
+      "value": 30,
+      "unit": "USD billion",
+      "asOf": "2026-02-12",
+      "sourceId": "anthropic-series-g",
+      "sourceUrl": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed Series G equity financing amount.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-run-rate-2026-05-28",
+      "entity": "Anthropic",
+      "metric": "run_rate_revenue",
+      "value": 47,
+      "unit": "USD billion",
+      "asOf": "2026-05-28",
+      "sourceId": "anthropic-run-rate",
+      "sourceUrl": "https://www.anthropic.com/news/series-h",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed run-rate revenue in the Series H financing announcement.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-valuation-2026-05-28",
+      "entity": "Anthropic",
+      "metric": "post_money_valuation",
+      "value": 965,
+      "unit": "USD billion",
+      "asOf": "2026-05-28",
+      "sourceId": "anthropic-run-rate",
+      "sourceUrl": "https://www.anthropic.com/news/series-h",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed post-money valuation in the Series H financing announcement.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-financing-2026-05-28",
+      "entity": "Anthropic",
+      "metric": "equity_financing_amount",
+      "value": 65,
+      "unit": "USD billion",
+      "asOf": "2026-05-28",
+      "sourceId": "anthropic-run-rate",
+      "sourceUrl": "https://www.anthropic.com/news/series-h",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed Series H equity financing amount.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-arr-2023",
+      "entity": "OpenAI",
+      "metric": "arr",
+      "value": 2,
+      "unit": "USD billion",
+      "asOf": "2023-12-31",
+      "sourceId": "openai-arr-history",
+      "sourceUrl": "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed annual recurring revenue for 2023.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-arr-2024",
+      "entity": "OpenAI",
+      "metric": "arr",
+      "value": 6,
+      "unit": "USD billion",
+      "asOf": "2024-12-31",
+      "sourceId": "openai-arr-history",
+      "sourceUrl": "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed annual recurring revenue for 2024.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-arr-2025",
+      "entity": "OpenAI",
+      "metric": "arr",
+      "value": 20,
+      "unit": "USD billion lower bound",
+      "asOf": "2025-12-31",
+      "sourceId": "openai-arr-history",
+      "sourceUrl": "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company disclosed ARR as greater than USD 20 billion; the dashboard stores the stated threshold and flags it as a lower bound.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-valuation-2026-03-31",
+      "entity": "OpenAI",
+      "metric": "post_money_valuation",
+      "value": 852,
+      "unit": "USD billion",
+      "asOf": "2026-03-31",
+      "sourceId": "openai-valuation",
+      "sourceUrl": "https://openai.com/index/accelerating-the-next-phase-ai/",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed post-money valuation for the financing round.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-financing-2026-03-31",
+      "entity": "OpenAI",
+      "metric": "committed_capital",
+      "value": 122,
+      "unit": "USD billion",
+      "asOf": "2026-03-31",
+      "sourceId": "openai-valuation",
+      "sourceUrl": "https://openai.com/index/accelerating-the-next-phase-ai/",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed committed capital in the latest financing round.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-gpt-5-6-sol-short-price-2026-08-24", "entity": "OpenAI", "metric": "token_api_price",
+      "value": "USD 5 input / 0.5 cache read / 6.25 cache write / 30 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "openai-pricing", "sourceUrl": "https://platform.openai.com/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "OpenAI official Standard tier price for GPT-5.6 Sol at the short-context tier; each price is retained in the original USD per-million-token unit.",
+      "dimensions": { "vendor": "OpenAI", "model": "GPT 5.6 Sol", "generation": "GPT 5.6", "currentGeneration": true, "contextTier": "short", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 5, "cacheReadPrice": 0.5, "cacheWritePrice": 6.25, "outputPrice": 30 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-gpt-5-6-sol-long-price-2026-08-24", "entity": "OpenAI", "metric": "token_api_price",
+      "value": "USD 10 input / 1 cache read / 12.5 cache write / 45 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "openai-pricing", "sourceUrl": "https://platform.openai.com/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "OpenAI official Standard tier price for GPT-5.6 Sol at the long-context tier; each price is retained in the original USD per-million-token unit.",
+      "dimensions": { "vendor": "OpenAI", "model": "GPT 5.6 Sol", "generation": "GPT 5.6", "currentGeneration": true, "contextTier": "long", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 10, "cacheReadPrice": 1, "cacheWritePrice": 12.5, "outputPrice": 45 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-fable-5-price-2026-08-24", "entity": "Anthropic", "metric": "token_api_price",
+      "value": "USD 10 input / 1 cache read / 12.5 cache write / 50 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "anthropic-pricing", "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official public API price table; original USD per-million-token units retained.",
+      "dimensions": { "vendor": "Anthropic", "model": "Claude Fable 5", "generation": "Claude Fable 5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 10, "cacheReadPrice": 1, "cacheWritePrice": 12.5, "outputPrice": 50 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-mythos-5-price-2026-08-24", "entity": "Anthropic", "metric": "token_api_price",
+      "value": "USD 10 input / 1 cache read / 12.5 cache write / 50 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "anthropic-pricing", "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official public API price table; limited-availability label is preserved in the model name.",
+      "dimensions": { "vendor": "Anthropic", "model": "Claude Mythos 5 (limited availability)", "generation": "Claude Mythos 5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 10, "cacheReadPrice": 1, "cacheWritePrice": 12.5, "outputPrice": 50 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-opus-5-price-2026-08-24", "entity": "Anthropic", "metric": "token_api_price",
+      "value": "USD 5 input / 0.5 cache read / 6.25 cache write / 25 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "anthropic-pricing", "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official public API price table; original USD per-million-token units retained.",
+      "dimensions": { "vendor": "Anthropic", "model": "Claude Opus 5", "generation": "Claude Opus 5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 5, "cacheReadPrice": 0.5, "cacheWritePrice": 6.25, "outputPrice": 25 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-sonnet-5-price-2026-08-24", "entity": "Anthropic", "metric": "token_api_price",
+      "value": "USD 2 input / 0.2 cache read / 2.5 cache write / 10 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "anthropic-pricing", "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official public API price table; original USD per-million-token units retained.",
+      "dimensions": { "vendor": "Anthropic", "model": "Claude Sonnet 5", "generation": "Claude Sonnet 5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 2, "cacheReadPrice": 0.2, "cacheWritePrice": 2.5, "outputPrice": 10 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-haiku-4-5-price-2026-08-24", "entity": "Anthropic", "metric": "token_api_price",
+      "value": "USD 1 input / 0.1 cache read / 1.25 cache write / 5 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "anthropic-pricing", "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official public API price table; current small-model generation retained alongside the Claude 5 family.",
+      "dimensions": { "vendor": "Anthropic", "model": "Claude Haiku 4.5", "generation": "Claude Haiku 4.5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 1, "cacheReadPrice": 0.1, "cacheWritePrice": 1.25, "outputPrice": 5 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "gemini-3-1-pro-short-price-2026-08-24", "entity": "Gemini", "metric": "token_api_price",
+      "value": "USD 2 input / 0.2 cache / 12 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "gemini-pricing", "sourceUrl": "https://ai.google.dev/gemini-api/docs/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Google official paid-tier price for Gemini 3.1 Pro prompts up to 200K tokens; cache price is stored as cache-read price.",
+      "dimensions": { "vendor": "Gemini", "model": "Gemini 3.1 Pro", "generation": "Gemini 3.1", "currentGeneration": true, "contextTier": "≤200K", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 2, "cacheReadPrice": 0.2, "cacheWritePrice": null, "outputPrice": 12 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "gemini-3-1-pro-long-price-2026-08-24", "entity": "Gemini", "metric": "token_api_price",
+      "value": "USD 4 input / 0.4 cache / 18 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "gemini-pricing", "sourceUrl": "https://ai.google.dev/gemini-api/docs/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Google official paid-tier price for Gemini 3.1 Pro prompts above 200K tokens; cache price is stored as cache-read price.",
+      "dimensions": { "vendor": "Gemini", "model": "Gemini 3.1 Pro", "generation": "Gemini 3.1", "currentGeneration": true, "contextTier": ">200K", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 4, "cacheReadPrice": 0.4, "cacheWritePrice": null, "outputPrice": 18 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "zhipu-glm-5-2-price-unavailable-2026-08-24", "entity": "智谱", "metric": "token_api_price", "value": null, "unit": "not disclosed", "asOf": "2026-08-24",
+      "sourceId": "zhipu-models", "sourceUrl": "https://docs.bigmodel.cn/cn/guide/start/model-overview", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "The official model overview was checked for the latest GLM-5.2 generation, but no reproducible public token price table was available on the checked page.",
+      "dimensions": { "vendor": "智谱", "model": "GLM-5.2", "generation": "GLM-5.2", "currentGeneration": true },
+      "verification": { "status": "unavailable", "checkedAt": "2026-08-23T16:00:00.000Z", "note": "GLM-5.2 最新代已确认；官网检查页未公开可复核的 Token 单价，页面不得用旧代价格替代。" }
+    },
+    {
+      "id": "minimax-m2-7-price-2026-08-24", "entity": "MiniMax", "metric": "token_api_price",
+      "value": "CNY 2.1 input / 0.42 cache read / 2.625 cache write / 8.4 output", "unit": "CNY per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "minimax-pricing", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-paygo", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiniMax official pay-as-you-go price table for MiniMax M2.7; original CNY per-million-token units retained.",
+      "dimensions": { "vendor": "MiniMax", "model": "MiniMax-M2.7", "generation": "MiniMax M2.7", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "CNY", "region": "China", "priceUnit": "per_million_tokens", "inputPrice": 2.1, "cacheReadPrice": 0.42, "cacheWritePrice": 2.625, "outputPrice": 8.4 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "kimi-k3-price-2026-08-24", "entity": "Kimi", "metric": "token_api_price",
+      "value": "USD 3 cache miss/input / 0.3 cache hit / 15 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "kimi-pricing", "sourceUrl": "https://platform.kimi.ai/docs/pricing/chat-k3.md", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Kimi official K3 Markdown price table; cache miss is stored as input price and cache hit as cache-read price.",
+      "dimensions": { "vendor": "Kimi", "model": "Kimi K3", "generation": "K3", "currentGeneration": true, "contextTier": "1M context", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 3, "cacheReadPrice": 0.3, "cacheWritePrice": null, "outputPrice": 15 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "deepseek-v4-flash-peak-price-2026-08-24", "entity": "DeepSeek", "metric": "token_api_price",
+      "value": "USD 0.44 cache miss/input / 0.014 cache hit / 1.32 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "deepseek-pricing", "sourceUrl": "https://api-docs.deepseek.com/quick_start/pricing/", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "DeepSeek official peak-period V4 Flash price; off-peak discounts are described in the note rather than blended into the standard row.",
+      "dimensions": { "vendor": "DeepSeek", "model": "DeepSeek V4 Flash 0731", "generation": "DeepSeek V4", "currentGeneration": true, "contextTier": "1M context", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 0.44, "cacheReadPrice": 0.014, "cacheWritePrice": null, "outputPrice": 1.32, "note": "官网另列低峰价：cache hit 0.007、cache miss 0.22、output 0.66 USD / 1M Tokens。" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "deepseek-v4-pro-peak-price-2026-08-24", "entity": "DeepSeek", "metric": "token_api_price",
+      "value": "USD 1.32 cache miss/input / 0.044 cache hit / 3.96 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "deepseek-pricing", "sourceUrl": "https://api-docs.deepseek.com/quick_start/pricing/", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "DeepSeek official peak-period V4 Pro price; off-peak discounts are described in the note rather than blended into the standard row.",
+      "dimensions": { "vendor": "DeepSeek", "model": "DeepSeek V4 Pro 0813", "generation": "DeepSeek V4", "currentGeneration": true, "contextTier": "1M context", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 1.32, "cacheReadPrice": 0.044, "cacheWritePrice": null, "outputPrice": 3.96, "note": "官网另列低峰价：cache hit 0.022、cache miss 0.66、output 1.98 USD / 1M Tokens。" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-v2-5-pro-china-price-2026-08-24", "entity": "MiMo", "metric": "token_api_price",
+      "value": "CNY 3 cache miss/input / 0.025 cache hit / 6 output", "unit": "CNY per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "mimo-pricing", "sourceUrl": "https://mimo.mi.com/docs/zh-CN/price/pay-as-you-go", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official mainland-China pay-as-you-go price for mimo-v2.5-pro; cache miss is stored as input price.",
+      "dimensions": { "vendor": "MiMo", "model": "MiMo V2.5 Pro", "generation": "MiMo V2.5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "CNY", "region": "China", "priceUnit": "per_million_tokens", "inputPrice": 3, "cacheReadPrice": 0.025, "cacheWritePrice": null, "outputPrice": 6 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-v2-5-pro-global-price-2026-08-24", "entity": "MiMo", "metric": "token_api_price",
+      "value": "USD 0.435 cache miss/input / 0.0036 cache hit / 0.87 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "mimo-pricing", "sourceUrl": "https://mimo.mi.com/docs/zh-CN/price/pay-as-you-go", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official overseas pay-as-you-go price for mimo-v2.5-pro; cache miss is stored as input price.",
+      "dimensions": { "vendor": "MiMo", "model": "MiMo V2.5 Pro", "generation": "MiMo V2.5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 0.435, "cacheReadPrice": 0.0036, "cacheWritePrice": null, "outputPrice": 0.87 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "qwen3-8-max-beijing-price-2026-08-24", "entity": "Qwen", "metric": "token_api_price",
+      "value": "CNY 12 input / 1.5 cache hit / 15 cache create / 36 output", "unit": "CNY per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "qwen-pricing", "sourceUrl": "https://help.aliyun.com/zh/model-studio/qwen3-8-max", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Alibaba Cloud Model Studio official Beijing-region price for qwen3.8-max; original CNY per-million-token units retained.",
+      "dimensions": { "vendor": "Qwen", "model": "Qwen3.8-Max", "generation": "Qwen3.8", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "CNY", "region": "Beijing", "priceUnit": "per_million_tokens", "inputPrice": 12, "cacheReadPrice": 1.5, "cacheWritePrice": 15, "outputPrice": 36 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "kling-3-video-720p-price-2026-08-24", "entity": "Kling", "metric": "video_api_price", "value": 0.084, "unit": "USD per second", "asOf": "2026-08-24",
+      "sourceId": "kling-pricing", "sourceUrl": "https://kling.ai/document-api/pricing/base/video", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Kling official API base-video price for Kling 3.0 without native audio at 720p; price is billed per generated second.",
+      "dimensions": { "vendor": "Kling", "model": "Kling 3.0", "mode": "无原生音频", "resolution": "720p", "durationTier": "按生成秒数", "pricingMode": "fixed", "price": 0.084, "currency": "USD", "priceUnit": "per_second", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "kling-3-video-1080p-price-2026-08-24", "entity": "Kling", "metric": "video_api_price", "value": 0.112, "unit": "USD per second", "asOf": "2026-08-24",
+      "sourceId": "kling-pricing", "sourceUrl": "https://kling.ai/document-api/pricing/base/video", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Kling official API base-video price for Kling 3.0 without native audio at 1080p; price is billed per generated second.",
+      "dimensions": { "vendor": "Kling", "model": "Kling 3.0", "mode": "无原生音频", "resolution": "1080p", "durationTier": "按生成秒数", "pricingMode": "fixed", "price": 0.112, "currency": "USD", "priceUnit": "per_second", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "kling-3-video-4k-price-2026-08-24", "entity": "Kling", "metric": "video_api_price", "value": 0.42, "unit": "USD per second", "asOf": "2026-08-24",
+      "sourceId": "kling-pricing", "sourceUrl": "https://kling.ai/document-api/pricing/base/video", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Kling official API base-video price for Kling 3.0 without native audio at 4K; price is billed per generated second.",
+      "dimensions": { "vendor": "Kling", "model": "Kling 3.0", "mode": "无原生音频", "resolution": "4K", "durationTier": "按生成秒数", "pricingMode": "fixed", "price": 0.42, "currency": "USD", "priceUnit": "per_second", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "seedance-2-resource-package-price-2026-08-24", "entity": "Seedance", "metric": "video_api_price", "value": 28, "unit": "CNY per 1M tokens effective resource-package price", "asOf": "2026-08-24",
+      "sourceId": "seedance-pricing", "sourceUrl": "https://www.volcengine.com/activity/seedance2", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Volcengine official Seedance 2.0 resource packages list CNY 196 for 7M tokens and CNY 280 for 10M tokens; both imply CNY 28 per 1M package tokens. This is not presented as a pay-as-you-go per-video API rate.",
+      "dimensions": { "vendor": "Seedance", "model": "Seedance 2.0", "mode": "资源包有效价", "resolution": "多档", "durationTier": "按 Token 资源包", "pricingMode": "fixed", "price": 28, "currency": "CNY", "priceUnit": "per_million_tokens", "region": "China", "note": "资源包有效 Token 价；不是按条视频的 PAYG 单价。" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "minimax-hailuo-2-3-768p-6s-price-2026-08-24", "entity": "MiniMax", "metric": "video_api_price", "value": 2, "unit": "CNY per video", "asOf": "2026-08-24",
+      "sourceId": "minimax-pricing", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-paygo", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiniMax official pay-as-you-go video table for Hailuo 2.3 text-to-video or image-to-video, 768p and 6 seconds.",
+      "dimensions": { "vendor": "MiniMax", "model": "MiniMax-Hailuo-2.3", "mode": "文生/图生视频", "resolution": "768p", "durationTier": "6 秒", "durationSeconds": 6, "pricingMode": "fixed", "price": 2, "currency": "CNY", "priceUnit": "per_video", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-codex-plus-plan-2026-08-24", "entity": "OpenAI Codex", "metric": "coding_plan_price", "value": 20, "unit": "USD per month", "asOf": "2026-08-24",
+      "sourceId": "openai-codex-plan", "sourceUrl": "https://openai.com/chatgpt/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "OpenAI official ChatGPT Plus subscription price; Codex access is included in the plan.",
+      "dimensions": { "vendor": "OpenAI", "plan": "ChatGPT Plus（含 Codex）", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 20, "annualPrice": null, "allowanceText": "Codex included; usage limits follow the official plan.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-codex-pro-plan-2026-08-24", "entity": "OpenAI Codex", "metric": "coding_plan_price", "value": 200, "unit": "USD per month", "asOf": "2026-08-24",
+      "sourceId": "openai-codex-plan", "sourceUrl": "https://openai.com/chatgpt/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "OpenAI official ChatGPT Pro subscription price; Codex access is included in the plan.",
+      "dimensions": { "vendor": "OpenAI", "plan": "ChatGPT Pro（含 Codex）", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 200, "annualPrice": null, "allowanceText": "Codex included; usage limits follow the official plan.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-codex-business-plan-2026-08-24", "entity": "OpenAI Codex", "metric": "coding_plan_price", "value": "USD 30 monthly or USD 300 annually", "unit": "USD per seat", "asOf": "2026-08-24",
+      "sourceId": "openai-codex-plan", "sourceUrl": "https://openai.com/chatgpt/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "OpenAI official ChatGPT Business price: USD 30 per seat monthly or USD 25 per seat per month when billed annually; Codex included.",
+      "dimensions": { "vendor": "OpenAI", "plan": "ChatGPT Business（含 Codex）", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 30, "annualPrice": 300, "allowanceText": "Per seat; annual price is USD 25 × 12.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-claude-code-pro-plan-2026-08-24", "entity": "Claude Code", "metric": "coding_plan_price", "value": "USD 20 monthly or USD 204 annually", "unit": "USD per user", "asOf": "2026-08-24",
+      "sourceId": "anthropic-claude-code-plan", "sourceUrl": "https://claude.com/product/claude-code", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official Claude Pro price with Claude Code access: USD 20 monthly or USD 17 per month billed annually.",
+      "dimensions": { "vendor": "Anthropic", "plan": "Claude Pro（含 Claude Code）", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 20, "annualPrice": 204, "allowanceText": "Claude Code included.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-claude-code-max5-plan-2026-08-24", "entity": "Claude Code", "metric": "coding_plan_price", "value": 100, "unit": "USD per month", "asOf": "2026-08-24",
+      "sourceId": "anthropic-claude-code-plan", "sourceUrl": "https://claude.com/product/claude-code", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official Claude Max 5× price with Claude Code access.",
+      "dimensions": { "vendor": "Anthropic", "plan": "Claude Max 5×", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 100, "annualPrice": null, "allowanceText": "5× Pro usage; Claude Code included.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-claude-code-max20-plan-2026-08-24", "entity": "Claude Code", "metric": "coding_plan_price", "value": 200, "unit": "USD per month", "asOf": "2026-08-24",
+      "sourceId": "anthropic-claude-code-plan", "sourceUrl": "https://claude.com/product/claude-code", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official Claude Max 20× price with Claude Code access.",
+      "dimensions": { "vendor": "Anthropic", "plan": "Claude Max 20×", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 200, "annualPrice": null, "allowanceText": "20× Pro usage; Claude Code included.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "gemini-code-assist-standard-plan-2026-08-24", "entity": "Gemini Code Assist", "metric": "coding_plan_price", "value": "USD 22.80 monthly or USD 228 annually", "unit": "USD per user", "asOf": "2026-08-24",
+      "sourceId": "gemini-code-assist-plan", "sourceUrl": "https://cloud.google.com/products/gemini/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Google official hourly commitment rates converted using 730 hours per month: Standard monthly commitment USD 0.031232877/hour and annual commitment USD 0.026027397/hour.",
+      "dimensions": { "vendor": "Gemini", "plan": "Gemini Code Assist Standard", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 22.8, "annualPrice": 228, "allowanceText": "Derived from official commitment hourly rates using 730 h/month.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "gemini-code-assist-enterprise-plan-2026-08-24", "entity": "Gemini Code Assist", "metric": "coding_plan_price", "value": "USD 54 monthly or USD 540 annually", "unit": "USD per user", "asOf": "2026-08-24",
+      "sourceId": "gemini-code-assist-plan", "sourceUrl": "https://cloud.google.com/products/gemini/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Google official hourly commitment rates converted using 730 hours per month: Enterprise monthly commitment USD 0.073972603/hour and annual commitment USD 0.061643836/hour.",
+      "dimensions": { "vendor": "Gemini", "plan": "Gemini Code Assist Enterprise", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 54, "annualPrice": 540, "allowanceText": "Derived from official commitment hourly rates using 730 h/month.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "zhipu-coding-lite-plan-2026-08-24", "entity": "GLM Coding Plan", "metric": "coding_plan_price", "value": 49, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "zhipu-coding-plan", "sourceUrl": "https://open.bigmodel.cn/glm-coding", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Zhipu official individual GLM Coding Plan monthly price; quarterly promotion is retained in the allowance note rather than treated as an annual plan.",
+      "dimensions": { "vendor": "智谱", "plan": "GLM Coding Lite", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 49, "annualPrice": null, "allowanceText": "季度价月均 44.1 元。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "zhipu-coding-pro-plan-2026-08-24", "entity": "GLM Coding Plan", "metric": "coding_plan_price", "value": 149, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "zhipu-coding-plan", "sourceUrl": "https://open.bigmodel.cn/glm-coding", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Zhipu official individual GLM Coding Plan monthly price; quarterly promotion is retained in the allowance note.",
+      "dimensions": { "vendor": "智谱", "plan": "GLM Coding Pro", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 149, "annualPrice": null, "allowanceText": "季度价月均 134.1 元。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "zhipu-coding-max-plan-2026-08-24", "entity": "GLM Coding Plan", "metric": "coding_plan_price", "value": 469, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "zhipu-coding-plan", "sourceUrl": "https://open.bigmodel.cn/glm-coding", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Zhipu official individual GLM Coding Plan monthly price; quarterly promotion is retained in the allowance note.",
+      "dimensions": { "vendor": "智谱", "plan": "GLM Coding Max", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 469, "annualPrice": null, "allowanceText": "季度价月均 422.1 元。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "minimax-coding-plus-plan-2026-08-24", "entity": "MiniMax Coding Plan", "metric": "coding_plan_price", "value": 49, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "minimax-coding-plan", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiniMax official Token Plan monthly price.",
+      "dimensions": { "vendor": "MiniMax", "plan": "Plus", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 49, "annualPrice": null, "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "minimax-coding-max-plan-2026-08-24", "entity": "MiniMax Coding Plan", "metric": "coding_plan_price", "value": 119, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "minimax-coding-plan", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiniMax official Token Plan monthly price.",
+      "dimensions": { "vendor": "MiniMax", "plan": "Max", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 119, "annualPrice": null, "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "minimax-coding-ultra-plan-2026-08-24", "entity": "MiniMax Coding Plan", "metric": "coding_plan_price", "value": 469, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "minimax-coding-plan", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiniMax official Token Plan monthly price.",
+      "dimensions": { "vendor": "MiniMax", "plan": "Ultra", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 469, "annualPrice": null, "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-token-lite-plan-2026-08-24", "entity": "MiMo Token Plan", "metric": "coding_plan_price", "value": 39, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "mimo-token-plan", "sourceUrl": "https://mimo.mi.com/docs/en-US/price/token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official Token Plan monthly price and current monthly token-credit allowance.",
+      "dimensions": { "vendor": "MiMo", "plan": "Token Plan Lite", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 39, "annualPrice": null, "allowanceText": "每月 41 亿 Token Credits；海外官网等值 USD 6。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-token-standard-plan-2026-08-24", "entity": "MiMo Token Plan", "metric": "coding_plan_price", "value": 99, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "mimo-token-plan", "sourceUrl": "https://mimo.mi.com/docs/en-US/price/token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official Token Plan monthly price and current monthly token-credit allowance.",
+      "dimensions": { "vendor": "MiMo", "plan": "Token Plan Standard", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 99, "annualPrice": null, "allowanceText": "每月 110 亿 Token Credits；海外官网等值 USD 16。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-token-pro-plan-2026-08-24", "entity": "MiMo Token Plan", "metric": "coding_plan_price", "value": 329, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "mimo-token-plan", "sourceUrl": "https://mimo.mi.com/docs/en-US/price/token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official Token Plan monthly price and current monthly token-credit allowance.",
+      "dimensions": { "vendor": "MiMo", "plan": "Token Plan Pro", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 329, "annualPrice": null, "allowanceText": "每月 380 亿 Token Credits；海外官网等值 USD 50。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-token-max-plan-2026-08-24", "entity": "MiMo Token Plan", "metric": "coding_plan_price", "value": 659, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "mimo-token-plan", "sourceUrl": "https://mimo.mi.com/docs/en-US/price/token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official Token Plan monthly price and current monthly token-credit allowance.",
+      "dimensions": { "vendor": "MiMo", "plan": "Token Plan Max", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 659, "annualPrice": null, "allowanceText": "每月 820 亿 Token Credits；海外官网等值 USD 100。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "qwen-code-plan-unavailable-2026-08-24", "entity": "Qwen Code", "metric": "coding_plan_price", "value": null, "unit": "not disclosed", "asOf": "2026-08-24",
+      "sourceId": "qwen-code-plan", "sourceUrl": "https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Qwen Code official authentication documentation was checked after free OAuth access ended; the checked page refers users to Alibaba Cloud Coding Plan but does not disclose a reproducible independent subscription price.",
+      "dimensions": { "vendor": "Qwen", "plan": "Qwen Code / Alibaba Cloud Coding Plan", "pricingMode": "unpublished", "allowanceText": "官网确认接入方式，未在检查页公开可复核套餐价。", "region": "China" },
+      "verification": { "status": "unavailable", "checkedAt": "2026-08-23T16:00:00.000Z", "note": "未找到独立公开套餐价；不得以 API Token 单价冒充 Coding Plan。" }
+    },
+    {
+      "id": "kimi-coding-plan-unavailable-2026-08-24", "entity": "Kimi Code", "metric": "coding_plan_price", "value": null, "unit": "not disclosed", "asOf": "2026-08-24",
+      "sourceId": "kimi-coding-plan", "sourceUrl": "https://platform.kimi.ai/docs/pricing/chat-k27-code", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Kimi official coding-model pricing page was checked; it exposes model usage pricing rather than a distinct fixed-price Coding Plan subscription.",
+      "dimensions": { "vendor": "Kimi", "plan": "Kimi Coding subscription", "pricingMode": "unpublished", "allowanceText": "官网公开模型用量价，未公开独立固定 Coding Plan。", "region": "global" },
+      "verification": { "status": "unavailable", "checkedAt": "2026-08-23T16:00:00.000Z", "note": "未发现独立固定 Coding Plan；页面明确显示未公开，不用 API 价替代。" }
+    },
+    {
+      "id": "deepseek-coding-plan-unavailable-2026-08-24", "entity": "DeepSeek Coding", "metric": "coding_plan_price", "value": null, "unit": "not disclosed", "asOf": "2026-08-24",
+      "sourceId": "deepseek-coding-plan", "sourceUrl": "https://api-docs.deepseek.com/quick_start/pricing/", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "DeepSeek official pricing documentation was checked; it publishes API token pricing but no distinct fixed-price Coding Plan subscription.",
+      "dimensions": { "vendor": "DeepSeek", "plan": "DeepSeek Coding subscription", "pricingMode": "unpublished", "allowanceText": "官网仅公开 API Token 价格，未公开独立固定 Coding Plan。", "region": "global" },
+      "verification": { "status": "unavailable", "checkedAt": "2026-08-23T16:00:00.000Z", "note": "未发现独立固定 Coding Plan；不得把 API Token 价当成套餐价。" }
+    },
+    {
+      "id": "aa-index-claude-opus-5-max-2026-08-24",
+      "entity": "Claude Opus 5 max",
+      "metric": "artificial_analysis_intelligence_index",
+      "value": 63.0532,
+      "unit": "index points",
+      "asOf": "2026-08-24",
+      "sourceId": "artificial-analysis-index",
+      "sourceUrl": "https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index",
+      "sourceKind": "named-third-party",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Public JSON-LD dataset published on the named third-party index page; kept separate from official model-card Benchmark.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "aa-index-gpt-5-6-sol-max-2026-08-24",
+      "entity": "GPT-5.6 Sol max",
+      "metric": "artificial_analysis_intelligence_index",
+      "value": 60.9299,
+      "unit": "index points",
+      "asOf": "2026-08-24",
+      "sourceId": "artificial-analysis-index",
+      "sourceUrl": "https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index",
+      "sourceKind": "named-third-party",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Public JSON-LD dataset published on the named third-party index page; kept separate from official model-card Benchmark.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    }
+  ]
+}

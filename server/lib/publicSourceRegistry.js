@@ -130,8 +130,8 @@ export const PUBLIC_SOURCE_REGISTRY = validatePublicSourceRegistry([
   },
   {
     id: 'kimi-pricing', slice: 'pricing', entity: 'Kimi',
-    entryUrl: 'https://platform.moonshot.cn/docs/pricing/chat', allowedHosts: ['platform.moonshot.cn'],
-    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+    entryUrl: 'https://platform.kimi.ai/docs/pricing/chat-k3.md', allowedHosts: ['platform.kimi.ai'],
+    format: 'markdown', freshMs: DAY_MS, sourceKind: 'official',
   },
   {
     id: 'deepseek-pricing', slice: 'pricing', entity: 'DeepSeek',
@@ -155,7 +155,47 @@ export const PUBLIC_SOURCE_REGISTRY = validatePublicSourceRegistry([
   },
   {
     id: 'kling-pricing', slice: 'pricing', entity: 'Kling',
-    entryUrl: 'https://kling.ai/document-api/apiReference%2Fmodel%2FvideoModels', allowedHosts: ['kling.ai'],
+    entryUrl: 'https://kling.ai/document-api/pricing/base/video', allowedHosts: ['kling.ai'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
+    id: 'openai-codex-plan', slice: 'pricing', entity: 'OpenAI Codex',
+    entryUrl: 'https://openai.com/chatgpt/pricing', allowedHosts: ['openai.com'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
+    id: 'anthropic-claude-code-plan', slice: 'pricing', entity: 'Claude Code',
+    entryUrl: 'https://claude.com/product/claude-code', allowedHosts: ['claude.com'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
+    id: 'gemini-code-assist-plan', slice: 'pricing', entity: 'Gemini Code Assist',
+    entryUrl: 'https://cloud.google.com/products/gemini/pricing', allowedHosts: ['cloud.google.com'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
+    id: 'zhipu-coding-plan', slice: 'pricing', entity: 'GLM Coding Plan',
+    entryUrl: 'https://open.bigmodel.cn/glm-coding', allowedHosts: ['open.bigmodel.cn'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
+    id: 'mimo-token-plan', slice: 'pricing', entity: 'MiMo Token Plan',
+    entryUrl: 'https://mimo.mi.com/docs/en-US/price/token-plan', allowedHosts: ['mimo.mi.com'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
+    id: 'qwen-code-plan', slice: 'pricing', entity: 'Qwen Code',
+    entryUrl: 'https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/', allowedHosts: ['qwenlm.github.io'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
+    id: 'kimi-coding-plan', slice: 'pricing', entity: 'Kimi Code',
+    entryUrl: 'https://platform.kimi.ai/docs/pricing/chat-k27-code', allowedHosts: ['platform.kimi.ai'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
+    id: 'deepseek-coding-plan', slice: 'pricing', entity: 'DeepSeek Coding',
+    entryUrl: 'https://api-docs.deepseek.com/quick_start/pricing/', allowedHosts: ['api-docs.deepseek.com'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
   },
   {

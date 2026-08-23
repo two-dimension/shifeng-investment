@@ -48,6 +48,25 @@ test('official Chinese pricing adapter parses CNY per-million token rows without
   assert.equal(parsed.token[1].currentGeneration, false);
 });
 
+test('official Kimi markdown adapter parses the latest K3 cache-hit, cache-miss, and output prices', () => {
+  const source = definition('kimi-pricing');
+  const adapter = createOfficialPricingAdapter(source);
+  const parsed = adapter.parsePricing({
+    ...document(readFixture('kimi-k3-pricing.md'), source.entryUrl),
+    contentType: 'text/markdown',
+  });
+
+  assert.equal(parsed.token.length, 1);
+  assert.deepEqual({
+    model: parsed.token[0].model,
+    currency: parsed.token[0].currency,
+    input: parsed.token[0].inputPrice,
+    cache: parsed.token[0].cacheReadPrice,
+    output: parsed.token[0].outputPrice,
+    current: parsed.token[0].currentGeneration,
+  }, { model: 'Kimi K3', currency: 'USD', input: 3, cache: 0.3, output: 15, current: true });
+});
+
 test('video and Coding Plan adapters preserve non-comparable units and inquiry-only rows', () => {
   const videoSource = definition('seedance-pricing');
   const videoAdapter = createOfficialPricingAdapter(videoSource);
@@ -96,4 +115,32 @@ test('collector isolates failed official pages, keeps history, and emits current
   assert.equal(result.payload.modelPricing.token.some((row) => row.model === 'GPT 5.5'), false);
   assert.equal(result.payload.modelPricing.tokenHistory.some((row) => row.model === 'GPT 5.5'), true);
   assert.equal(result.payload.modelPricing.sourceReports.find((row) => row.sourceId === 'minimax-pricing').status, 'error');
+});
+
+test('collector retains verified ledger coverage notes when an accessible official page yields no rows', async () => {
+  const source = definition('zhipu-models');
+  const collector = createAiPricingCollector({
+    registry: [source],
+    documentClient: {
+      async fetchDocument() {
+        return document('<main><h1>GLM-5.2</h1><p>模型总览</p></main>', source.entryUrl);
+      },
+    },
+  });
+  const result = await collector({
+    previous: {
+      modelPricing: {
+        sourceReports: [{
+          sourceId: 'zhipu-models', status: 'unavailable', rows: 0,
+          message: 'GLM-5.2 最新代已确认；官网未公开可复核 Token 单价。',
+        }],
+      },
+    },
+    generatedAt: '2026-08-23T01:02:03.000Z',
+  });
+
+  const report = result.payload.modelPricing.sourceReports[0];
+  assert.equal(report.status, 'ready');
+  assert.equal(report.rows, 0);
+  assert.match(report.message, /未公开可复核/);
 });

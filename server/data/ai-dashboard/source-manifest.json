@@ -1,0 +1,684 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-23T16:36:53.222Z",
+  "sources": [
+    {
+      "id": "artificial-analysis-index",
+      "slice": "artificialAnalysis",
+      "entity": "Artificial Analysis",
+      "sourceKind": "named-third-party",
+      "entryUrl": "https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index",
+      "allowedHosts": [
+        "artificialanalysis.ai"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "benchmark:Anthropic",
+      "slice": "benchmarks",
+      "entity": "Anthropic",
+      "sourceKind": "official",
+      "entryUrl": "https://anthropic.com/claude-opus-5-system-card",
+      "allowedHosts": [
+        "www.anthropic.com",
+        "anthropic.com",
+        "www-cdn.anthropic.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "benchmark:DeepSeek",
+      "slice": "benchmarks",
+      "entity": "DeepSeek",
+      "sourceKind": "official",
+      "entryUrl": "https://github.com/deepseek-ai",
+      "allowedHosts": [
+        "github.com",
+        "raw.githubusercontent.com",
+        "api.github.com"
+      ],
+      "status": "discovery"
+    },
+    {
+      "id": "benchmark:Gemini",
+      "slice": "benchmarks",
+      "entity": "Gemini",
+      "sourceKind": "official",
+      "entryUrl": "https://deepmind.google/models/model-cards/gemini-3-7-flash/",
+      "allowedHosts": [
+        "deepmind.google"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "benchmark:Kimi",
+      "slice": "benchmarks",
+      "entity": "Kimi",
+      "sourceKind": "official",
+      "entryUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
+      "allowedHosts": [
+        "github.com",
+        "raw.githubusercontent.com",
+        "api.github.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "benchmark:Meta",
+      "slice": "benchmarks",
+      "entity": "Meta",
+      "sourceKind": "official",
+      "entryUrl": "https://developer.meta.com/ai/models/",
+      "allowedHosts": [
+        "www.llama.com",
+        "llama.com",
+        "developer.meta.com"
+      ],
+      "status": "discovery"
+    },
+    {
+      "id": "benchmark:Mimo",
+      "slice": "benchmarks",
+      "entity": "Mimo",
+      "sourceKind": "official",
+      "entryUrl": "https://github.com/XiaomiMiMo",
+      "allowedHosts": [
+        "github.com",
+        "raw.githubusercontent.com",
+        "api.github.com"
+      ],
+      "status": "discovery"
+    },
+    {
+      "id": "benchmark:MiniMax",
+      "slice": "benchmarks",
+      "entity": "MiniMax",
+      "sourceKind": "official",
+      "entryUrl": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-M2.7/main/README.md",
+      "allowedHosts": [
+        "github.com",
+        "raw.githubusercontent.com",
+        "api.github.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "benchmark:OpenAI",
+      "slice": "benchmarks",
+      "entity": "OpenAI",
+      "sourceKind": "official",
+      "entryUrl": "https://deploymentsafety.openai.com/gpt-5-6",
+      "allowedHosts": [
+        "deploymentsafety.openai.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "benchmark:Qwen",
+      "slice": "benchmarks",
+      "entity": "Qwen",
+      "sourceKind": "official",
+      "entryUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
+      "allowedHosts": [
+        "github.com",
+        "raw.githubusercontent.com",
+        "api.github.com",
+        "huggingface.co"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "benchmark:Tencent",
+      "slice": "benchmarks",
+      "entity": "Tencent",
+      "sourceKind": "official",
+      "entryUrl": "https://raw.githubusercontent.com/Tencent-Hunyuan/Hy3/main/README.md",
+      "allowedHosts": [
+        "github.com",
+        "raw.githubusercontent.com",
+        "api.github.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "benchmark:xAI",
+      "slice": "benchmarks",
+      "entity": "xAI",
+      "sourceKind": "official",
+      "entryUrl": "https://x.ai/news/grok-4-6",
+      "allowedHosts": [
+        "x.ai",
+        "data.x.ai"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "benchmark:智谱",
+      "slice": "benchmarks",
+      "entity": "智谱",
+      "sourceKind": "official",
+      "entryUrl": "https://docs.bigmodel.cn/cn/guide/start/model-overview",
+      "allowedHosts": [
+        "docs.bigmodel.cn"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "alibaba-capital",
+      "slice": "capital",
+      "entity": "Alibaba",
+      "sourceKind": "filing",
+      "entryUrl": "https://www.alibabagroup.com/en-US/ir-filings-hkex",
+      "allowedHosts": [
+        "www.alibabagroup.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "amazon-sec",
+      "slice": "capital",
+      "entity": "Amazon",
+      "sourceKind": "filing",
+      "entryUrl": "https://data.sec.gov/submissions/CIK0001018724.json",
+      "allowedHosts": [
+        "data.sec.gov"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "anthropic-capital",
+      "slice": "capital",
+      "entity": "Anthropic",
+      "sourceKind": "official",
+      "entryUrl": "https://www.anthropic.com/news",
+      "allowedHosts": [
+        "www.anthropic.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "baidu-capital",
+      "slice": "capital",
+      "entity": "Baidu",
+      "sourceKind": "filing",
+      "entryUrl": "https://ir.baidu.com/",
+      "allowedHosts": [
+        "ir.baidu.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "coreweave-capital",
+      "slice": "capital",
+      "entity": "CoreWeave",
+      "sourceKind": "official",
+      "entryUrl": "https://investors.coreweave.com/news-events/news-releases",
+      "allowedHosts": [
+        "investors.coreweave.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "deepseek-capital",
+      "slice": "capital",
+      "entity": "DeepSeek",
+      "sourceKind": "official",
+      "entryUrl": "https://www.deepseek.com/",
+      "allowedHosts": [
+        "www.deepseek.com"
+      ],
+      "status": "discovery"
+    },
+    {
+      "id": "google-sec",
+      "slice": "capital",
+      "entity": "Google",
+      "sourceKind": "filing",
+      "entryUrl": "https://data.sec.gov/submissions/CIK0001652044.json",
+      "allowedHosts": [
+        "data.sec.gov"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "meta-sec",
+      "slice": "capital",
+      "entity": "Meta",
+      "sourceKind": "filing",
+      "entryUrl": "https://data.sec.gov/submissions/CIK0001326801.json",
+      "allowedHosts": [
+        "data.sec.gov"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "microsoft-sec",
+      "slice": "capital",
+      "entity": "Microsoft",
+      "sourceKind": "filing",
+      "entryUrl": "https://data.sec.gov/submissions/CIK0000789019.json",
+      "allowedHosts": [
+        "data.sec.gov"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "minimax-capital",
+      "slice": "capital",
+      "entity": "MiniMax",
+      "sourceKind": "official",
+      "entryUrl": "https://www.minimaxi.com/",
+      "allowedHosts": [
+        "www.minimaxi.com"
+      ],
+      "status": "discovery"
+    },
+    {
+      "id": "moonshot-capital",
+      "slice": "capital",
+      "entity": "Moonshot",
+      "sourceKind": "official",
+      "entryUrl": "https://www.moonshot.cn/",
+      "allowedHosts": [
+        "www.moonshot.cn"
+      ],
+      "status": "discovery"
+    },
+    {
+      "id": "openai-capital",
+      "slice": "capital",
+      "entity": "OpenAI",
+      "sourceKind": "official",
+      "entryUrl": "https://openai.com/news/company/",
+      "allowedHosts": [
+        "openai.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "tencent-capital",
+      "slice": "capital",
+      "entity": "Tencent",
+      "sourceKind": "filing",
+      "entryUrl": "https://www.tencent.com/en-us/investors.html",
+      "allowedHosts": [
+        "www.tencent.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "xai-capital",
+      "slice": "capital",
+      "entity": "xAI",
+      "sourceKind": "official",
+      "entryUrl": "https://x.ai/news",
+      "allowedHosts": [
+        "x.ai"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "xiaomi-capital",
+      "slice": "capital",
+      "entity": "Xiaomi",
+      "sourceKind": "filing",
+      "entryUrl": "https://ir.mi.com/",
+      "allowedHosts": [
+        "ir.mi.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "zhipu-capital",
+      "slice": "capital",
+      "entity": "智谱",
+      "sourceKind": "official",
+      "entryUrl": "https://www.zhipuai.cn/",
+      "allowedHosts": [
+        "www.zhipuai.cn"
+      ],
+      "status": "discovery"
+    },
+    {
+      "id": "aws-ec2-pricing",
+      "slice": "compute",
+      "entity": "AWS",
+      "sourceKind": "official",
+      "entryUrl": "https://aws.amazon.com/ec2/pricing/on-demand/",
+      "allowedHosts": [
+        "aws.amazon.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "azure-vm-pricing",
+      "slice": "compute",
+      "entity": "Azure",
+      "sourceKind": "official",
+      "entryUrl": "https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/",
+      "allowedHosts": [
+        "azure.microsoft.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "coreweave-pricing",
+      "slice": "compute",
+      "entity": "CoreWeave",
+      "sourceKind": "official",
+      "entryUrl": "https://www.coreweave.com/pricing",
+      "allowedHosts": [
+        "www.coreweave.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "gcp-gpu-pricing",
+      "slice": "compute",
+      "entity": "Google Cloud",
+      "sourceKind": "official",
+      "entryUrl": "https://cloud.google.com/compute/gpus-pricing",
+      "allowedHosts": [
+        "cloud.google.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "lambda-cloud-pricing",
+      "slice": "compute",
+      "entity": "Lambda",
+      "sourceKind": "official",
+      "entryUrl": "https://lambda.ai/pricing",
+      "allowedHosts": [
+        "lambda.ai"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "anthropic-run-rate",
+      "slice": "growth",
+      "entity": "Anthropic",
+      "sourceKind": "official",
+      "entryUrl": "https://www.anthropic.com/news/series-h",
+      "allowedHosts": [
+        "www.anthropic.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "anthropic-series-g",
+      "slice": "growth",
+      "entity": "Anthropic",
+      "sourceKind": "official",
+      "entryUrl": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
+      "allowedHosts": [
+        "www.anthropic.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "openai-arr-history",
+      "slice": "growth",
+      "entity": "OpenAI",
+      "sourceKind": "official",
+      "entryUrl": "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/",
+      "allowedHosts": [
+        "openai.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "openai-valuation",
+      "slice": "growth",
+      "entity": "OpenAI",
+      "sourceKind": "official",
+      "entryUrl": "https://openai.com/index/accelerating-the-next-phase-ai/",
+      "allowedHosts": [
+        "openai.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "yipit-ai-revenue",
+      "slice": "growth",
+      "entity": "AI company ARR estimates",
+      "sourceKind": "estimate",
+      "entryUrl": "https://www.yipitdata.com/",
+      "allowedHosts": [
+        "www.yipitdata.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "openrouter-rankings",
+      "slice": "openRouter",
+      "entity": "OpenRouter",
+      "sourceKind": "named-third-party",
+      "entryUrl": "https://openrouter.ai/rankings",
+      "allowedHosts": [
+        "openrouter.ai"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "anthropic-claude-code-plan",
+      "slice": "pricing",
+      "entity": "Claude Code",
+      "sourceKind": "official",
+      "entryUrl": "https://claude.com/product/claude-code",
+      "allowedHosts": [
+        "claude.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "anthropic-pricing",
+      "slice": "pricing",
+      "entity": "Anthropic",
+      "sourceKind": "official",
+      "entryUrl": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "allowedHosts": [
+        "platform.claude.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "deepseek-coding-plan",
+      "slice": "pricing",
+      "entity": "DeepSeek Coding",
+      "sourceKind": "official",
+      "entryUrl": "https://api-docs.deepseek.com/quick_start/pricing/",
+      "allowedHosts": [
+        "api-docs.deepseek.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "deepseek-pricing",
+      "slice": "pricing",
+      "entity": "DeepSeek",
+      "sourceKind": "official",
+      "entryUrl": "https://api-docs.deepseek.com/quick_start/pricing",
+      "allowedHosts": [
+        "api-docs.deepseek.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "gemini-code-assist-plan",
+      "slice": "pricing",
+      "entity": "Gemini Code Assist",
+      "sourceKind": "official",
+      "entryUrl": "https://cloud.google.com/products/gemini/pricing",
+      "allowedHosts": [
+        "cloud.google.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "gemini-pricing",
+      "slice": "pricing",
+      "entity": "Gemini",
+      "sourceKind": "official",
+      "entryUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+      "allowedHosts": [
+        "ai.google.dev"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "kimi-coding-plan",
+      "slice": "pricing",
+      "entity": "Kimi Code",
+      "sourceKind": "official",
+      "entryUrl": "https://platform.kimi.ai/docs/pricing/chat-k27-code",
+      "allowedHosts": [
+        "platform.kimi.ai"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "kimi-pricing",
+      "slice": "pricing",
+      "entity": "Kimi",
+      "sourceKind": "official",
+      "entryUrl": "https://platform.kimi.ai/docs/pricing/chat-k3.md",
+      "allowedHosts": [
+        "platform.kimi.ai"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "kling-pricing",
+      "slice": "pricing",
+      "entity": "Kling",
+      "sourceKind": "official",
+      "entryUrl": "https://kling.ai/document-api/pricing/base/video",
+      "allowedHosts": [
+        "kling.ai"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "mimo-pricing",
+      "slice": "pricing",
+      "entity": "Mimo",
+      "sourceKind": "official",
+      "entryUrl": "https://mimo.mi.com/docs/zh-CN/price/pay-as-you-go",
+      "allowedHosts": [
+        "mimo.mi.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "mimo-token-plan",
+      "slice": "pricing",
+      "entity": "MiMo Token Plan",
+      "sourceKind": "official",
+      "entryUrl": "https://mimo.mi.com/docs/en-US/price/token-plan",
+      "allowedHosts": [
+        "mimo.mi.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "minimax-coding-plan",
+      "slice": "pricing",
+      "entity": "MiniMax Coding Plan",
+      "sourceKind": "official",
+      "entryUrl": "https://platform.minimaxi.com/docs/guides/pricing-token-plan",
+      "allowedHosts": [
+        "platform.minimaxi.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "minimax-pricing",
+      "slice": "pricing",
+      "entity": "MiniMax",
+      "sourceKind": "official",
+      "entryUrl": "https://platform.minimaxi.com/docs/guides/pricing-paygo",
+      "allowedHosts": [
+        "platform.minimaxi.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "openai-codex-plan",
+      "slice": "pricing",
+      "entity": "OpenAI Codex",
+      "sourceKind": "official",
+      "entryUrl": "https://openai.com/chatgpt/pricing",
+      "allowedHosts": [
+        "openai.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "openai-pricing",
+      "slice": "pricing",
+      "entity": "OpenAI",
+      "sourceKind": "official",
+      "entryUrl": "https://platform.openai.com/pricing",
+      "allowedHosts": [
+        "platform.openai.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "qwen-code-plan",
+      "slice": "pricing",
+      "entity": "Qwen Code",
+      "sourceKind": "official",
+      "entryUrl": "https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/",
+      "allowedHosts": [
+        "qwenlm.github.io"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "qwen-pricing",
+      "slice": "pricing",
+      "entity": "Qwen",
+      "sourceKind": "official",
+      "entryUrl": "https://help.aliyun.com/zh/model-studio/model-pricing",
+      "allowedHosts": [
+        "help.aliyun.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "seedance-pricing",
+      "slice": "pricing",
+      "entity": "Seedance",
+      "sourceKind": "official",
+      "entryUrl": "https://www.volcengine.com/docs/84458/1585097",
+      "allowedHosts": [
+        "www.volcengine.com"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "zhipu-coding-plan",
+      "slice": "pricing",
+      "entity": "GLM Coding Plan",
+      "sourceKind": "official",
+      "entryUrl": "https://open.bigmodel.cn/glm-coding",
+      "allowedHosts": [
+        "open.bigmodel.cn"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "zhipu-models",
+      "slice": "pricing",
+      "entity": "智谱",
+      "sourceKind": "official",
+      "entryUrl": "https://docs.bigmodel.cn/cn/guide/start/model-overview",
+      "allowedHosts": [
+        "docs.bigmodel.cn"
+      ],
+      "status": "active"
+    }
+  ]
+}
