@@ -1,10 +1,11 @@
 import crypto from 'node:crypto';
 import express from 'express';
 import { createAiDashboardServiceFromEnv } from '../lib/aiDashboardService.js';
+import { DASHBOARD_SOURCE_KEYS } from '../lib/publicSourceRegistry.js';
 
 const COOKIE_NAME = 'ai_dashboard_session';
 const SESSION_MAX_AGE_SECONDS = 12 * 60 * 60;
-const REFRESH_SOURCES = new Set(['feishu', 'openRouter', 'benchmarks']);
+const REFRESH_SOURCES = new Set(DASHBOARD_SOURCE_KEYS);
 
 function jsonError(res, status, code, message) {
   return res.status(status).json({ success: false, error: { code, message } });
@@ -179,7 +180,7 @@ export function createAiDashboardRouter({
         res,
         400,
         'AI_DASHBOARD_INVALID_REFRESH_SOURCE',
-        '刷新范围必须是 feishu、openRouter 或 benchmarks，force 必须是布尔值',
+        `刷新范围必须是 ${DASHBOARD_SOURCE_KEYS.join('、')}，force 必须是布尔值`,
       );
     }
     const refreshOptions = hasSources || hasForce

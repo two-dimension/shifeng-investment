@@ -64,10 +64,10 @@ test('refresh forwards validated scoped sources and force to the dashboard servi
   const scoped = await fetch(`${server.baseUrl}/api/ai-dashboard/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sources: ['benchmarks'], force: false }),
+    body: JSON.stringify({ sources: ['growth', 'pricing'], force: false }),
   });
   assert.equal(scoped.status, 200);
-  assert.deepEqual(calls[0], { sources: ['benchmarks'], force: false });
+  assert.deepEqual(calls[0], { sources: ['growth', 'pricing'], force: false });
 
   const full = await fetch(`${server.baseUrl}/api/ai-dashboard/refresh`, { method: 'POST' });
   assert.equal(full.status, 200);
@@ -86,6 +86,7 @@ test('refresh rejects unknown or malformed source scopes without calling the ser
 
   for (const body of [
     { sources: ['unknown'] },
+    { sources: ['feishu'] },
     { sources: [] },
     { sources: 'benchmarks' },
     { sources: ['benchmarks'], force: 'yes' },

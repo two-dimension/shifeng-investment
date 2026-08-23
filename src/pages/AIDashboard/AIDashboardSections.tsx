@@ -642,10 +642,10 @@ function legacyMetricDefinition(key: string, models: BenchmarkModel[]): Benchmar
   return {
     key,
     label: key,
-    group: '飞书历史口径',
+    group: '厂商官网口径',
     unit: score && Number.isFinite(score.value) && Math.abs(score.value) <= 1 ? 'percent' : (score?.metric || 'number'),
     direction: score?.direction === 'lower' ? 'lower' : 'higher',
-    source: score?.source || 'feishu',
+    source: score?.source || 'official-model-card',
     sourceUrl: score?.sourceUrl,
   };
 }
@@ -684,20 +684,20 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
   return (
     <div className="ai-section-stack">
       <Alert
-        type={data.benchmarks.sourceMode === 'openrouter' ? 'info' : 'warning'}
+        type={data.benchmarks.sourceMode === 'official-model-cards' ? 'info' : 'warning'}
         showIcon
         title={`${coverage.vendors} 个厂商的最新文本模型 · ${coverage.evaluatedVendors} 个已评测 · ${coverage.metrics} 个分项`}
         description={(
           <Flex gap={8} wrap>
             <Text type="secondary">数据日期 {dateLabel(data.benchmarks.asOf)}</Text>
-            <Tag color={data.benchmarks.sourceMode === 'openrouter' ? 'blue' : 'default'}>{data.benchmarks.sourceMode === 'openrouter' ? 'OpenRouter 统一 Benchmark API' : '飞书 / 上一版'}</Tag>
+            <Tag color={data.benchmarks.sourceMode === 'official-model-cards' ? 'blue' : 'default'}>{data.benchmarks.sourceMode === 'official-model-cards' ? '厂商官网模型卡' : '等待官网模型卡同步'}</Tag>
             {refreshing && <Tag color="processing">正在检查最新数据…</Tag>}
           </Flex>
         )}
       />
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={7}>
-          <ChartCard title="各分项最强模型" extra={<Tag>排除 Fable / Mythos</Tag>}>
+          <ChartCard title="各分项最强模型">
             {Object.keys(data.benchmarks.winners).length === 0 ? <NoData description="暂无冠军摘要" /> : (
               <div className="ai-winner-list">
                 {Object.entries(data.benchmarks.winners).map(([metricKey, winners]) => {

@@ -17,7 +17,6 @@ import {
 } from 'antd';
 import {
   CloudSyncOutlined,
-  ExportOutlined,
   LockOutlined,
   LogoutOutlined,
   ReloadOutlined,
@@ -26,6 +25,7 @@ import {
 import type { AiDashboardApiResponse, AiDashboardSnapshot, SourceStatus } from './types';
 import {
   benchmarkRefreshRequest,
+  dashboardSourceEntries,
   showDashboardSessionControls,
   sourceStatusColor,
   sourceStatusLabel,
@@ -41,7 +41,7 @@ import {
 } from './AIDashboardSections';
 import './AIDashboardPanel.css';
 
-const { Title, Text, Paragraph, Link } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
 type AuthState = 'checking' | 'required' | 'authenticated' | 'error';
 
@@ -229,8 +229,8 @@ export const AIDashboardPanel: React.FC = () => {
   if (auth === 'error' || (error && !data)) return <><Result status="error" title="AI 看板暂时不可用" subTitle={error} extra={<Button type="primary" onClick={() => void load()}>重试</Button>} />{messageContext}</>;
   if (!data) return null;
 
-  const feishuUrl = data.sources.feishu.url || 'https://xcn0zaydz11m.feishu.cn/sheets/F9W3s5BBEhRRV8tdZvCchEAfnCf?sheet=0rbUAO&table=tblzvLEtWP2TaYtF&view=vew0i9u3MV';
-  const hasStaleSource = data.sources.feishu.stale || data.sources.openRouter.stale || data.sources.benchmarks.stale;
+  const sourceEntries = dashboardSourceEntries(data.sources);
+  const hasStaleSource = sourceEntries.some(({ source }) => source.stale);
 
   return (
     <div className="ai-dashboard">
@@ -241,16 +241,13 @@ export const AIDashboardPanel: React.FC = () => {
             <Title level={2}>AI 投资看板</Title>
             {hasStaleSource ? <Tag color="warning">部分数据过期</Tag> : <Tag color="success">数据最新</Tag>}
           </Flex>
-          <Paragraph type="secondary">聚焦 AI 公司的增长斜率、公开流量、定价、融资与基础设施成本。</Paragraph>
+          <Paragraph type="secondary">聚焦 AI 公司的增长变化、公开流量、定价、融资与基础设施成本。</Paragraph>
           <Flex gap={14} wrap className="ai-source-row">
-            <SourceBadge label="飞书" source={data.sources.feishu} />
-            <SourceBadge label="OpenRouter" source={data.sources.openRouter} />
-            <SourceBadge label="Benchmark" source={data.sources.benchmarks} />
+            {sourceEntries.map(({ key, label, source }) => <SourceBadge key={key} label={label} source={source} />)}
           </Flex>
         </div>
         <Space wrap>
           <Button icon={<ReloadOutlined />} loading={refreshing} onClick={() => void refresh()}>刷新数据</Button>
-          <Link href={feishuUrl} target="_blank" rel="noreferrer"><Button type="primary" icon={<ExportOutlined />}>飞书源表</Button></Link>
           {showDashboardSessionControls(publicAccess) && (
             <Tooltip title="退出 AI 看板会话"><Button aria-label="退出 AI 看板会话" icon={<LogoutOutlined />} onClick={() => void logout()} /></Tooltip>
           )}
@@ -259,7 +256,7 @@ export const AIDashboardPanel: React.FC = () => {
       {error && <Alert className="ai-page-alert" type="warning" showIcon closable title="数据加载存在异常" description={error} />}
       <Tabs className="ai-primary-tabs" activeKey={activeTab} onChange={(key) => void changeTab(key)} items={tabs} destroyOnHidden={false} />
       <footer className="ai-dashboard-footer">
-        数据仅供研究参考，不构成投资建议。OpenRouter 数据遵循 CC BY 4.0；公开 Token 流量不代表全行业使用量或模型质量。
+        数据仅供研究参考，不构成投资建议。各分片来自公开来源并独立标注状态；OpenRouter Token 流量不代表全行业使用量或模型质量。
       </footer>
     </div>
   );

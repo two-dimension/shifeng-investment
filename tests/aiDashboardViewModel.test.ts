@@ -40,6 +40,30 @@ test('source status labels distinguish ready, stale errors, and missing authoriz
   assert.equal(sourceStatusLabel({ status: 'authorization_required', stale: true }), '待授权');
 });
 
+test('dashboard source entries map all seven public slices without exposing Feishu', () => {
+  const ready = { status: 'ready' as const, stale: false, asOf: '2026-08-22' };
+  const sources = {
+    growth: ready,
+    openRouter: ready,
+    pricing: ready,
+    capital: ready,
+    benchmarks: ready,
+    artificialAnalysis: ready,
+    compute: ready,
+  };
+
+  assert.deepEqual(dashboardViewModel.dashboardSourceEntries?.(sources).map(({ key, label }) => [key, label]), [
+    ['growth', '增长与估值'],
+    ['openRouter', 'OpenRouter 流量'],
+    ['pricing', '模型与套餐价格'],
+    ['capital', '融资与债务'],
+    ['benchmarks', '厂商官网模型卡'],
+    ['artificialAnalysis', 'AA Index'],
+    ['compute', '算力租赁'],
+  ]);
+  assert.equal('feishu' in sources, false);
+});
+
 test('public dashboard mode hides the separate session controls', () => {
   assert.equal(dashboardViewModel.showDashboardSessionControls?.(true), false);
   assert.equal(dashboardViewModel.showDashboardSessionControls?.(false), true);

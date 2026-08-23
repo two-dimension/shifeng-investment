@@ -142,7 +142,7 @@ export interface BenchmarkModel {
   model: string;
   modelSlug?: string;
   releasedAt: string | null;
-  sourceMode?: 'openrouter' | 'feishu';
+  sourceMode?: 'official-model-card';
   scores: Record<string, BenchmarkScore>;
   sourceLabel?: string;
 }
@@ -199,11 +199,7 @@ export interface CdsRiskSnapshot {
 export interface AiDashboardSnapshot {
   schemaVersion: number;
   generatedAt: string;
-  sources: {
-    feishu: SourceStatus;
-    openRouter: SourceStatus;
-    benchmarks: SourceStatus;
-  };
+  sources: Record<DashboardSourceKey, SourceStatus>;
   arrAndValuation: {
     companies: ArrCompanyMetric[];
     valuations: ValuationMetric[];
@@ -226,14 +222,17 @@ export interface AiDashboardSnapshot {
     metrics: BenchmarkMetricDefinition[];
     winners: Record<string, string[]>;
     asOf: string | null;
-    sourceMode: 'openrouter' | 'feishu' | 'none';
+    sourceMode: 'official-model-cards' | 'none';
     coverage: {
       vendors: number;
       evaluatedVendors: number;
       metrics: number;
     };
     attributions: Array<{ source: string; label: string; url?: string }>;
-    feishuFallbackModels?: BenchmarkModel[];
+  };
+  artificialAnalysis: {
+    intelligenceIndex: Array<Record<string, unknown>>;
+    taskCosts: Array<Record<string, unknown>>;
   };
   computeRental: ComputeRentalQuote[];
   debtFinancing: DebtFinancing[];

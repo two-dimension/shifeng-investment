@@ -1,41 +1,30 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createFeishuClient, normalizeFeishuWorkbook } from './aiDashboardData.js';
-import { normalizeOnlineBenchmarks } from './aiBenchmarkData.js';
 import { normalizeCdsDataset } from './aiCdsData.js';
-import {
-  aggregateOpenRouterWeekly,
-  attachValuationMultiples,
-  buildArrMetrics,
-  selectLatestBenchmarkModels,
-} from './aiDashboardMetrics.js';
+import { aggregateOpenRouterWeekly } from './aiDashboardMetrics.js';
+import { DASHBOARD_SOURCE_KEYS } from './publicSourceRegistry.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const FEISHU_SOURCE_URL = 'https://xcn0zaydz11m.feishu.cn/sheets/F9W3s5BBEhRRV8tdZvCchEAfnCf?sheet=0rbUAO&table=tblzvLEtWP2TaYtF&view=vew0i9u3MV';
 const OPENROUTER_SOURCE_URL = 'https://openrouter.ai/rankings';
 const OPENROUTER_DATA_API_URL = 'https://openrouter.ai/api/v1/datasets/rankings-daily';
-const OPENROUTER_MODELS_API_URL = 'https://openrouter.ai/api/v1/models';
-const OPENROUTER_BENCHMARKS_API_URL = 'https://openrouter.ai/api/v1/benchmarks';
-const OPENROUTER_BENCHMARKS_URL = 'https://openrouter.ai/benchmarks';
-const HOUR_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * HOUR_MS;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const BENCHMARK_FRESH_MS = 15 * 60 * 1000;
+const SOURCE_KEY_SET = new Set(DASHBOARD_SOURCE_KEYS);
+
+const SLICE_PAYLOAD_FIELDS = Object.freeze({
+  growth: Object.freeze(['arrAndValuation']),
+  pricing: Object.freeze(['modelPricing']),
+  capital: Object.freeze(['debtFinancing']),
+  benchmarks: Object.freeze(['benchmarks']),
+  artificialAnalysis: Object.freeze(['artificialAnalysis']),
+  compute: Object.freeze(['computeRental']),
+});
 
 export const DEFAULT_AI_DASHBOARD_FILE = path.join(__dirname, '../data/ai-dashboard/snapshot.json');
-export const DEFAULT_FEISHU_EXPORT_FILE = path.join(__dirname, '../data/ai-dashboard/feishu-export.json');
 export const DEFAULT_OPENROUTER_PUBLIC_FILE = path.join(__dirname, '../data/ai-dashboard/openrouter-public.json');
 export const DEFAULT_CDS_FILE = path.join(__dirname, '../data/ai-dashboard/cds-5y.json');
-export const AI_DASHBOARD_SHEET_TITLES = Object.freeze([
-  'ARR&估值',
-  'API模型token价格&发布日期&优化方向',
-  '模型基准测试',
-  '海外算力租赁价格追踪',
-  '债务融资',
-  '视频模型价格',
-  'Coding Plan价格',
-]);
 
 function isoNow(now) {
   return now().toISOString();
@@ -47,14 +36,17 @@ function utcDateOffset(date, days) {
   return copy.toISOString().slice(0, 10);
 }
 
-export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOString()) {
-  const unavailable = (message = '尚未完成首次公开数据同步') => ({
+function unavailable(message = '尚未完成首次公开数据同步') {
+  return {
     status: 'error',
     stale: true,
     asOf: null,
     syncedAt: null,
     message,
-  });
+  };
+}
+
+export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOString()) {
   return {
     schemaVersion: 2,
     generatedAt,
@@ -64,6 +56,7 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
         status: 'authorization_required',
         stale: true,
         asOf: null,
+        syncedAt: null,
         url: OPENROUTER_SOURCE_URL,
         message: '需配置 OPENROUTER_API_KEY',
       },
@@ -91,7 +84,10 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
       sourceMode: 'none',
       coverage: { vendors: 0, evaluatedVendors: 0, metrics: 0 },
       attributions: [],
-      feishuFallbackModels: [],
+    },
+    artificialAnalysis: {
+      intelligenceIndex: [],
+      taskCosts: [],
     },
     computeRental: [],
     debtFinancing: [],
@@ -108,6 +104,28 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
   };
 }
 
+function migrateSources(parsedSources, emptySources) {
+  return Object.fromEntries(DASHBOARD_SOURCE_KEYS.map((key) => [
+    key,
+    { ...emptySources[key], ...(parsedSources?.[key] || {}) },
+  ]));
+}
+
+function migrateBenchmarks(parsedBenchmarks, emptyBenchmarks) {
+  if (!parsedBenchmarks || typeof parsedBenchmarks !== 'object') return emptyBenchmarks;
+  if (!['none', 'official-model-cards'].includes(parsedBenchmarks.sourceMode)) return emptyBenchmarks;
+  return {
+    ...emptyBenchmarks,
+    models: parsedBenchmarks.models || emptyBenchmarks.models,
+    metrics: parsedBenchmarks.metrics || emptyBenchmarks.metrics,
+    winners: parsedBenchmarks.winners || emptyBenchmarks.winners,
+    asOf: parsedBenchmarks.asOf || null,
+    sourceMode: parsedBenchmarks.sourceMode,
+    coverage: parsedBenchmarks.coverage || emptyBenchmarks.coverage,
+    attributions: parsedBenchmarks.attributions || emptyBenchmarks.attributions,
+  };
+}
+
 async function readSnapshotFile(dataFile, now) {
   try {
     const parsed = JSON.parse(await fs.promises.readFile(dataFile, 'utf8'));
@@ -115,8 +133,13 @@ async function readSnapshotFile(dataFile, now) {
     return {
       ...empty,
       ...parsed,
-      sources: { ...empty.sources, ...(parsed.sources || {}) },
-      benchmarks: { ...empty.benchmarks, ...(parsed.benchmarks || {}) },
+      schemaVersion: 2,
+      sources: migrateSources(parsed.sources, empty.sources),
+      benchmarks: migrateBenchmarks(parsed.benchmarks, empty.benchmarks),
+      artificialAnalysis: {
+        ...empty.artificialAnalysis,
+        ...(parsed.artificialAnalysis || {}),
+      },
       creditRisk: {
         ...empty.creditRisk,
         ...(parsed.creditRisk || {}),
@@ -140,111 +163,11 @@ async function readCdsFile(cdsFile) {
   }
 }
 
-function legacyBenchmarkSlice(models) {
-  const selected = selectLatestBenchmarkModels(models);
-  const metricNames = [...new Set(selected.models.flatMap((model) => Object.keys(model.scores || {})))];
-  const asOf = selected.models.map((model) => model.releasedAt).filter(Boolean).sort().at(-1) || null;
-  return {
-    ...selected,
-    models: selected.models.map((model) => ({ ...model, sourceMode: 'feishu' })),
-    metrics: metricNames.map((key) => {
-      const score = selected.models.find((model) => model.scores?.[key])?.scores?.[key];
-      return {
-        key,
-        label: key,
-        group: '飞书历史口径',
-        unit: Number.isFinite(Number(score?.value)) && Math.abs(Number(score.value)) <= 1
-          ? 'percent'
-          : (score?.metric || 'number'),
-        direction: score?.direction === 'lower' ? 'lower' : 'higher',
-        source: 'feishu',
-        sourceUrl: FEISHU_SOURCE_URL,
-      };
-    }),
-    asOf,
-    sourceMode: 'feishu',
-    coverage: {
-      vendors: selected.models.length,
-      evaluatedVendors: selected.models.filter((model) => Object.keys(model.scores || {}).length > 0).length,
-      metrics: metricNames.length,
-    },
-    attributions: [{ source: 'feishu', label: '飞书模型基准测试', url: FEISHU_SOURCE_URL }],
-    feishuFallbackModels: models || [],
-  };
-}
-
 async function writeSnapshotFile(dataFile, snapshot) {
   await fs.promises.mkdir(path.dirname(dataFile), { recursive: true });
   const tempFile = `${dataFile}.${process.pid}.tmp`;
   await fs.promises.writeFile(tempFile, `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
   await fs.promises.rename(tempFile, dataFile);
-}
-
-function enrichComputeRental(rows) {
-  const groups = new Map();
-  for (const row of rows || []) {
-    const key = `${row.platform}\u0000${row.gpu}`;
-    const bucket = groups.get(key) || [];
-    bucket.push(row);
-    groups.set(key, bucket);
-  }
-  return [...groups.values()].flatMap((group) => group
-    .toSorted((left, right) => left.asOf.localeCompare(right.asOf))
-    .map((row, index, sorted) => ({
-      ...row,
-      onDemandChange: index > 0 && row.onDemand !== null && sorted[index - 1].onDemand !== null
-        ? row.onDemand - sorted[index - 1].onDemand
-        : null,
-      preemptibleChange: index > 0 && row.preemptible !== null && sorted[index - 1].preemptible !== null
-        ? row.preemptible - sorted[index - 1].preemptible
-        : null,
-      latest: index === sorted.length - 1,
-    })));
-}
-
-function feishuSlice(normalized, nowDate, previous) {
-  const available = new Set(normalized.validSheets || []);
-  const missingSheets = AI_DASHBOARD_SHEET_TITLES.filter((title) => !available.has(title));
-  const slice = {};
-
-  if (available.has('ARR&估值')) {
-    const companies = buildArrMetrics(normalized.arrRecords, { now: nowDate });
-    slice.arrAndValuation = {
-      companies,
-      valuations: attachValuationMultiples(normalized.valuationRecords, companies)
-        .toSorted((left, right) => String(right.asOf).localeCompare(String(left.asOf))),
-    };
-  }
-
-  const modelPricing = {
-    token: previous.modelPricing?.token || [],
-    video: previous.modelPricing?.video || [],
-    codingPlans: previous.modelPricing?.codingPlans || [],
-  };
-  let pricingChanged = false;
-  if (available.has('API模型token价格&发布日期&优化方向')) {
-    modelPricing.token = normalized.modelPrices;
-    pricingChanged = true;
-  }
-  if (available.has('视频模型价格')) {
-    modelPricing.video = normalized.videoPrices;
-    pricingChanged = true;
-  }
-  if (available.has('Coding Plan价格')) {
-    modelPricing.codingPlans = normalized.codingPlans;
-    pricingChanged = true;
-  }
-  if (pricingChanged) slice.modelPricing = modelPricing;
-  if (available.has('模型基准测试') && available.has('API模型token价格&发布日期&优化方向')) {
-    slice.benchmarks = previous.benchmarks?.sourceMode === 'openrouter'
-      ? { ...previous.benchmarks, feishuFallbackModels: normalized.benchmarkModels }
-      : legacyBenchmarkSlice(normalized.benchmarkModels);
-  }
-  if (available.has('海外算力租赁价格追踪')) slice.computeRental = enrichComputeRental(normalized.computeRental);
-  if (available.has('债务融资')) {
-    slice.debtFinancing = normalized.debtFinancing.toSorted((left, right) => String(right.asOf).localeCompare(String(left.asOf)));
-  }
-  return { slice, missingSheets };
 }
 
 function openRouterCoverageError(payload, expectedEndDate) {
@@ -261,50 +184,77 @@ function openRouterCoverageError(payload, expectedEndDate) {
 
 export function createOpenRouterClient({ apiKey, fetchImpl = fetch, timeoutMs = 15_000 }) {
   if (!apiKey) throw new Error('OpenRouter API key is required');
-  const fetchJson = async (url, label) => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const response = await fetchImpl(url, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-        signal: controller.signal,
-      });
-      if (!response.ok) throw new Error(`${label} failed with HTTP ${response.status}`);
-      return await response.json();
-    } catch (error) {
-      if (controller.signal.aborted) throw new Error(`${label} timed out after ${timeoutMs}ms`);
-      throw error;
-    } finally {
-      clearTimeout(timer);
-    }
-  };
   return {
     async fetchRankings({ startDate, endDate }) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
       const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
-      const payload = await fetchJson(`${OPENROUTER_DATA_API_URL}?${params}`, 'OpenRouter Data API');
-      if (!Array.isArray(payload.data) || !payload.meta) throw new Error('OpenRouter Data API returned an invalid payload');
-      return payload;
-    },
-    async fetchModels() {
-      const params = new URLSearchParams({ output_modalities: 'text' });
-      const payload = await fetchJson(`${OPENROUTER_MODELS_API_URL}?${params}`, 'OpenRouter Models API');
-      if (!Array.isArray(payload?.data)) throw new Error('OpenRouter Models API returned an invalid payload');
-      return payload;
-    },
-    async fetchBenchmarks() {
-      const payload = await fetchJson(OPENROUTER_BENCHMARKS_API_URL, 'OpenRouter Benchmarks API');
-      if (!Array.isArray(payload?.data) || !payload.meta || Array.isArray(payload.meta) || typeof payload.meta !== 'object') {
-        throw new Error('OpenRouter Benchmarks API returned an invalid payload');
+      try {
+        const response = await fetchImpl(`${OPENROUTER_DATA_API_URL}?${params}`, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error(`OpenRouter Data API failed with HTTP ${response.status}`);
+        const payload = await response.json();
+        if (!Array.isArray(payload.data) || !payload.meta) {
+          throw new Error('OpenRouter Data API returned an invalid payload');
+        }
+        return payload;
+      } catch (error) {
+        if (controller.signal.aborted) throw new Error(`OpenRouter Data API timed out after ${timeoutMs}ms`);
+        throw error;
+      } finally {
+        clearTimeout(timer);
       }
-      return payload;
     },
   };
+}
+
+function validateCollectorResult(sourceKey, result) {
+  if (!result || typeof result !== 'object' || Array.isArray(result)) {
+    throw new Error(`${sourceKey} collector returned an invalid result`);
+  }
+  const payload = result.payload;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error(`${sourceKey} collector returned an invalid payload`);
+  }
+  const allowedFields = new Set(SLICE_PAYLOAD_FIELDS[sourceKey] || []);
+  for (const field of Object.keys(payload)) {
+    if (!allowedFields.has(field)) {
+      throw new Error(`${sourceKey} collector returned unsupported payload field: ${field}`);
+    }
+  }
+  if (Object.keys(payload).length === 0) throw new Error(`${sourceKey} collector returned an empty payload`);
+  if (!result.source || typeof result.source !== 'object' || Array.isArray(result.source)) {
+    throw new Error(`${sourceKey} collector returned invalid source metadata`);
+  }
+  if (!['ready', 'error', 'authorization_required'].includes(result.source.status)) {
+    throw new Error(`${sourceKey} collector returned invalid source status`);
+  }
+  return { payload, source: result.source };
+}
+
+function failedSource(previousSource, error, generatedAt) {
+  return {
+    ...previousSource,
+    status: 'error',
+    stale: true,
+    syncedAt: generatedAt,
+    message: error instanceof Error ? error.message : String(error),
+  };
+}
+
+function validateRefreshSources(sources) {
+  if (!Array.isArray(sources) || sources.length === 0 || sources.some((source) => !SOURCE_KEY_SET.has(source))) {
+    throw new Error(`Unsupported AI dashboard refresh sources: ${JSON.stringify(sources)}`);
+  }
+  return [...new Set(sources)];
 }
 
 export function createAiDashboardService({
   dataFile = DEFAULT_AI_DASHBOARD_FILE,
   cdsFile = DEFAULT_CDS_FILE,
-  feishuClient,
+  collectors = {},
   openRouterClient,
   openRouterPublicClient,
   now = () => new Date(),
@@ -325,77 +275,64 @@ export function createAiDashboardService({
     };
   };
 
-  const performRefresh = async ({ sources = ['feishu', 'openRouter', 'benchmarks'] } = {}) => {
+  const performRefresh = async ({ sources, force = false }) => {
     const previous = await getSnapshot();
     const generatedAt = isoNow(now);
     const nowDate = now();
-    const next = { ...previous, generatedAt, sources: { ...previous.sources } };
-    const shouldRefreshFeishu = sources.includes('feishu');
-    const shouldRefreshOpenRouter = sources.includes('openRouter');
-    const shouldRefreshBenchmarks = sources.includes('benchmarks');
+    const next = {
+      ...previous,
+      schemaVersion: 2,
+      generatedAt,
+      sources: { ...previous.sources },
+    };
 
-    const feishuPromise = shouldRefreshFeishu && feishuClient
-      ? feishuClient.readWorkbook(AI_DASHBOARD_SHEET_TITLES).then((workbook) => normalizeFeishuWorkbook(workbook, { asOf: generatedAt }))
-      : null;
-    const endDate = utcDateOffset(nowDate, -1);
-    const startDate = utcDateOffset(nowDate, -84);
-    const openRouterPromise = shouldRefreshOpenRouter && openRouterClient
-      ? openRouterClient.fetchRankings({ startDate, endDate })
-      : null;
-    const openRouterPublicPromise = shouldRefreshOpenRouter && !openRouterClient && openRouterPublicClient
-      ? openRouterPublicClient.readRankings()
-      : null;
-    const hasBenchmarkClient = openRouterClient
-      && typeof openRouterClient.fetchModels === 'function'
-      && typeof openRouterClient.fetchBenchmarks === 'function';
-    const benchmarkPromise = shouldRefreshBenchmarks && hasBenchmarkClient
-      ? Promise.all([openRouterClient.fetchModels(), openRouterClient.fetchBenchmarks()])
-      : null;
-    const [feishuResult, openRouterResult, openRouterPublicResult, benchmarkResult] = await Promise.all([
-      feishuPromise ? feishuPromise.then((value) => ({ value })).catch((error) => ({ error })) : null,
-      openRouterPromise ? openRouterPromise.then((value) => ({ value })).catch((error) => ({ error })) : null,
-      openRouterPublicPromise ? openRouterPublicPromise.then((value) => ({ value })).catch((error) => ({ error })) : null,
-      benchmarkPromise ? benchmarkPromise.then((value) => ({ value })).catch((error) => ({ error })) : null,
-    ]);
-
-    if (shouldRefreshFeishu) {
-      if (!feishuClient) {
-        next.sources.feishu = createEmptyAiDashboardSnapshot(generatedAt).sources.feishu;
-      } else if (feishuResult?.error) {
-        next.sources.feishu = {
-          ...previous.sources.feishu,
-          status: 'error',
-          stale: true,
-          url: FEISHU_SOURCE_URL,
-          message: feishuResult.error.message,
-        };
-      } else {
-        const { slice, missingSheets } = feishuSlice(feishuResult.value, nowDate, previous);
-        Object.assign(next, slice);
-        next.sources.feishu = {
-          status: 'ready',
-          stale: missingSheets.length > 0,
-          asOf: generatedAt,
-          url: FEISHU_SOURCE_URL,
-          message: missingSheets.length > 0
-            ? `飞书部分工作表缺失或表头无效，已保留上一版：${missingSheets.join('、')}`
-            : '飞书工作表同步成功',
-        };
+    const genericSources = sources.filter((source) => source !== 'openRouter');
+    const genericResults = await Promise.all(genericSources.map(async (sourceKey) => {
+      const collector = collectors[sourceKey];
+      if (typeof collector !== 'function') return { sourceKey, skipped: true };
+      try {
+        const result = await collector({ previous, now: nowDate, generatedAt, force });
+        return { sourceKey, value: validateCollectorResult(sourceKey, result) };
+      } catch (error) {
+        return { sourceKey, error };
       }
+    }));
+
+    for (const result of genericResults) {
+      if (result.skipped) continue;
+      if (result.error) {
+        next.sources[result.sourceKey] = failedSource(previous.sources[result.sourceKey], result.error, generatedAt);
+        continue;
+      }
+      Object.assign(next, result.value.payload);
+      next.sources[result.sourceKey] = {
+        ...result.value.source,
+        syncedAt: generatedAt,
+      };
     }
 
-    if (shouldRefreshOpenRouter) {
-      if (!openRouterClient) {
-        if (openRouterPublicResult?.error) {
-          next.sources.openRouter = {
-            ...previous.sources.openRouter,
-            status: 'error',
-            stale: true,
-            url: OPENROUTER_SOURCE_URL,
-            message: openRouterPublicResult.error.message,
+    if (sources.includes('openRouter')) {
+      const endDate = utcDateOffset(nowDate, -1);
+      const startDate = utcDateOffset(nowDate, -84);
+      try {
+        if (openRouterClient) {
+          const payload = await openRouterClient.fetchRankings({ startDate, endDate });
+          const coverageError = openRouterCoverageError(payload, endDate);
+          if (coverageError) throw new Error(coverageError);
+          next.openRouter = {
+            ...aggregateOpenRouterWeekly(payload.data, { endDate: payload.meta.end_date || endDate, weeks: 12 }),
+            attribution: `Source: OpenRouter (openrouter.ai/rankings), as of ${payload.meta.as_of}. Licensed under CC BY 4.0.`,
           };
-        } else if (openRouterPublicResult?.value) {
-          const payload = openRouterPublicResult.value;
+          next.sources.openRouter = {
+            status: 'ready',
+            stale: false,
+            asOf: payload.meta.as_of,
+            syncedAt: generatedAt,
+            url: OPENROUTER_SOURCE_URL,
+            message: 'OpenRouter 公开排名同步成功',
+          };
+        } else if (openRouterPublicClient) {
+          const payload = await openRouterPublicClient.readRankings();
           next.openRouter = {
             startDate: payload.startDate,
             endDate: payload.endDate,
@@ -408,92 +345,13 @@ export function createAiDashboardService({
             status: 'ready',
             stale: true,
             asOf: payload.asOf,
+            syncedAt: generatedAt,
             url: OPENROUTER_SOURCE_URL,
             message: '已读取公开榜单 Top 10；全平台周总量和 12 周趋势需配置 OpenRouter Data API 密钥',
           };
-        } else {
-          next.sources.openRouter = createEmptyAiDashboardSnapshot(generatedAt).sources.openRouter;
         }
-      } else if (openRouterResult?.error) {
-        next.sources.openRouter = {
-          ...previous.sources.openRouter,
-          status: 'error',
-          stale: true,
-          url: OPENROUTER_SOURCE_URL,
-          message: openRouterResult.error.message,
-        };
-      } else {
-        const payload = openRouterResult.value;
-        const coverageError = openRouterCoverageError(payload, endDate);
-        if (coverageError) {
-          next.sources.openRouter = {
-            ...previous.sources.openRouter,
-            status: 'error',
-            stale: true,
-            url: OPENROUTER_SOURCE_URL,
-            message: coverageError,
-          };
-        } else {
-          next.openRouter = {
-            ...aggregateOpenRouterWeekly(payload.data, { endDate: payload.meta.end_date || endDate, weeks: 12 }),
-            attribution: `Source: OpenRouter (openrouter.ai/rankings), as of ${payload.meta.as_of}. Licensed under CC BY 4.0.`,
-          };
-          next.sources.openRouter = {
-            status: 'ready',
-            stale: false,
-            asOf: payload.meta.as_of,
-            url: OPENROUTER_SOURCE_URL,
-            message: 'OpenRouter 公开排名同步成功',
-          };
-        }
-      }
-    }
-
-    if (shouldRefreshBenchmarks) {
-      if (!hasBenchmarkClient) {
-        next.sources.benchmarks = createEmptyAiDashboardSnapshot(generatedAt).sources.benchmarks;
-      } else if (benchmarkResult?.error) {
-        next.sources.benchmarks = {
-          ...previous.sources.benchmarks,
-          status: 'error',
-          stale: true,
-          url: OPENROUTER_BENCHMARKS_URL,
-          message: benchmarkResult.error.message,
-        };
-      } else {
-        try {
-          const [catalogPayload, benchmarkPayload] = benchmarkResult.value;
-          if (catalogPayload.data.length === 0 || benchmarkPayload.data.length === 0) {
-            throw new Error('OpenRouter Benchmark 返回空数据，已保留上一版');
-          }
-          const feishuModels = feishuResult?.value?.benchmarkModels
-            || next.benchmarks?.feishuFallbackModels
-            || (next.benchmarks?.sourceMode === 'feishu' ? next.benchmarks.models : []);
-          const normalized = normalizeOnlineBenchmarks({
-            catalog: catalogPayload.data,
-            benchmarkPayload,
-            feishuModels,
-          });
-          if (normalized.models.length === 0) throw new Error('OpenRouter Benchmark 无可匹配模型，已保留上一版');
-          next.benchmarks = { ...normalized, feishuFallbackModels: feishuModels };
-          next.sources.benchmarks = {
-            status: 'ready',
-            stale: false,
-            asOf: normalized.asOf || generatedAt,
-            syncedAt: generatedAt,
-            url: OPENROUTER_BENCHMARKS_URL,
-            message: `Benchmark 同步成功：${normalized.coverage.evaluatedVendors}/${normalized.coverage.vendors} 个厂商有评测数据`,
-          };
-        } catch (error) {
-          next.benchmarks = previous.benchmarks?.sourceMode === 'openrouter' ? previous.benchmarks : next.benchmarks;
-          next.sources.benchmarks = {
-            ...previous.sources.benchmarks,
-            status: 'error',
-            stale: true,
-            url: OPENROUTER_BENCHMARKS_URL,
-            message: error.message,
-          };
-        }
+      } catch (error) {
+        next.sources.openRouter = failedSource(previous.sources.openRouter, error, generatedAt);
       }
     }
 
@@ -504,16 +362,15 @@ export function createAiDashboardService({
   return {
     getSnapshot,
     refresh(options = {}) {
-      const sources = options.sources || ['feishu', 'openRouter', 'benchmarks'];
+      const sources = validateRefreshSources(options.sources || DASHBOARD_SOURCE_KEYS);
       const benchmarkOnly = sources.length === 1 && sources[0] === 'benchmarks';
       if (benchmarkOnly && benchmarkRefreshInFlight) return benchmarkRefreshInFlight;
 
       const enqueue = async () => {
         if (benchmarkOnly && !options.force) {
           const snapshot = await getSnapshot();
-          const syncedAt = Date.parse(snapshot.sources.benchmarks?.syncedAt || snapshot.sources.benchmarks?.asOf || '');
+          const syncedAt = Date.parse(snapshot.sources.benchmarks?.syncedAt || '');
           if (snapshot.sources.benchmarks?.status === 'ready'
-            && snapshot.benchmarks?.sourceMode === 'openrouter'
             && Number.isFinite(syncedAt)
             && now().getTime() - syncedAt < BENCHMARK_FRESH_MS) return snapshot;
         }
@@ -536,29 +393,10 @@ export function createAiDashboardServiceFromEnv({
   fetchImpl = fetch,
   dataFile = DEFAULT_AI_DASHBOARD_FILE,
   cdsFile = DEFAULT_CDS_FILE,
-  feishuExportFile = DEFAULT_FEISHU_EXPORT_FILE,
   openRouterPublicFile = DEFAULT_OPENROUTER_PUBLIC_FILE,
+  collectors = {},
   now = () => new Date(),
 } = {}) {
-  let feishuClient = process.env.FEISHU_APP_ID && process.env.FEISHU_APP_SECRET && process.env.FEISHU_AI_SHEET_TOKEN
-    ? createFeishuClient({
-        appId: process.env.FEISHU_APP_ID,
-        appSecret: process.env.FEISHU_APP_SECRET,
-        spreadsheetToken: process.env.FEISHU_AI_SHEET_TOKEN,
-        fetchImpl,
-      })
-    : undefined;
-  if (!feishuClient && feishuExportFile && fs.existsSync(feishuExportFile)) {
-    feishuClient = {
-      async readWorkbook() {
-        const payload = JSON.parse(await fs.promises.readFile(feishuExportFile, 'utf8'));
-        if (!payload?.workbook || typeof payload.workbook !== 'object') {
-          throw new Error('本地飞书导出文件格式无效');
-        }
-        return payload.workbook;
-      },
-    };
-  }
   const openRouterClient = process.env.OPENROUTER_API_KEY
     ? createOpenRouterClient({ apiKey: process.env.OPENROUTER_API_KEY, fetchImpl })
     : undefined;
@@ -576,7 +414,14 @@ export function createAiDashboardServiceFromEnv({
         },
       }
     : undefined;
-  return createAiDashboardService({ dataFile, cdsFile, feishuClient, openRouterClient, openRouterPublicClient, now });
+  return createAiDashboardService({
+    dataFile,
+    cdsFile,
+    collectors,
+    openRouterClient,
+    openRouterPublicClient,
+    now,
+  });
 }
 
 export function startAiDashboardAutoRefresh(service, {
@@ -588,14 +433,15 @@ export function startAiDashboardAutoRefresh(service, {
   const run = (sources) => service.refresh({ sources }).catch((error) => {
     console.error(`[ai-dashboard] automatic refresh failed: ${error.message}`);
   });
-  const initial = setTimeoutImpl(() => run(['feishu', 'openRouter', 'benchmarks']), 5_000);
-  const feishuInterval = setIntervalImpl(() => run(['feishu']), HOUR_MS);
+  const researchSources = ['growth', 'pricing', 'capital', 'artificialAnalysis', 'compute'];
+  const initial = setTimeoutImpl(() => run(DASHBOARD_SOURCE_KEYS), 5_000);
+  const researchInterval = setIntervalImpl(() => run(researchSources), DAY_MS);
   const openRouterInterval = setIntervalImpl(() => run(['openRouter']), DAY_MS);
   const benchmarkInterval = setIntervalImpl(() => run(['benchmarks']), DAY_MS);
-  console.log('[ai-dashboard] scheduled Feishu hourly, OpenRouter rankings daily, and Benchmarks daily');
+  console.log('[ai-dashboard] scheduled seven public-source slices for daily refresh');
   return () => {
     clearTimeoutImpl(initial);
-    clearIntervalImpl(feishuInterval);
+    clearIntervalImpl(researchInterval);
     clearIntervalImpl(openRouterInterval);
     clearIntervalImpl(benchmarkInterval);
   };

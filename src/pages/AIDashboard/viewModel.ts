@@ -1,9 +1,20 @@
 import type {
   BenchmarkMetricDefinition,
   BenchmarkScore,
+  DashboardSourceKey,
   MetricProvenance,
   SourceStatus,
 } from './types';
+
+const DASHBOARD_SOURCE_DEFINITIONS: ReadonlyArray<{ key: DashboardSourceKey; label: string }> = [
+  { key: 'growth', label: '增长与估值' },
+  { key: 'openRouter', label: 'OpenRouter 流量' },
+  { key: 'pricing', label: '模型与套餐价格' },
+  { key: 'capital', label: '融资与债务' },
+  { key: 'benchmarks', label: '厂商官网模型卡' },
+  { key: 'artificialAnalysis', label: 'AA Index' },
+  { key: 'compute', label: '算力租赁' },
+];
 
 const TOKEN_UNITS: Array<{ divisor: bigint; suffix: string }> = [
   { divisor: 1_000_000_000_000_000_000n, suffix: 'E' },
@@ -60,6 +71,10 @@ export function sourceStatusColor(source: Pick<SourceStatus, 'status' | 'stale'>
   if (source.status === 'authorization_required') return 'default';
   if (source.stale) return 'warning';
   return 'error';
+}
+
+export function dashboardSourceEntries(sources: Record<DashboardSourceKey, SourceStatus>) {
+  return DASHBOARD_SOURCE_DEFINITIONS.map(({ key, label }) => ({ key, label, source: sources[key] }));
 }
 
 export function methodologyTooltip(
