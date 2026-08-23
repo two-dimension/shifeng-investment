@@ -90,3 +90,15 @@ test('fetchCninfoMarketDay rejects an incomplete final page', async () => {
     /incomplete CNINFO response/,
   );
 });
+
+test('fetchCninfoMarketDay rejects a successful response missing announcements', async () => {
+  await assert.rejects(
+    fetchCninfoMarketDay({
+      date: '2026-08-20',
+      columns: ['szse'],
+      attempts: 1,
+      fetchImpl: async () => response({ totalRecordNum: 1, totalAnnouncement: 1 }),
+    }),
+    /malformed CNINFO response/,
+  );
+});
