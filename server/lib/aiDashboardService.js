@@ -46,17 +46,18 @@ function utcDateOffset(date, days) {
 }
 
 export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOString()) {
+  const unavailable = (message = '尚未完成首次公开数据同步') => ({
+    status: 'error',
+    stale: true,
+    asOf: null,
+    syncedAt: null,
+    message,
+  });
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt,
     sources: {
-      feishu: {
-        status: 'authorization_required',
-        stale: true,
-        asOf: null,
-        url: FEISHU_SOURCE_URL,
-        message: '需配置飞书企业自建应用只读凭证',
-      },
+      growth: unavailable(),
       openRouter: {
         status: 'authorization_required',
         stale: true,
@@ -64,14 +65,11 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
         url: OPENROUTER_SOURCE_URL,
         message: '需配置 OPENROUTER_API_KEY',
       },
-      benchmarks: {
-        status: 'authorization_required',
-        stale: true,
-        asOf: null,
-        syncedAt: null,
-        url: OPENROUTER_BENCHMARKS_URL,
-        message: '需配置 OPENROUTER_API_KEY',
-      },
+      pricing: unavailable(),
+      capital: unavailable(),
+      benchmarks: unavailable('尚未完成首次厂商官网模型卡同步'),
+      artificialAnalysis: unavailable(),
+      compute: unavailable(),
     },
     arrAndValuation: { companies: [], valuations: [] },
     openRouter: {

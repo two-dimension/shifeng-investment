@@ -1,4 +1,9 @@
-import type { BenchmarkMetricDefinition, BenchmarkScore, SourceStatus } from './types';
+import type {
+  BenchmarkMetricDefinition,
+  BenchmarkScore,
+  MetricProvenance,
+  SourceStatus,
+} from './types';
 
 const TOKEN_UNITS: Array<{ divisor: bigint; suffix: string }> = [
   { divisor: 1_000_000_000_000_000_000n, suffix: 'E' },
@@ -55,6 +60,17 @@ export function sourceStatusColor(source: Pick<SourceStatus, 'status' | 'stale'>
   if (source.status === 'authorization_required') return 'default';
   if (source.stale) return 'warning';
   return 'error';
+}
+
+export function methodologyTooltip(
+  provenance: Pick<MetricProvenance, 'methodology' | 'sourceLabel' | 'asOf' | 'commentary'>,
+): string[] {
+  return [
+    `数据口径：${provenance.methodology}`,
+    `数据来源：${provenance.sourceLabel}`,
+    `数据日期：${provenance.asOf}`,
+    provenance.commentary ? `点评：${provenance.commentary}` : null,
+  ].filter((line): line is string => line !== null);
 }
 
 export function showDashboardSessionControls(publicAccess: boolean | undefined): boolean {

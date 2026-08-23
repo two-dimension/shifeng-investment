@@ -6,9 +6,26 @@ import test from 'node:test';
 import {
   createAiDashboardService,
   createAiDashboardServiceFromEnv,
+  createEmptyAiDashboardSnapshot,
   createOpenRouterClient,
   startAiDashboardAutoRefresh,
 } from './aiDashboardService.js';
+
+test('empty dashboard snapshot uses public-source schema v2 without Feishu', () => {
+  const snapshot = createEmptyAiDashboardSnapshot('2026-08-23T00:00:00.000Z');
+
+  assert.equal(snapshot.schemaVersion, 2);
+  assert.equal('feishu' in snapshot.sources, false);
+  assert.deepEqual(Object.keys(snapshot.sources).sort(), [
+    'artificialAnalysis',
+    'benchmarks',
+    'capital',
+    'compute',
+    'growth',
+    'openRouter',
+    'pricing',
+  ]);
+});
 
 test('refresh writes a normalized snapshot and preserves last-good OpenRouter data when that source fails', async (t) => {
   const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-service-'));
@@ -70,7 +87,7 @@ test('refresh writes a normalized snapshot and preserves last-good OpenRouter da
   assert.equal(JSON.parse(await fs.promises.readFile(dataFile, 'utf8')).generatedAt, '2026-08-20T00:00:00.000Z');
 });
 
-test('missing credentials return an empty authorization-required snapshot instead of fabricated values', async (t) => {
+test('missing credentials return an empty public-source snapshot instead of fabricated values', async (t) => {
   const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-empty-'));
   t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
   const service = createAiDashboardService({
@@ -80,7 +97,8 @@ test('missing credentials return an empty authorization-required snapshot instea
 
   const snapshot = await service.getSnapshot();
 
-  assert.equal(snapshot.sources.feishu.status, 'authorization_required');
+  assert.equal('feishu' in snapshot.sources, false);
+  assert.equal(snapshot.sources.growth.status, 'error');
   assert.equal(snapshot.sources.openRouter.status, 'authorization_required');
   assert.deepEqual(snapshot.arrAndValuation.companies, []);
   assert.deepEqual(snapshot.openRouter.topModels, []);

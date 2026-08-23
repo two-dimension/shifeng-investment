@@ -49,3 +49,21 @@ test('cache hit range never renders missing values as null percentages', () => {
   assert.equal(dashboardViewModel.formatCacheHitRange?.(null, null, false), '待补录');
   assert.equal(dashboardViewModel.formatCacheHitRange?.(20, 80, true), '20%–80%');
 });
+
+test('methodology tooltip keeps method, source, date, and commentary in investment-reading order', () => {
+  assert.deepEqual(dashboardViewModel.methodologyTooltip?.({
+    sourceLabel: 'Yipit',
+    sourceUrl: 'https://example.test/yipit',
+    sourceKind: 'estimate',
+    asOf: '2026-08-01',
+    retrievedAt: '2026-08-23T00:00:00Z',
+    methodology: 'ARR estimate',
+    commentary: 'Monthly observation',
+    stale: false,
+  }), [
+    '数据口径：ARR estimate',
+    '数据来源：Yipit',
+    '数据日期：2026-08-01',
+    '点评：Monthly observation',
+  ]);
+});

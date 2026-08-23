@@ -1,5 +1,27 @@
 export type SourceStatusCode = 'ready' | 'error' | 'authorization_required';
 
+export type SourceKind = 'official' | 'filing' | 'estimate' | 'named-third-party';
+
+export type DashboardSourceKey =
+  | 'growth'
+  | 'openRouter'
+  | 'pricing'
+  | 'capital'
+  | 'benchmarks'
+  | 'artificialAnalysis'
+  | 'compute';
+
+export interface MetricProvenance {
+  sourceLabel: string;
+  sourceUrl: string;
+  sourceKind: SourceKind;
+  asOf: string;
+  retrievedAt: string;
+  methodology: string;
+  commentary?: string;
+  stale: boolean;
+}
+
 export interface SourceStatus {
   status: SourceStatusCode;
   stale: boolean;
