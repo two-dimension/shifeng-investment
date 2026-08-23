@@ -208,14 +208,14 @@ function CdsRiskSection({ data }: DashboardProps) {
       </Flex>
       <Row gutter={[12, 12]}>
         {cds.companies.map((metric) => (
-          <Col xs={24} sm={12} xl={8} key={metric.company}>
+          <Col xs={24} md={8} key={metric.company}>
             <CdsSummaryCard metric={metric} />
           </Col>
         ))}
       </Row>
       <Row gutter={[12, 12]}>
         {cds.companies.map((metric) => (
-          <Col xs={24} xl={12} key={metric.company}>
+          <Col xs={24} md={12} key={metric.company}>
             <CdsTrendChart metric={metric} estimated={cds.historyEstimated} />
           </Col>
         ))}
