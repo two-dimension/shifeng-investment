@@ -236,6 +236,10 @@ function stablePresetId(name: string): string {
   return `us_sector_${encodedName}`;
 }
 
+function stripUSSubsetPrefix(name: string): string {
+  return name.replace(/^美股(?=.)/, '');
+}
+
 export function createUSSectorPresetFunds(createdAt = new Date().toISOString()): Fund[] {
   return US_SECTOR_FUND_PRESETS.map((preset) => {
     const rawWeights = preset.positions.map((position) => {
@@ -246,7 +250,7 @@ export function createUSSectorPresetFunds(createdAt = new Date().toISOString()):
 
     return {
       id: stablePresetId(preset.name),
-      name: preset.name,
+      name: stripUSSubsetPrefix(preset.name),
       market: DEFAULT_PORTFOLIO_MARKET,
       initialCapital: US_SECTOR_INITIAL_CAPITAL,
       positions: preset.positions.map((position, index) => {
@@ -298,8 +302,24 @@ function isLegacyDefaultFundSet(funds: Fund[]): boolean {
 export type FundSetSource = 'missing' | 'legacy' | 'preset' | 'custom';
 
 const PRESET_IDENTITIES = new Set(
-  US_SECTOR_FUND_PRESETS.map((preset) => `${stablePresetId(preset.name)}\0${preset.name}`),
+  US_SECTOR_FUND_PRESETS.flatMap((preset) => [
+    `${stablePresetId(preset.name)}\0${preset.name}`,
+    `${stablePresetId(preset.name)}\0${stripUSSubsetPrefix(preset.name)}`,
+  ]),
 );
+
+export function migrateUSSubsetNames(funds: Fund[]): Fund[] {
+  const hasPrefixedUSSubset = funds.some(
+    (fund) => fund.market === 'us' && stripUSSubsetPrefix(fund.name) !== fund.name,
+  );
+  if (!hasPrefixedUSSubset) return funds;
+
+  return funds.map((fund) => {
+    if (fund.market !== 'us') return fund;
+    const name = stripUSSubsetPrefix(fund.name);
+    return name === fund.name ? fund : { ...fund, name };
+  });
+}
 
 export function classifyFundSet(funds: Fund[]): FundSetSource {
   if (funds.length === 0) return 'missing';

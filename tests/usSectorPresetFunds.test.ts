@@ -8,6 +8,7 @@ type PresetModule = typeof presetModule & {
   DEFAULT_PORTFOLIO_MARKET?: string;
   createUSSectorPresetFunds?: (createdAt?: string) => Fund[];
   migrateLegacyDefaultFunds?: (funds: Fund[], createdAt?: string) => Fund[];
+  migrateUSSubsetNames?: (funds: Fund[]) => Fund[];
   classifyFundSet?: (funds: Fund[]) => 'missing' | 'legacy' | 'preset' | 'custom';
   shouldPreferLocalFundSource?: (options: {
     localSource: 'missing' | 'legacy' | 'preset' | 'custom';
@@ -60,7 +61,33 @@ test('creates exactly the 39 archived US-sector subsets with stable identities',
   assert.ok(funds.every((fund) => fund.market === 'us'));
   assert.ok(funds.every((fund) => fund.initialCapital === 100_000));
   assert.ok(!funds.some((fund) => fund.name === '锋行成长1号'));
+  assert.ok(!funds.some((fund) => fund.name.startsWith('美股')));
+  assert.ok(funds.some((fund) => fund.name === 'AI算力'));
   assert.equal(restoration.DEFAULT_PORTFOLIO_MARKET, 'us');
+});
+
+test('removes the US-market prefix from subset names without changing holdings or other markets', () => {
+  assert.equal(typeof restoration.migrateUSSubsetNames, 'function');
+  const migrate = restoration.migrateUSSubsetNames!;
+  const usFund: Fund = {
+    id: 'us-custom',
+    name: '美股半导体',
+    market: 'us',
+    initialCapital: 100_000,
+    positions: [{ code: 'NVDA', name: '美股英伟达', shares: 1, avgCost: 100 }],
+    navHistory: [],
+    createdAt: FIXED_TIME,
+  };
+  const aShareFund: Fund = { ...usFund, id: 'a-custom', name: '美股概念', market: 'a' };
+  const alreadyClean: Fund = { ...usFund, id: 'us-clean', name: 'AI算力' };
+
+  const migrated = migrate([usFund, aShareFund, alreadyClean]);
+
+  assert.equal(migrated[0].name, '半导体');
+  assert.equal(migrated[0].positions[0].name, '美股英伟达');
+  assert.strictEqual(migrated[1], aShareFund);
+  assert.strictEqual(migrated[2], alreadyClean);
+  assert.strictEqual(migrate(migrated), migrated);
 });
 
 test('uses equal weights unless the preset contains explicit weights', () => {
@@ -73,7 +100,7 @@ test('uses equal weights unless the preset contains explicit weights', () => {
     Math.abs((position.targetWeight ?? 0) - (100 / 7)) < 1e-10
   ));
 
-  const semiconductors = funds.find((fund) => fund.name === '美股半导体');
+  const semiconductors = funds.find((fund) => fund.name === '半导体');
   assert.ok(semiconductors);
   const totalWeight = semiconductors.positions.reduce(
     (total, position) => total + (position.targetWeight ?? 0),

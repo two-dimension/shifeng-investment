@@ -5,6 +5,7 @@ import {
   classifyFundSet,
   createUSSectorPresetFunds,
   migrateLegacyDefaultFunds,
+  migrateUSSubsetNames,
   shouldPreferLocalFundSource,
   type FundSetSource,
 } from '../data/usSectorFunds';
@@ -25,7 +26,7 @@ function loadFundsSnapshot(): { funds: Fund[]; source: FundSetSource } {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
         const source = classifyFundSet(parsed);
-        const migrated = migrateLegacyDefaultFunds(parsed);
+        const migrated = migrateUSSubsetNames(migrateLegacyDefaultFunds(parsed));
         if (migrated !== parsed) saveFunds(migrated);
         return { funds: migrated, source };
       }
@@ -93,7 +94,7 @@ async function loadFundsFromBackend(): Promise<{
       const data = await response.json();
       if (data.funds && Array.isArray(data.funds)) {
         const source = classifyFundSet(data.funds);
-        const migrated = migrateLegacyDefaultFunds(data.funds);
+        const migrated = migrateUSSubsetNames(migrateLegacyDefaultFunds(data.funds));
         return {
           funds: migrated,
           lastUpdated: data.lastUpdated ?? null,
