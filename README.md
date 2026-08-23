@@ -1,5 +1,20 @@
 # 石锋资产投研平台
 
+## AI 投资看板配置
+
+AI 看板位于 `/ai-dashboard`，沿用网站现有访问边界，不再要求单独输入访问口令。实时数据源可配置：
+
+```bash
+export FEISHU_APP_ID='cli_xxx'
+export FEISHU_APP_SECRET='xxx'
+export FEISHU_AI_SHEET_TOKEN='F9W3s5BBEhRRV8tdZvCchEAfnCf'
+export OPENROUTER_API_KEY='sk-or-v1-xxx'
+```
+
+本地开发也可以将同名变量写入仓库根目录的 `.env.local`；`npm run server` 会自动加载该文件，且该文件已被 Git 忽略。系统环境变量优先于 `.env.local` 中的同名配置。没有飞书 API 凭证时，服务会读取 `server/data/ai-dashboard/feishu-export.json` 作为本地只读快照。
+
+飞书应用只需电子表格读取权限，并需要作为协作者加入源表。服务端会按工作表名称发现 sheet ID；飞书每小时同步、OpenRouter 每日同步，也可以在页面手动刷新。未配置 OpenRouter Data API 密钥时，页面可读取本地保存的官方公开榜单 Top 10，但不会把 Top 10 合计冒充全平台总量。快照原子写入 `server/data/ai-dashboard/snapshot.json`，单一来源失败时继续返回上一版数据并标记过期。
+
 ## 本地公网访问
 
 推荐使用两种方式（二选一）：

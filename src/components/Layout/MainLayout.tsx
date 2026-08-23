@@ -15,6 +15,7 @@ import {
   HomeOutlined,
   FundProjectionScreenOutlined,
   CalendarOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useTheme } from '../../hooks/useTheme';
@@ -48,6 +49,11 @@ const MainLayout: React.FC = () => {
       key: '/calendar',
       icon: <CalendarOutlined />,
       label: '日历',
+    },
+    {
+      key: '/ai-dashboard',
+      icon: <RobotOutlined />,
+      label: 'AI看板',
     },
     {
       key: '/portfolio',
