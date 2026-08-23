@@ -61,6 +61,7 @@ import type {
   ResearchFile,
 } from '../../types/research';
 import { useTheme } from '../../hooks/useTheme';
+import { describeResearchSyncResult, postResearchSync } from './researchSyncClient';
 import './ResearchPanel.css';
 
 const { Text, Title, Paragraph } = Typography;
@@ -74,37 +75,6 @@ const KIND_META: Record<ResearchKind, { label: string; icon: React.ReactNode }> 
 
 function isEarningsKind(kind: ResearchKind): kind is 'earnings' | 'earnings-report' {
   return kind === 'earnings' || kind === 'earnings-report';
-}
-
-interface ResearchSyncResponse {
-  success: boolean;
-  error?: string;
-  totals?: {
-    attempted: number;
-    succeeded: number;
-    failed: number;
-    changedDates: number;
-    filesCopied: number;
-    filesSkipped: number;
-  };
-}
-
-async function postResearchSync(kind: ResearchKind, date: string | null): Promise<ResearchSyncResponse> {
-  const res = await fetch('/api/research/sync', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      kind,
-      date: date || undefined,
-      days: date ? undefined : 14,
-      force: false,
-    }),
-  });
-  const payload = await res.json().catch(() => ({})) as ResearchSyncResponse;
-  if (!res.ok) {
-    throw new Error(payload.error || `同步失败: HTTP ${res.status}`);
-  }
-  return payload;
 }
 
 function formatWanForDisplay(low?: number | null, high?: number | null): string {
@@ -267,16 +237,10 @@ const ResearchPanel: React.FC = () => {
       await Promise.all([refetchHistory(), refetchLatest()]);
       setDetailVersion((v) => v + 1);
 
-      const totals = result.totals;
-      if (!result.success && totals?.failed) {
-        message.warning(`同步完成，但有 ${totals.failed} 个日期失败`);
-      } else {
-        message.success(
-          totals
-            ? `同步完成：更新 ${totals.changedDates} 天，复制 ${totals.filesCopied} 个文件`
-            : '同步完成',
-        );
-      }
+      const notice = describeResearchSyncResult(result);
+      if (notice.level === 'error') message.error(notice.text);
+      else if (notice.level === 'warning') message.warning(notice.text);
+      else message.success(notice.text);
     } catch (e) {
       message.error(e instanceof Error ? e.message : '同步失败');
     } finally {
@@ -353,7 +317,7 @@ const ResearchPanel: React.FC = () => {
               共 {activeHistory?.dates.length || 0} 天
             </Text>
           </Space>
-          <Tooltip title="刷新最近 14 天本地产物">
+          <Tooltip title="从官方公告源刷新；本地产物存在时优先导入">
             <Button size="small" icon={<SyncOutlined />} onClick={handleSync} loading={syncing}>
               刷新
             </Button>
