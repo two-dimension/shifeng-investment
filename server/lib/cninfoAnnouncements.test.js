@@ -61,6 +61,27 @@ test('fetchCninfoMarketDay reads every Shanghai and Shenzhen page and removes du
   ]);
 });
 
+test('fetchCninfoMarketDay uses CNINFO scoped defaults for Shanghai and Shenzhen', async () => {
+  const requests = [];
+  await fetchCninfoMarketDay({
+    date: '2026-08-20',
+    attempts: 1,
+    fetchImpl: async (_url, options) => {
+      requests.push({
+        column: options.body.get('column'),
+        pageSize: options.body.get('pageSize'),
+        plate: options.body.get('plate'),
+      });
+      return response({ totalRecordNum: 0, totalAnnouncement: 0, announcements: [] });
+    },
+  });
+
+  assert.deepEqual(requests, [
+    { column: 'sse', pageSize: '30', plate: 'sh' },
+    { column: 'szse', pageSize: '30', plate: 'sz' },
+  ]);
+});
+
 test('fetchCninfoMarketDay retries 503 and returns the later valid response', async () => {
   let calls = 0;
   const result = await fetchCninfoMarketDay({

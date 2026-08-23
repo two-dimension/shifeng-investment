@@ -16,7 +16,7 @@ export async function fetchCninfoMarketDay({
   sleepImpl = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   timeoutMs = 10_000,
   attempts = 3,
-  pageSize = 100,
+  pageSize = 30,
   columns = ['sse', 'szse'],
 } = {}) {
   assertDate(date);
@@ -65,7 +65,8 @@ async function fetchColumn({ date, column, fetchImpl, sleepImpl, timeoutMs, atte
 async function requestPage({ date, column, page, pageSize, fetchImpl, sleepImpl, timeoutMs, attempts }) {
   const body = new URLSearchParams({
     pageNum: String(page), pageSize: String(pageSize), column, tabName: 'fulltext',
-    plate: '', stock: '', searchkey: '', secid: '', category: '', trade: '',
+    plate: column === 'sse' ? 'sh' : column === 'szse' ? 'sz' : '',
+    stock: '', searchkey: '', secid: '', category: '', trade: '',
     seDate: `${date}~${date}`, sortName: '', sortType: '', isHLtitle: 'true',
   });
   let lastError;
