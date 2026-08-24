@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createFeishuClient, normalizeFeishuWorkbook } from './aiDashboardData.js';
+import { normalizeCdsDataset } from './aiCdsData.js';
 import {
   aggregateOpenRouterWeekly,
   attachValuationMultiples,
@@ -20,6 +21,7 @@ const DAY_MS = 24 * HOUR_MS;
 export const DEFAULT_AI_DASHBOARD_FILE = path.join(__dirname, '../data/ai-dashboard/snapshot.json');
 export const DEFAULT_FEISHU_EXPORT_FILE = path.join(__dirname, '../data/ai-dashboard/feishu-export.json');
 export const DEFAULT_OPENROUTER_PUBLIC_FILE = path.join(__dirname, '../data/ai-dashboard/openrouter-public.json');
+export const DEFAULT_CDS_FILE = path.join(__dirname, '../data/ai-dashboard/cds-5y.json');
 export const AI_DASHBOARD_SHEET_TITLES = Object.freeze([
   'ARR&估值',
   'API模型token价格&发布日期&优化方向',
@@ -73,16 +75,46 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
     benchmarks: { models: [], winners: {} },
     computeRental: [],
     debtFinancing: [],
+    creditRisk: {
+      cds5y: {
+        asOf: null,
+        sourceLabel: '平台数据',
+        sourceUrl: null,
+        historyEstimated: false,
+        note: '',
+        companies: [],
+      },
+    },
   };
 }
 
 async function readSnapshotFile(dataFile, now) {
   try {
     const parsed = JSON.parse(await fs.promises.readFile(dataFile, 'utf8'));
-    return { ...createEmptyAiDashboardSnapshot(isoNow(now)), ...parsed };
+    const empty = createEmptyAiDashboardSnapshot(isoNow(now));
+    return {
+      ...empty,
+      ...parsed,
+      creditRisk: {
+        ...empty.creditRisk,
+        ...(parsed.creditRisk || {}),
+        cds5y: { ...empty.creditRisk.cds5y, ...(parsed.creditRisk?.cds5y || {}) },
+      },
+    };
   } catch (error) {
     if (error.code !== 'ENOENT') console.warn(`[ai-dashboard] snapshot read failed: ${error.message}`);
     return createEmptyAiDashboardSnapshot(isoNow(now));
+  }
+}
+
+async function readCdsFile(cdsFile) {
+  if (!cdsFile) return null;
+  try {
+    const dataset = JSON.parse(await fs.promises.readFile(cdsFile, 'utf8'));
+    return normalizeCdsDataset(dataset);
+  } catch (error) {
+    if (error.code !== 'ENOENT') console.warn(`[ai-dashboard] CDS data read failed: ${error.message}`);
+    return null;
   }
 }
 
@@ -188,6 +220,7 @@ export function createOpenRouterClient({ apiKey, fetchImpl = fetch }) {
 
 export function createAiDashboardService({
   dataFile = DEFAULT_AI_DASHBOARD_FILE,
+  cdsFile = DEFAULT_CDS_FILE,
   feishuClient,
   openRouterClient,
   openRouterPublicClient,
@@ -195,7 +228,18 @@ export function createAiDashboardService({
 } = {}) {
   let refreshQueue = Promise.resolve();
 
-  const getSnapshot = () => readSnapshotFile(dataFile, now);
+  const getSnapshot = async () => {
+    const snapshot = await readSnapshotFile(dataFile, now);
+    const cds5y = await readCdsFile(cdsFile);
+    if (!cds5y) return snapshot;
+    return {
+      ...snapshot,
+      creditRisk: {
+        ...(snapshot.creditRisk || {}),
+        cds5y,
+      },
+    };
+  };
 
   const performRefresh = async ({ sources = ['feishu', 'openRouter'] } = {}) => {
     const previous = await getSnapshot();
@@ -330,6 +374,7 @@ export function createAiDashboardService({
 export function createAiDashboardServiceFromEnv({
   fetchImpl = fetch,
   dataFile = DEFAULT_AI_DASHBOARD_FILE,
+  cdsFile = DEFAULT_CDS_FILE,
   feishuExportFile = DEFAULT_FEISHU_EXPORT_FILE,
   openRouterPublicFile = DEFAULT_OPENROUTER_PUBLIC_FILE,
   now = () => new Date(),
@@ -370,7 +415,7 @@ export function createAiDashboardServiceFromEnv({
         },
       }
     : undefined;
-  return createAiDashboardService({ dataFile, feishuClient, openRouterClient, openRouterPublicClient, now });
+  return createAiDashboardService({ dataFile, cdsFile, feishuClient, openRouterClient, openRouterPublicClient, now });
 }
 
 export function startAiDashboardAutoRefresh(service) {
