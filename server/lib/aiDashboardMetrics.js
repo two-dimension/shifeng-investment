@@ -131,7 +131,10 @@ export function attachValuationMultiples(valuations, arrMetrics) {
       matched
         ? `P/ARR 使用估值日前最近一期 ${matched.sourceLabel || matchingSeries?.sourceLabel || valuation.company} ${matchingSeries?.seriesKind === 'estimate' ? '估算口径' : '官方口径'}（${matched.observedAt}）配对。`
         : '估值日前没有可匹配的 ARR 观测，未计算 P/ARR。',
-    ].filter((value, index, values) => value && values.indexOf(value) === index).join(' ');
+    ].reduce((parts, value) => {
+      const text = String(value || '').trim();
+      return !text || parts.join(' ').includes(text) ? parts : [...parts, text];
+    }, []).join(' ');
     return {
       ...valuation,
       asOf,

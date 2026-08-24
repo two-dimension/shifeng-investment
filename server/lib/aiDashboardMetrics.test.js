@@ -63,6 +63,8 @@ test('official and estimate ARR stay separate and P/ARR matches the requested pr
   assert.equal(anthropicOfficial.arrValue, 470);
   assert.equal(anthropicOfficial.arrSourceLabel, 'Anthropic');
   assert.equal(anthropicOfficial.note, '融资公告披露的投后估值。 公司官网披露的收入运行率。 P/ARR 使用估值日前最近一期 Anthropic 官方口径（2026-05-10）配对。');
+  const [refreshedAnthropicOfficial] = attachValuationMultiples([anthropicOfficial], arr);
+  assert.equal(refreshedAnthropicOfficial.note, anthropicOfficial.note);
   assert.equal(anthropicEstimate.arrValue, 730);
   assert.equal(anthropicEstimate.arrSourceLabel, 'Yipit');
   assert.equal(openAi.arrAsOf, '2026-03-31');
