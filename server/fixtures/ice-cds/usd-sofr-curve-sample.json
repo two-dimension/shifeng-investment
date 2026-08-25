@@ -1,0 +1,12 @@
+{
+  "curveId": "usd-sofr-2026-08-24-test",
+  "asOf": "2026-08-24",
+  "currency": "USD",
+  "nodes": [
+    { "years": 0.25, "zeroRate": 0.041 },
+    { "years": 1, "zeroRate": 0.039 },
+    { "years": 3, "zeroRate": 0.037 },
+    { "years": 5, "zeroRate": 0.036 },
+    { "years": 10, "zeroRate": 0.038 }
+  ]
+}
