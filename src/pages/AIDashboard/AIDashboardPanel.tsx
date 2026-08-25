@@ -31,6 +31,7 @@ import type {
 import {
   benchmarkRefreshRequest,
   dashboardSourceEntries,
+  dashboardSourceSummary,
   showDashboardSessionControls,
   sourceStatusColor,
   sourceStatusLabel,
@@ -263,7 +264,7 @@ export const AIDashboardPanel: React.FC = () => {
   if (!data) return null;
 
   const sourceEntries = dashboardSourceEntries(data.sources);
-  const hasStaleSource = sourceEntries.some(({ source }) => source.stale);
+  const sourceSummary = dashboardSourceSummary(sourceEntries.map(({ source }) => source));
 
   return (
     <div className="ai-dashboard">
@@ -272,7 +273,7 @@ export const AIDashboardPanel: React.FC = () => {
         <div>
           <Flex align="center" gap={10} wrap>
             <Title level={2}>AI 投资看板</Title>
-            {hasStaleSource ? <Tag color="warning">部分数据过期</Tag> : <Tag color="success">数据最新</Tag>}
+            <Tag color={sourceSummary.color}>{sourceSummary.label}</Tag>
           </Flex>
           <Paragraph type="secondary">聚焦 AI 公司的增长变化、公开流量、定价、融资与基础设施成本。</Paragraph>
           <Flex gap={14} wrap className="ai-source-row">

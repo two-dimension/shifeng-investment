@@ -115,8 +115,9 @@ export function formatCacheHitRange(low: number | null, high: number | null, val
 export function sourceStatusLabel(source: Pick<SourceStatus, 'status' | 'stale'>): string {
   if (source.status === 'authorization_required') return '待授权';
   if (source.status === 'error' && source.stale) return '使用上一版';
-  if (source.status === 'ready' && !source.stale) return '已同步';
-  return '数据过期';
+  if (source.status === 'error') return '同步失败';
+  if (source.stale) return '部分沿用旧值';
+  return '已同步';
 }
 
 export function sourceStatusColor(source: Pick<SourceStatus, 'status' | 'stale'>): 'success' | 'warning' | 'error' | 'default' {
@@ -124,6 +125,15 @@ export function sourceStatusColor(source: Pick<SourceStatus, 'status' | 'stale'>
   if (source.status === 'authorization_required') return 'default';
   if (source.stale) return 'warning';
   return 'error';
+}
+
+export function dashboardSourceSummary(
+  sources: ReadonlyArray<Pick<SourceStatus, 'status' | 'stale'>>,
+): { label: string; color: 'success' | 'warning' } {
+  const needsAttention = sources.some((source) => source.status !== 'ready' || source.stale);
+  return needsAttention
+    ? { label: '部分来源需关注', color: 'warning' }
+    : { label: '数据源正常', color: 'success' };
 }
 
 export function dashboardSourceEntries(sources: Record<DashboardSourceKey, SourceStatus>) {

@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as dashboardViewModel from '../src/pages/AIDashboard/viewModel.ts';
 import {
   benchmarkRefreshRequest,
+  dashboardSourceSummary,
   formatBenchmarkValue,
   formatCurrencyPrice,
   formatPriceChange,
@@ -136,10 +137,32 @@ test('ARR and Token delta formatters preserve sign, unit, percent, zero, and una
   assert.equal(dashboardViewModel.formatTokenDelta?.(null, null), '—');
 });
 
-test('source status labels distinguish ready, stale errors, and missing authorization', () => {
+test('source status labels distinguish fresh, partially retained, fallback, authorization, and failed states', () => {
   assert.equal(sourceStatusLabel({ status: 'ready', stale: false }), '已同步');
+  assert.equal(sourceStatusLabel({ status: 'ready', stale: true }), '部分沿用旧值');
   assert.equal(sourceStatusLabel({ status: 'error', stale: true }), '使用上一版');
   assert.equal(sourceStatusLabel({ status: 'authorization_required', stale: true }), '待授权');
+  assert.equal(sourceStatusLabel({ status: 'error', stale: false }), '同步失败');
+});
+
+test('dashboard source summary flags every state that needs attention', () => {
+  assert.deepEqual(dashboardSourceSummary([
+    { status: 'ready', stale: false },
+    { status: 'ready', stale: false },
+  ]), { label: '数据源正常', color: 'success' });
+
+  assert.deepEqual(dashboardSourceSummary([
+    { status: 'ready', stale: false },
+    { status: 'ready', stale: true },
+  ]), { label: '部分来源需关注', color: 'warning' });
+
+  assert.deepEqual(dashboardSourceSummary([
+    { status: 'authorization_required', stale: false },
+  ]), { label: '部分来源需关注', color: 'warning' });
+
+  assert.deepEqual(dashboardSourceSummary([
+    { status: 'error', stale: false },
+  ]), { label: '部分来源需关注', color: 'warning' });
 });
 
 test('dashboard source entries map all eight public slices without exposing Feishu', () => {
@@ -163,7 +186,7 @@ test('dashboard source entries map all eight public slices without exposing Feis
     ['benchmarks', '厂商官网模型卡'],
     ['artificialAnalysis', 'AA Index'],
     ['compute', '算力租赁'],
-    ['creditRisk', 'DTCC CDS'],
+    ['creditRisk', '5Y CDS'],
   ]);
   assert.equal('feishu' in sources, false);
 });
