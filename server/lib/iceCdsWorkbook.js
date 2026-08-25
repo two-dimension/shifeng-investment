@@ -219,8 +219,10 @@ function writeDashboardSheet(workbook, derived) {
     const companyRows = byCompany.get(row.company);
     const companyIndex = companyRows.indexOf(row);
     const oneDay = companyIndex > 0 ? companyRows[companyIndex - 1] : null;
-    const sevenDay = companyRows.find((candidate) => candidate.clearingDate === offsetDate(row.clearingDate, -7)) || null;
-    const oneMonth = companyRows.find((candidate) => candidate.clearingDate === priorMonthDate(row.clearingDate)) || null;
+    const priorRows = companyRows.slice(0, companyIndex);
+    const latestAtOrBefore = (targetDate) => priorRows.toReversed().find((candidate) => candidate.clearingDate <= targetDate) || null;
+    const sevenDay = latestAtOrBefore(offsetDate(row.clearingDate, -7));
+    const oneMonth = latestAtOrBefore(priorMonthDate(row.clearingDate));
     const sourceRow = derived.sourceRows.get(`${row.company}|${row.clearingDate}`);
     const dashboardRow = sheet.addRow([
       dateValue(row.clearingDate, 'Dashboard date'),

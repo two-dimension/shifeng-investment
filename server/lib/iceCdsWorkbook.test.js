@@ -157,3 +157,29 @@ test('generated workbook contains no broken formula tokens', async () => {
   assert.ok(formulas.length > 0);
   assert.equal(formulas.some((formula) => brokenTokens.some((token) => formula.includes(token))), false);
 });
+
+test('dashboard seven-day formula uses the latest valid clearing day at or before the anchor', async () => {
+  const state = sampleState();
+  state.derivedRows.push({
+    ...state.derivedRows[0],
+    batchId: 'ice-20260814',
+    clearingDate: '2026-08-14',
+    eodPrice: 95.8,
+    spreadBp: 190,
+    roundTripPrice: 95.8,
+  });
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(await buildIceCdsWorkbook(state));
+  const dashboard = workbook.getWorksheet('Daily Dashboard');
+  let targetRow = null;
+  dashboard.eachRow((row) => {
+    const date = row.getCell(1).value;
+    if (date instanceof Date && date.toISOString().slice(0, 10) === '2026-08-24' && row.getCell(2).value === 'Oracle') {
+      targetRow = row;
+    }
+  });
+
+  assert.ok(targetRow);
+  assert.ok(Math.abs(targetRow.getCell(5).value.result - 17.4) < 0.000001);
+  assert.match(targetRow.getCell(5).value.formula, /Derived 5Y Spreads/);
+});
