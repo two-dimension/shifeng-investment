@@ -9,8 +9,8 @@ function freezeDefinition(definition) {
 export const ICE_CDS_CONTRACT_REGISTRY = Object.freeze([
   freezeDefinition({
     company: 'Oracle',
-    aliases: ['ORACLE CORP', 'ORACLE CORPORATION'],
-    symbols: ['ORCL'],
+    aliases: ['ORACLE COP', 'ORACLE CORP', 'ORACLE CORPORATION'],
+    symbols: ['ORCLE', 'ORCL'],
     currency: 'USD',
     tier: 'SNRFOR',
     restructuring: 'XR14',
@@ -19,7 +19,7 @@ export const ICE_CDS_CONTRACT_REGISTRY = Object.freeze([
   freezeDefinition({
     company: 'CoreWeave',
     aliases: ['COREWEAVE', 'COREWEAVE INC', 'COREWEAVE, INC.'],
-    symbols: ['CRWV'],
+    symbols: ['COREWEI', 'CRWV'],
     currency: 'USD',
     tier: 'SNRFOR',
     restructuring: 'XR14',
@@ -28,7 +28,7 @@ export const ICE_CDS_CONTRACT_REGISTRY = Object.freeze([
   freezeDefinition({
     company: 'NVIDIA',
     aliases: ['NVIDIA CORP', 'NVIDIA CORPORATION'],
-    symbols: ['NVDA'],
+    symbols: ['NVIDIA', 'NVDA'],
     currency: 'USD',
     tier: 'SNRFOR',
     restructuring: 'XR14',
@@ -46,7 +46,7 @@ export const ICE_CDS_CONTRACT_REGISTRY = Object.freeze([
   freezeDefinition({
     company: 'Google',
     aliases: ['ALPHABET INC', 'ALPHABET, INC.', 'GOOGLE INC', 'GOOGLE LLC'],
-    symbols: ['GOOG', 'GOOGL'],
+    symbols: ['ALPHINC', 'GOOG', 'GOOGL'],
     currency: 'USD',
     tier: 'SNRFOR',
     restructuring: 'XR14',
@@ -64,7 +64,7 @@ export const ICE_CDS_CONTRACT_REGISTRY = Object.freeze([
   freezeDefinition({
     company: 'Meta',
     aliases: ['META PLATFORMS INC', 'META PLATFORMS, INC.', 'META PLATFORMS'],
-    symbols: ['META'],
+    symbols: ['METAPL', 'META'],
     currency: 'USD',
     tier: 'SNRFOR',
     restructuring: 'XR14',

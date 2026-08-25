@@ -84,6 +84,30 @@ test('registry covers the seven requested companies and selects only exact canon
   assert.deepEqual(result.errors, []);
 });
 
+test('selects the seven live ICE issuer codes published by the free single-name feed', () => {
+  const officialRows = [
+    ['Oracle Cop', 'ORCLE', 100, 95.0309],
+    ['COREWEAVE INC', 'COREWEI', 500, 90.0135],
+    ['NVIDIA Corp', 'NVIDIA', 100, 100.5487],
+    ['Amazon Com Inc', 'AMZN', 100, 101.4668],
+    ['Alphabet Inc', 'ALPHINC', 100, 101.7418],
+    ['Microsoft Corp', 'MSFT', 100, 102.2015],
+    ['META PLATFORMS INC', 'METAPL', 100, 100.1232],
+  ].map(([name, symbol, couponBp, eodPrice], index) => ({
+    clearingDate: '2026-08-24',
+    name,
+    instrumentName: `${symbol}.SNRFOR.USD.XR14.${couponBp}.2031-06-20`,
+    eodPrice,
+    rowNumber: index + 2,
+  }));
+
+  const result = selectTrackedFiveYearContracts(officialRows, '2026-08-24');
+
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.selected.map((row) => row.company),
+    ['Oracle', 'CoreWeave', 'NVIDIA', 'Amazon', 'Google', 'Microsoft', 'Meta']);
+});
+
 test('selection reports missing, ambiguous, wrong-coupon, and wrong-tenor rows without guessing', () => {
   const rows = [
     { clearingDate: '2026-08-24', name: 'ORACLE CORP', instrumentName: 'ORCL.SNRFOR.USD.XR14.500.2031-06-20', eodPrice: 95, rowNumber: 2 },

@@ -68,6 +68,34 @@ test('drops invalid CDS rows instead of turning missing values into zero', () =>
   assert.deepEqual(normalized.companies[0].changes, { oneDayBp: 0, sevenDayBp: 3, oneMonthBp: -2 });
 });
 
+test('keeps explicitly labeled screenshot history without fabricating EOD prices', () => {
+  const normalized = normalizeCdsDataset({
+    asOf: '2026-08-24',
+    sourceKind: 'ice_eod_isda',
+    sourceLabel: 'ICE EOD Price · ISDA 换算值',
+    qualityStatus: 'model-derived',
+    companies: [{
+      company: 'Oracle',
+      latestBp: 223.3,
+      latestEodPrice: 95.0309,
+      latestInstrumentName: 'ORCLE.SNRFOR.USD.XR14.100.2031-06-20',
+      qualityStatus: 'model-derived',
+      changes: {},
+      history: [
+        { date: '2026-08-21', valueBp: 214, sourceKind: 'screenshot_backfill', qualityStatus: 'stale' },
+        { date: '2026-08-24', valueBp: 223.3, eodPrice: 95.0309, instrumentName: 'ORCLE.SNRFOR.USD.XR14.100.2031-06-20', qualityStatus: 'model-derived' },
+      ],
+    }],
+  });
+
+  assert.deepEqual(normalized.companies[0].history[0], {
+    date: '2026-08-21',
+    valueBp: 214,
+    sourceKind: 'screenshot_backfill',
+    qualityStatus: 'stale',
+  });
+});
+
 test('rejects a malformed CDS dataset envelope', () => {
   assert.throws(() => normalizeCdsDataset(null), /CDS dataset/);
   assert.throws(() => normalizeCdsDataset({ companies: [] }), /asOf/);

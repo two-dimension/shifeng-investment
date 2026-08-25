@@ -4,7 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { ICE_CDS_CONTRACT_REGISTRY } from './iceCdsRegistry.js';
-import { readIceCdsWorkbook } from './iceCdsWorkbook.js';
+import { buildIceCdsWorkbook, readIceCdsWorkbook } from './iceCdsWorkbook.js';
+import { applyScreenshotBackfill } from './iceCdsScreenshotBackfill.js';
 import {
   calculateCdsChanges,
   createIceCdsPipeline,
@@ -126,6 +127,37 @@ test('import is idempotent, records corrections, and commits matching Excel/JSON
   assert.equal(snapshot.creditRisk.cds5y.batchId, corrected.batchId);
   assert.equal(snapshot.sources.creditRisk.status, 'ready');
   assert.equal(snapshot.creditRisk.cds5y.companies.length, 7);
+});
+
+test('a live import keeps screenshot history and makes the live observation the latest point', async (t) => {
+  const { dataDir, snapshotFile, pipeline } = await tempPipeline(t);
+  const initialState = applyScreenshotBackfill({
+    schemaVersion: 1,
+    batchId: 'ice-empty-v1',
+    generatedAt: '2026-08-24T00:00:00.000Z',
+    rawRows: [],
+    derivedRows: [],
+    curves: [],
+    registry: ICE_CDS_CONTRACT_REGISTRY,
+    validationLog: [],
+    methodology: {
+      modelVersion: 'ice-isda-compatible-v1',
+      priceTolerance: 0.005,
+      relativeBenchmarkTolerance: 0.01,
+      note: 'Model-derived.',
+    },
+  });
+  await fs.promises.mkdir(dataDir, { recursive: true });
+  await fs.promises.writeFile(path.join(dataDir, 'ice-cds-history.xlsx'), await buildIceCdsWorkbook(initialState));
+
+  await pipeline.import({ iceText: iceText(), discountCurve: curve });
+  const snapshot = JSON.parse(await fs.promises.readFile(snapshotFile, 'utf8'));
+  const oracle = snapshot.creditRisk.cds5y.companies.find((row) => row.company === 'Oracle');
+
+  assert.equal(oracle.history[0].sourceKind, 'screenshot_backfill');
+  assert.equal(oracle.history.at(-1).date, '2026-08-24');
+  assert.equal(oracle.history.at(-1).eodPrice, 95.24);
+  assert.equal(oracle.history.length > 40, true);
 });
 
 test('a second-file rename failure restores both last-good files', async (t) => {

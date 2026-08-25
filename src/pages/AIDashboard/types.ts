@@ -401,6 +401,7 @@ export interface PublicSourceReport {
 export interface CdsHistoryPoint {
   date: string;
   valueBp: number;
+  sourceKind?: 'screenshot_backfill' | string;
   eodPrice?: number;
   instrumentName?: string;
   qualityStatus?: CdsQualityStatus;

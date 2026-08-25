@@ -66,17 +66,20 @@ export function normalizeCdsDataset(dataset) {
       const valueBp = finiteNumber(point?.valueBp);
       const eodPrice = optionalFiniteNumber(point?.eodPrice);
       const pointQualityStatus = normalizeQualityStatus(point?.qualityStatus);
+      const pointSourceKind = typeof point?.sourceKind === 'string' ? point.sourceKind.trim() : '';
+      const isScreenshotBackfill = pointSourceKind === 'screenshot_backfill';
       const instrumentName = typeof point?.instrumentName === 'string' ? point.instrumentName.trim() : '';
       if (!validDate(point?.date) || point.date > dataset.asOf || valueBp === null || valueBp < 0) continue;
       if (point?.eodPrice !== undefined && eodPrice === null) continue;
       if (pointQualityStatus === undefined) continue;
-      if (isIceDerived && (eodPrice === null || !instrumentName || !pointQualityStatus)) continue;
+      if (isIceDerived && !isScreenshotBackfill && (eodPrice === null || !instrumentName || !pointQualityStatus)) continue;
       historyByDate.set(point.date, {
         date: point.date,
         valueBp,
         ...(eodPrice === null ? {} : { eodPrice }),
         ...(instrumentName ? { instrumentName } : {}),
         ...(pointQualityStatus ? { qualityStatus: pointQualityStatus } : {}),
+        ...(isScreenshotBackfill ? { sourceKind: pointSourceKind } : {}),
       });
     }
 

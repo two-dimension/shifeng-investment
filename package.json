@@ -10,6 +10,8 @@
     "build": "tsc -b && vite build",
     "verify:ai-sources": "node server/scripts/verify_ai_dashboard_sources.mjs",
     "refresh:ai-dashboard": "node server/scripts/refresh_ai_dashboard_snapshot.mjs",
+    "refresh:ice-cds": "node server/scripts/refresh_ice_cds_snapshot.mjs",
+    "backfill:ice-cds-screenshot": "node server/scripts/backfill_ice_cds_screenshot.mjs",
     "init:ice-cds-workbook": "node server/scripts/init_ice_cds_workbook.mjs",
     "verify:ice-cds-workbook": "node server/scripts/verify_ice_cds_workbook.mjs",
     "check:earnings-copy": "node scripts/check-earnings-copy.mjs",

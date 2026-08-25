@@ -315,13 +315,17 @@ function createCdsSnapshot(state, preview, generatedAt) {
     const rows = (grouped.get(definition.company) || []).sort((left, right) => left.clearingDate.localeCompare(right.clearingDate));
     if (rows.length === 0) return [];
     const latest = rows[rows.length - 1];
-    const history = rows.map((row) => ({
-      date: row.clearingDate,
-      valueBp: row.spreadBp,
-      eodPrice: row.eodPrice,
-      instrumentName: row.instrumentName,
-      qualityStatus: row.qualityStatus,
-    }));
+    const history = rows.map((row) => {
+      const isScreenshotBackfill = row.modelVersion === 'screenshot-backfill-v1';
+      return {
+        date: row.clearingDate,
+        valueBp: row.spreadBp,
+        ...(!isScreenshotBackfill && Number.isFinite(row.eodPrice) ? { eodPrice: row.eodPrice } : {}),
+        ...(!isScreenshotBackfill && row.instrumentName ? { instrumentName: row.instrumentName } : {}),
+        qualityStatus: row.qualityStatus,
+        ...(isScreenshotBackfill ? { sourceKind: 'screenshot_backfill' } : {}),
+      };
+    });
     return [{
       company: definition.company,
       latestBp: latest.spreadBp,
@@ -345,7 +349,7 @@ function createCdsSnapshot(state, preview, generatedAt) {
     qualityStatus,
     workbookAvailable: true,
     historyEstimated: true,
-    note: 'Spread (bp) 为 ICE EOD Price 经 ISDA-compatible 模型换算的估算值；未经官方基准验证时不代表 ICE 官方 spread。',
+    note: '2026-06-10 至 2026-08-21 为用户截图曲线回填估算；最新点由 ICE EOD Price 经 ISDA-compatible 模型换算。未经官方基准验证时不代表 ICE 官方 spread。',
     lastCheckedAt: generatedAt,
     companies,
   });

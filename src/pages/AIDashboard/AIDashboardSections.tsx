@@ -230,12 +230,14 @@ function CdsTrendChart({
       formatter: (params: Array<{ dataIndex: number; marker: string }>) => {
         const point = metric.history[params[0]?.dataIndex];
         if (!point) return '';
+        const isScreenshotBackfill = point.sourceKind === 'screenshot_backfill';
         return [
           `<b>${escapeHtml(metric.company)} · ${escapeHtml(point.date)}</b>`,
           `${params[0]?.marker || ''}Spread：${escapeHtml(compactNumber(point.valueBp))} bp`,
           `EOD Price：${point.eodPrice === undefined ? '—' : escapeHtml(point.eodPrice.toFixed(4))}`,
+          `来源：${isScreenshotBackfill ? '用户截图曲线回填（近似）' : 'ICE EOD Price · 模型换算'}`,
           `合约：${escapeHtml(point.instrumentName || '—')}`,
-          `状态：${escapeHtml(cdsQualityLabel(point.qualityStatus))}`,
+          `状态：${isScreenshotBackfill ? '截图历史参考' : escapeHtml(cdsQualityLabel(point.qualityStatus))}`,
         ].join('<br/>');
       },
     },
@@ -273,7 +275,7 @@ function CdsTrendChart({
   return (
     <Card className="ai-cds-chart-card" variant="outlined">
       <Title level={5}>{metric.company} 5Y CDS 信用违约互换利差（bp）</Title>
-      <Text type="secondary" className="ai-cds-chart-source">ICE EOD Price · ISDA 换算值</Text>
+      <Text type="secondary" className="ai-cds-chart-source">截图历史回填 + ICE EOD Price · ISDA 换算值</Text>
       {metric.history.length > 0
         ? <ReactECharts option={option} style={{ height: compact ? 300 : 330 }} notMerge />
         : <NoData description="暂无 CDS 历史数据" />}

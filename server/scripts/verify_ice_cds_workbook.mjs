@@ -46,9 +46,15 @@ for (const row of state.derivedRows) {
   const key = `${row.clearingDate}|${row.company}|${row.instrumentName}`;
   assert.equal(unique.has(key), false, `Duplicate derived key ${key}`);
   unique.add(key);
-  assert.ok(Number.isFinite(row.eodPrice), `${key} EOD Price`);
   assert.ok(Number.isFinite(row.spreadBp), `${key} spread`);
-  assert.ok(row.priceResidual <= 0.005, `${key} price residual`);
+  if (row.modelVersion === 'screenshot-backfill-v1') {
+    assert.equal(row.eodPrice, null, `${key} must not fabricate an EOD Price`);
+    assert.equal(row.priceResidual, null, `${key} must not fabricate a price residual`);
+    assert.equal(row.qualityStatus, 'stale', `${key} screenshot quality status`);
+  } else {
+    assert.ok(Number.isFinite(row.eodPrice), `${key} EOD Price`);
+    assert.ok(row.priceResidual <= 0.005, `${key} price residual`);
+  }
 }
 
 const brokenTokens = ['#REF!', '#DIV/0!', '#VALUE!', '#NAME?', '#N/A'];

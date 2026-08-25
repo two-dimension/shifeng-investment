@@ -20,6 +20,11 @@ import {
 } from './lib/aiDashboardService.js';
 import { createIceCdsPipelineFromEnv } from './lib/iceCdsPipeline.js';
 import {
+  createIceCdsPublicClient,
+  refreshIceCdsFromPublicSources,
+  startIceCdsAutoRefresh,
+} from './lib/iceCdsPublicSource.js';
+import {
   isExactMissingOptionalModuleError,
   validateQuantStrategyExports,
 } from './lib/validateQuantStrategy.js';
@@ -58,6 +63,11 @@ const app = express();
 app.set('trust proxy', 'loopback');
 const aiDashboardService = createAiDashboardServiceFromEnv();
 const iceCdsPipeline = createIceCdsPipelineFromEnv();
+const iceCdsPublicClient = createIceCdsPublicClient();
+const refreshPublicIceCds = () => refreshIceCdsFromPublicSources({
+  client: iceCdsPublicClient,
+  pipeline: iceCdsPipeline,
+});
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 const NEWS_FILE = path.join(__dirname, 'data', 'news.json');
@@ -3313,5 +3323,6 @@ app.listen(PORT, HOST, () => {
     startNewsAutoRefresh();
     priceTracking.startAutoRefresh();
     startAiDashboardAutoRefresh(aiDashboardService);
+    startIceCdsAutoRefresh(refreshPublicIceCds);
   }
 });
