@@ -258,7 +258,7 @@ function CdsRiskSection({ data }: DashboardProps) {
           {cds.sourceUrl
             ? <Tag><Link href={cds.sourceUrl} target="_blank" rel="noreferrer">{cds.sourceLabel}</Link></Tag>
             : <Tag>{cds.sourceLabel}</Tag>}
-          {data.sources.creditRisk.stale && cds.sourceKind === 'dtcc_public_trade_estimate'
+          {data.sources.creditRisk?.stale && cds.sourceKind === 'dtcc_public_trade_estimate'
             ? <Tag color="warning">同步异常 · 使用上一版</Tag>
             : null}
         </Space>

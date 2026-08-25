@@ -127,7 +127,9 @@ export function sourceStatusColor(source: Pick<SourceStatus, 'status' | 'stale'>
 }
 
 export function dashboardSourceEntries(sources: Record<DashboardSourceKey, SourceStatus>) {
-  return DASHBOARD_SOURCE_DEFINITIONS.map(({ key, label }) => ({ key, label, source: sources[key] }));
+  return DASHBOARD_SOURCE_DEFINITIONS.flatMap(({ key, label }) => (
+    sources[key] ? [{ key, label, source: sources[key] }] : []
+  ));
 }
 
 export function methodologyTooltip(

@@ -168,6 +168,22 @@ test('dashboard source entries map all eight public slices without exposing Feis
   assert.equal('feishu' in sources, false);
 });
 
+test('dashboard source entries tolerate an older backend response during a rolling restart', () => {
+  const ready = { status: 'ready' as const, stale: false, asOf: '2026-08-22' };
+  const legacySources = {
+    growth: ready,
+    openRouter: ready,
+    pricing: ready,
+    capital: ready,
+    benchmarks: ready,
+    artificialAnalysis: ready,
+    compute: ready,
+  } as Parameters<typeof dashboardViewModel.dashboardSourceEntries>[0];
+
+  assert.doesNotThrow(() => dashboardViewModel.dashboardSourceEntries(legacySources));
+  assert.equal(dashboardViewModel.dashboardSourceEntries(legacySources).some(({ key }) => key === 'creditRisk'), false);
+});
+
 test('public dashboard mode hides the separate session controls', () => {
   assert.equal(dashboardViewModel.showDashboardSessionControls?.(true), false);
   assert.equal(dashboardViewModel.showDashboardSessionControls?.(false), true);
