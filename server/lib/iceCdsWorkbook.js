@@ -57,10 +57,13 @@ function addSheet(workbook, name, headers, widths) {
   sheet.addRow(headers);
   const header = sheet.getRow(1);
   header.height = 28;
-  header.font = { name: 'Aptos', size: 10, bold: true, color: { argb: COLORS.white } };
-  header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.navy } };
-  header.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-  header.border = { bottom: { style: 'medium', color: { argb: COLORS.navy } } };
+  for (let column = 1; column <= headers.length; column += 1) {
+    const cell = header.getCell(column);
+    cell.font = { name: 'Aptos', size: 10, bold: true, color: { argb: COLORS.white } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.navy } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    cell.border = { bottom: { style: 'medium', color: { argb: COLORS.navy } } };
+  }
   headers.forEach((_, index) => {
     sheet.getColumn(index + 1).width = widths[index] || 14;
   });
@@ -70,11 +73,13 @@ function addSheet(workbook, name, headers, widths) {
 
 function styleBody(sheet, dateColumns = [], numberFormats = {}, urlColumns = []) {
   for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber += 1) {
-    const row = sheet.getRow(rowNumber);
-    row.font = { name: 'Aptos', size: 10, color: { argb: 'FF000000' } };
-    row.alignment = { vertical: 'middle' };
-    row.border = { bottom: { style: 'hair', color: { argb: COLORS.lightBorder } } };
-    if (rowNumber % 2 === 0) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F9FC' } };
+    for (let column = 1; column <= sheet.columnCount; column += 1) {
+      const cell = sheet.getCell(rowNumber, column);
+      cell.font = { name: 'Aptos', size: 10, color: { argb: 'FF000000' } };
+      cell.alignment = { vertical: 'middle' };
+      cell.border = { bottom: { style: 'hair', color: { argb: COLORS.lightBorder } } };
+      if (rowNumber % 2 === 0) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F9FC' } };
+    }
     for (const column of dateColumns) sheet.getCell(rowNumber, column).numFmt = 'yyyy-mm-dd';
     for (const [column, format] of Object.entries(numberFormats)) {
       const cell = sheet.getCell(rowNumber, Number(column));
@@ -195,12 +200,12 @@ function writeDerivedSheet(workbook, state) {
       sourceCell(row.sourceUrl),
     ]);
     sourceRows.set(`${row.company}|${row.clearingDate}`, excelRow.number);
-    applyQualityFill(excelRow.getCell(15), row.qualityStatus);
   }
   styleBody(sheet, [2, 8], {
     5: '0.0000', 6: '0.00', 7: '0.00', 9: '0.0000', 10: '0.000000', 11: '0.000000',
     13: '0.00%', 16: '0.00', 17: '0.00%',
   }, [18]);
+  for (let row = 2; row <= sheet.rowCount; row += 1) applyQualityFill(sheet.getCell(row, 15), sheet.getCell(row, 15).value);
   return { rows, sourceRows };
 }
 
@@ -237,12 +242,19 @@ function writeDashboardSheet(workbook, derived) {
       { formula: `'Derived 5Y Spreads'!D${sourceRow}`, result: row.instrumentName },
       sourceCell(row.sourceUrl),
     ]);
-    for (let column = 3; column <= 10; column += 1) {
-      dashboardRow.getCell(column).font = { name: 'Aptos', size: 10, color: { argb: COLORS.formulaGreen } };
-    }
-    applyQualityFill(dashboardRow.getCell(8), row.qualityStatus);
   }
   styleBody(sheet, [1], { 3: '0.00', 4: '+0.00;[Red]-0.00;-', 5: '+0.00;[Red]-0.00;-', 6: '+0.00;[Red]-0.00;-', 7: '0.0000' }, [11]);
+  for (let row = 2; row <= sheet.rowCount; row += 1) {
+    for (let column = 3; column <= 10; column += 1) {
+      sheet.getCell(row, column).font = { name: 'Aptos', size: 10, color: { argb: COLORS.formulaGreen } };
+    }
+    const qualityCell = sheet.getCell(row, 8);
+    const qualityValue = qualityCell.value;
+    const qualityStatus = qualityValue && typeof qualityValue === 'object' && 'result' in qualityValue
+      ? qualityValue.result
+      : qualityValue;
+    applyQualityFill(qualityCell, qualityStatus);
+  }
 }
 
 function writeCurvesSheet(workbook, state) {
@@ -314,7 +326,7 @@ function writeMethodologySheet(workbook, state) {
   ];
   for (const entry of entries) sheet.addRow(entry);
   styleBody(sheet);
-  sheet.getColumn(2).alignment = { vertical: 'top', wrapText: true };
+  for (let row = 2; row <= sheet.rowCount; row += 1) sheet.getCell(row, 2).alignment = { vertical: 'top', wrapText: true };
   sheet.getCell('B6').numFmt = '0.0000';
   sheet.getCell('B7').numFmt = '0.00%';
   sheet.getCell('B6').font = { name: 'Aptos', size: 10, color: { argb: 'FF0000FF' } };

@@ -282,11 +282,14 @@ async function readSnapshotFile(dataFile, now) {
   try {
     const parsed = JSON.parse(await fs.promises.readFile(dataFile, 'utf8'));
     const empty = createEmptyAiDashboardSnapshot(isoNow(now));
+    const hasIceCdsBatch = parsed.creditRisk?.cds5y?.sourceKind === 'ice_eod_isda';
+    const sources = migrateSources(parsed.sources, empty.sources);
+    if (!hasIceCdsBatch) sources.creditRisk = empty.sources.creditRisk;
     return {
       ...empty,
       ...parsed,
       schemaVersion: 2,
-      sources: migrateSources(parsed.sources, empty.sources),
+      sources,
       modelPricing: {
         ...empty.modelPricing,
         ...(parsed.modelPricing || {}),
@@ -298,8 +301,10 @@ async function readSnapshotFile(dataFile, now) {
       },
       creditRisk: {
         ...empty.creditRisk,
-        ...(parsed.creditRisk || {}),
-        cds5y: { ...empty.creditRisk.cds5y, ...(parsed.creditRisk?.cds5y || {}) },
+        ...(hasIceCdsBatch ? parsed.creditRisk || {} : {}),
+        cds5y: hasIceCdsBatch
+          ? { ...empty.creditRisk.cds5y, ...(parsed.creditRisk?.cds5y || {}) }
+          : empty.creditRisk.cds5y,
       },
     };
   } catch (error) {

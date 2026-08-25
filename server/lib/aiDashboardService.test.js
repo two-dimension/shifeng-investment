@@ -164,6 +164,34 @@ test('legacy screenshot CDS file cannot overlay the production snapshot', async 
   assert.match(snapshot.sources.creditRisk.message, /ICE EOD Price/);
 });
 
+test('legacy DTCC CDS embedded in an old snapshot is quarantined during migration', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-cds-legacy-snapshot-');
+  await fs.promises.writeFile(dataFile, JSON.stringify({
+    schemaVersion: 2,
+    generatedAt: '2026-08-24T00:00:00.000Z',
+    sources: {
+      creditRisk: { status: 'ready', stale: false, asOf: '2026-08-24', message: 'DTCC sync ready' },
+    },
+    creditRisk: {
+      cds5y: {
+        sourceKind: 'dtcc_public_trade_estimate',
+        asOf: '2026-08-24',
+        sourceLabel: 'DTCC SEC PPD',
+        historyEstimated: true,
+        companies: [{ company: 'Oracle', latestBp: 221, changes: {}, history: [{ date: '2026-08-24', valueBp: 221 }] }],
+      },
+    },
+  }), 'utf8');
+  const service = createAiDashboardService({ dataFile, now: () => new Date('2026-08-25T00:00:00.000Z') });
+
+  const snapshot = await service.getSnapshot();
+
+  assert.equal(snapshot.creditRisk.cds5y.sourceKind, 'ice_eod_isda');
+  assert.equal(snapshot.creditRisk.cds5y.asOf, null);
+  assert.deepEqual(snapshot.creditRisk.cds5y.companies, []);
+  assert.match(snapshot.sources.creditRisk.message, /等待导入 ICE EOD Price/);
+});
+
 test('explicit ICE collector failure preserves the last-good ICE batch and marks it stale', async (t) => {
   const { dataFile } = await tempDashboard(t, 'ai-dashboard-cds-public-failure-');
   await fs.promises.writeFile(dataFile, JSON.stringify({
