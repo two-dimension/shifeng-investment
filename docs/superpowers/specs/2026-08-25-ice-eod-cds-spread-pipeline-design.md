@@ -121,13 +121,26 @@ AI 看板新增“导入 ICE 当日数据”入口，支持：
 
 求解失败、非有限值、负 spread、价格残差超阈值或参数缺失时，该记录不进入已发布序列。
 
-## 6. 数据结构与存储
+## 6. 数据结构、Excel 档案与网页快照
 
-新增三层本地 JSON 数据，保持无数据库的一期架构：
+Excel 是面向用户的长期数据档案和审计交付物，文件名固定为 `ice-cds-history.xlsx`。网页不在请求期间直接读取 Excel，而是读取由同一批已校验数据生成的 `snapshot.json`，避免 Excel 文件锁、局部写入或公式兼容问题影响页面。
 
-1. `ice-cds-raw.json`：不可变原始行和修订记录；
-2. `ice-cds-derived.json`：换算输入、结果和验证状态；
-3. `snapshot.json` 中的 `creditRisk.cds5y`：只包含通过发布规则的页面数据。
+工作簿包含：
+
+1. `Raw EOD Prices`：不可变原始 ICE 行、来源 URL、录入方式、录入时间和修订版本；
+2. `Derived 5Y Spreads`：目标合约、模型输入、计算 spread、反算价格、误差和质量状态；
+3. `Daily Dashboard`：七家公司每日 spread、1日/7日/1月绝对变化及最新状态；
+4. `Discount Curves`：按曲线日期保存期限节点、零利率和来源；
+5. `Contract Registry`：公司别名、币种、优先级、重组条款、票息和合约选择规则；
+6. `Validation Log`：导入批次、缺失项、重复项、价格残差、官方基准误差和发布决定；
+7. `Methodology`：指标定义、ISDA 模型版本、更新时间及来源链接。
+
+原始输入使用类型化日期和数值单元格。所有可以在 Excel 中审计的变化、误差和状态判断使用清晰公式；复杂的 ISDA 数值求解由服务端完成，并把完整输入、输出、模型版本和反算结果写入工作簿。工作簿中不得用静态文本伪装公式结果。
+
+后端以标准化记录为单次更新的内存事实源，同时生成两份一致输出：
+
+1. `ice-cds-history.xlsx`：完整历史、计算和审计记录；
+2. `snapshot.json` 中的 `creditRisk.cds5y`：只包含通过发布规则、供页面快速读取的数据。
 
 派生记录的唯一键为：
 
@@ -135,7 +148,9 @@ AI 看板新增“导入 ICE 当日数据”入口，支持：
 clearingDate + canonicalCompany + instrumentName + modelVersion + curveId + recoveryRate
 ```
 
-写入采用临时文件加原子替换。任何一家公司失败时，其他公司可以更新；失败公司保留上一结算日的 last-good，并明确显示日期和 stale 状态。不同来源的数据永远不合并进同一历史序列。
+Excel 与 JSON 使用同一批次 ID，并分别采用临时文件加原子替换。只有两份输出都成功生成并通过校验时才提交批次；任何一步失败都保留上一版 Excel 和 JSON，避免两者出现不同日期或不同数值。任何一家公司失败时，其他公司可以更新；失败公司保留上一结算日的 last-good，并明确显示日期和 stale 状态。不同来源的数据永远不合并进同一历史序列。
+
+每次成功更新后保留最近 30 个按日期命名的 Excel 备份，超出部分移入归档目录而不是直接删除。页面提供最新工作簿下载入口，用户可随时在 Excel 中查看和留存完整历史。
 
 ## 7. 每日更新流程
 
@@ -174,6 +189,7 @@ clearingDate + canonicalCompany + instrumentName + modelVersion + curveId + reco
 - `POST /api/ai-dashboard/cds/import/preview`：解析但不写入；
 - `POST /api/ai-dashboard/cds/import`：确认后写入和计算；
 - `GET /api/ai-dashboard/cds/import-status`：返回最近结算日、缺失公司和验证状态。
+- `GET /api/ai-dashboard/cds/export.xlsx`：下载最近一次成功批次的完整 Excel 工作簿。
 
 接口只接受 CSV 或结构化表格行，不接受任意网页 URL。限制文件大小、行数和字段类型，拒绝公式单元格及路径字段。导入权限沿用看板部署环境的内部访问边界；服务端记录导入时间和输入方式，不保存不必要的用户信息。
 
@@ -204,6 +220,10 @@ clearingDate + canonicalCompany + instrumentName + modelVersion + curveId + reco
 - 价格残差与 1% 基准误差判定；
 - 交易日口径的 1 日、7 日、1 月变化；
 - 重复导入幂等、修订审计和原子写入；
+- Excel 七张工作表、类型化单元格、公式、来源链接和批次 ID；
+- Excel 与 JSON 快照数值逐项一致；
+- Excel 写入失败时两份输出都回退到上一成功批次；
+- 工作簿公式错误扫描和所有工作表视觉检查；
 - 单公司失败保留 last-good；
 - DTCC 与截图取样数据不进入 ICE 序列；
 - API 文件限制和异常输入；
@@ -214,11 +234,12 @@ clearingDate + canonicalCompany + instrumentName + modelVersion + curveId + reco
 
 ## 12. 分阶段交付
 
-1. 原始数据导入、注册表、不可变存储和来源隔离；
+1. 原始数据导入、注册表、来源隔离和 Excel 工作簿骨架；
 2. ISDA 换算器、贴现曲线接口及反算校验；
-3. 变化计算、快照迁移和截图样式页面；
-4. 20 日并行验证、阈值调校和质量状态；
-5. 可选 ICE/S&P 授权源适配器及全自动定时采集。
+3. Excel 历史/公式/审计写入、JSON 快照及批次一致性；
+4. 变化计算、快照迁移、Excel 下载和截图样式页面；
+5. 20 日并行验证、阈值调校和质量状态；
+6. 可选 ICE/S&P 授权源适配器及全自动定时采集。
 
 任何阶段都不得把 DTCC 成交估算、截图取样或未通过校验的模型值标成 ICE 官方 spread。
 
