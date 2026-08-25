@@ -16,7 +16,7 @@ const DASHBOARD_SOURCE_DEFINITIONS: ReadonlyArray<{ key: DashboardSourceKey; lab
   { key: 'benchmarks', label: '厂商官网模型卡' },
   { key: 'artificialAnalysis', label: 'AA Index' },
   { key: 'compute', label: '算力租赁' },
-  { key: 'creditRisk', label: 'DTCC CDS' },
+  { key: 'creditRisk', label: '5Y CDS' },
 ];
 
 const TOKEN_UNITS: Array<{ divisor: bigint; suffix: string }> = [

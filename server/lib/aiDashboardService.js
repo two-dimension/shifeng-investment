@@ -1,8 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { normalizeCdsDataset } from './aiCdsData.js';
-import { createDtccCdsClient, DTCC_PPD_URL, mergePublicCdsObservations } from './aiCdsPublicData.js';
+import { DTCC_PPD_URL, mergePublicCdsObservations } from './aiCdsPublicData.js';
 import { AI_CAPITAL_SOURCE_REGISTRY, createAiCapitalCollector } from './aiCapitalSources.js';
 import { AI_COMPUTE_SOURCE_REGISTRY, createAiComputeCollector } from './aiComputeSources.js';
 import { AI_GROWTH_SOURCE_REGISTRY, createAiGrowthCollector } from './aiGrowthSources.js';
@@ -18,6 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const OPENROUTER_SOURCE_URL = 'https://openrouter.ai/rankings';
 const OPENROUTER_DATA_API_URL = 'https://openrouter.ai/api/v1/datasets/rankings-daily';
+const ICE_CDS_EOD_URL = 'https://www.ice.com/cds-settlement-prices/icc/single-name-instruments';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const BENCHMARK_FRESH_MS = 15 * 60 * 1000;
 const SOURCE_KEY_SET = new Set(DASHBOARD_SOURCE_KEYS);
@@ -34,7 +34,6 @@ const SLICE_PAYLOAD_FIELDS = Object.freeze({
 
 export const DEFAULT_AI_DASHBOARD_FILE = path.join(__dirname, '../data/ai-dashboard/snapshot.json');
 export const DEFAULT_OPENROUTER_PUBLIC_FILE = path.join(__dirname, '../data/ai-dashboard/openrouter-public.json');
-export const DEFAULT_CDS_FILE = path.join(__dirname, '../data/ai-dashboard/cds-5y.json');
 
 function isoNow(now) {
   return now().toISOString();
@@ -76,8 +75,8 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
       artificialAnalysis: unavailable(),
       compute: unavailable(),
       creditRisk: {
-        ...unavailable('等待首次同步 DTCC 公开 CDS 成交数据'),
-        url: DTCC_PPD_URL,
+        ...unavailable('等待导入 ICE EOD Price'),
+        url: ICE_CDS_EOD_URL,
       },
     },
     arrAndValuation: { companies: [], valuations: [] },
@@ -129,10 +128,14 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
     creditRisk: {
       cds5y: {
         asOf: null,
-        sourceLabel: '平台数据',
-        sourceUrl: null,
-        historyEstimated: false,
-        note: '',
+        sourceKind: 'ice_eod_isda',
+        sourceLabel: 'ICE EOD Price · ISDA 换算值',
+        sourceUrl: ICE_CDS_EOD_URL,
+        batchId: null,
+        qualityStatus: 'unavailable',
+        workbookAvailable: false,
+        historyEstimated: true,
+        note: '等待导入 ICE EOD Price；换算结果为模型估算值。',
         companies: [],
       },
     },
@@ -305,17 +308,6 @@ async function readSnapshotFile(dataFile, now) {
   }
 }
 
-async function readCdsFile(cdsFile) {
-  if (!cdsFile) return null;
-  try {
-    const dataset = JSON.parse(await fs.promises.readFile(cdsFile, 'utf8'));
-    return normalizeCdsDataset(dataset);
-  } catch (error) {
-    if (error.code !== 'ENOENT') console.warn(`[ai-dashboard] CDS data read failed: ${error.message}`);
-    return null;
-  }
-}
-
 async function writeSnapshotFile(dataFile, snapshot) {
   await fs.promises.mkdir(path.dirname(dataFile), { recursive: true });
   const tempFile = `${dataFile}.${process.pid}.tmp`;
@@ -406,7 +398,6 @@ function validateRefreshSources(sources) {
 
 export function createAiDashboardService({
   dataFile = DEFAULT_AI_DASHBOARD_FILE,
-  cdsFile = DEFAULT_CDS_FILE,
   collectors = {},
   openRouterClient,
   openRouterPublicClient,
@@ -420,20 +411,7 @@ export function createAiDashboardService({
   let refreshQueue = Promise.resolve();
   let benchmarkRefreshInFlight = null;
 
-  const getSnapshot = async () => {
-    const snapshot = await readSnapshotFile(dataFile, now);
-    const snapshotCds = snapshot.creditRisk?.cds5y;
-    if (snapshotCds?.sourceKind === 'dtcc_public_trade_estimate' && snapshotCds.companies?.length > 0) return snapshot;
-    const cds5y = await readCdsFile(cdsFile);
-    if (!cds5y) return snapshot;
-    return {
-      ...snapshot,
-      creditRisk: {
-        ...(snapshot.creditRisk || {}),
-        cds5y,
-      },
-    };
-  };
+  const getSnapshot = async () => readSnapshotFile(dataFile, now);
 
   const performRefresh = async ({ sources, force = false }) => {
     const previous = await getSnapshot();
@@ -555,7 +533,6 @@ export function createAiDashboardService({
 export function createAiDashboardServiceFromEnv({
   fetchImpl = fetch,
   dataFile = DEFAULT_AI_DASHBOARD_FILE,
-  cdsFile = DEFAULT_CDS_FILE,
   openRouterPublicFile = DEFAULT_OPENROUTER_PUBLIC_FILE,
   collectors = {},
   pricingSourceIds,
@@ -563,7 +540,6 @@ export function createAiDashboardServiceFromEnv({
   capitalSourceIds,
   computeSourceIds,
   officialBenchmarkClient,
-  cdsPublicClient,
   now = () => new Date(),
 } = {}) {
   const openRouterClient = process.env.OPENROUTER_API_KEY
@@ -636,14 +612,8 @@ export function createAiDashboardServiceFromEnv({
     });
     mergedCollectors.benchmarks = createOfficialBenchmarkCollector({ officialBenchmarkClient: benchmarkClient });
   }
-  if (typeof mergedCollectors.creditRisk !== 'function' && process.env.CDS_PUBLIC_SYNC_DISABLED !== '1') {
-    mergedCollectors.creditRisk = createDtccCreditRiskCollector({
-      cdsPublicClient: cdsPublicClient || createDtccCdsClient({ fetchImpl }),
-    });
-  }
   return createAiDashboardService({
     dataFile,
-    cdsFile,
     collectors: mergedCollectors,
     openRouterClient,
     openRouterPublicClient,
@@ -661,12 +631,13 @@ export function startAiDashboardAutoRefresh(service, {
   const run = (sources) => service.refresh({ sources }).catch((error) => {
     console.error(`[ai-dashboard] automatic refresh failed: ${error.message}`);
   });
-  const researchSources = ['growth', 'pricing', 'capital', 'artificialAnalysis', 'compute', 'creditRisk'];
-  const initial = setTimeoutImpl(() => run(DASHBOARD_SOURCE_KEYS), 5_000);
+  const automaticSources = DASHBOARD_SOURCE_KEYS.filter((source) => source !== 'creditRisk');
+  const researchSources = ['growth', 'pricing', 'capital', 'artificialAnalysis', 'compute'];
+  const initial = setTimeoutImpl(() => run(automaticSources), 5_000);
   const researchInterval = setIntervalImpl(() => run(researchSources), DAY_MS);
   const openRouterInterval = setIntervalImpl(() => run(['openRouter']), DAY_MS);
   const benchmarkInterval = setIntervalImpl(() => run(['benchmarks']), DAY_MS);
-  console.log('[ai-dashboard] scheduled eight public-source slices for daily refresh');
+  console.log('[ai-dashboard] scheduled public-source slices for daily refresh; ICE CDS is import-driven');
   return () => {
     clearTimeoutImpl(initial);
     clearIntervalImpl(researchInterval);

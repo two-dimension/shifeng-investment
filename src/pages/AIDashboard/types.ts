@@ -401,11 +401,19 @@ export interface PublicSourceReport {
 export interface CdsHistoryPoint {
   date: string;
   valueBp: number;
+  eodPrice?: number;
+  instrumentName?: string;
+  qualityStatus?: CdsQualityStatus;
 }
+
+export type CdsQualityStatus = 'validated' | 'model-derived' | 'needs-review' | 'stale' | 'unavailable';
 
 export interface CdsCompanyMetric {
   company: string;
   latestBp: number;
+  latestEodPrice?: number;
+  latestInstrumentName?: string;
+  qualityStatus?: CdsQualityStatus;
   changes: {
     oneDayBp: number | null;
     sevenDayBp: number | null;
@@ -416,10 +424,13 @@ export interface CdsCompanyMetric {
 
 export interface CdsRiskSnapshot {
   asOf: string | null;
-  sourceKind?: 'dtcc_public_trade_estimate' | string;
+  sourceKind?: 'ice_eod_isda' | string;
   sourceLabel: string;
   sourceUrl?: string | null;
   lastCheckedAt?: string | null;
+  batchId?: string | null;
+  qualityStatus?: CdsQualityStatus | null;
+  workbookAvailable?: boolean;
   historyEstimated: boolean;
   note?: string;
   companies: CdsCompanyMetric[];

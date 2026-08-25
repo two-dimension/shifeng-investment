@@ -6,7 +6,6 @@ import test from 'node:test';
 import {
   createAiDashboardService,
   createAiDashboardServiceFromEnv,
-  createDtccCreditRiskCollector,
   createEmptyAiDashboardSnapshot,
   createOpenRouterClient,
   startAiDashboardAutoRefresh,
@@ -133,7 +132,7 @@ test('missing collectors return an empty public-source snapshot instead of fabri
   assert.deepEqual(snapshot.openRouter.topModels, []);
 });
 
-test('platform CDS dataset overlays old snapshots without depending on any public slice refresh', async (t) => {
+test('legacy screenshot CDS file cannot overlay the production snapshot', async (t) => {
   const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-cds-');
   const cdsFile = path.join(dir, 'cds-5y.json');
   await fs.promises.writeFile(dataFile, JSON.stringify({
@@ -160,66 +159,24 @@ test('platform CDS dataset overlays old snapshots without depending on any publi
 
   const snapshot = await service.getSnapshot();
 
-  assert.equal(snapshot.creditRisk.cds5y.asOf, '2026-08-19');
-  assert.equal(snapshot.creditRisk.cds5y.companies[0].company, 'Oracle');
-  assert.equal(snapshot.creditRisk.cds5y.companies[0].latestBp, 207);
-  assert.equal(snapshot.creditRisk.cds5y.historyEstimated, true);
+  assert.equal(snapshot.creditRisk.cds5y.asOf, null);
+  assert.deepEqual(snapshot.creditRisk.cds5y.companies, []);
+  assert.match(snapshot.sources.creditRisk.message, /ICE EOD Price/);
 });
 
-test('DTCC public collector updates the screenshot-shaped CDS cards and survives a subsequent read', async (t) => {
-  const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-cds-public-');
-  const cdsFile = path.join(dir, 'cds-5y.json');
-  await fs.promises.writeFile(cdsFile, JSON.stringify({
-    asOf: '2026-08-19',
-    sourceLabel: 'ICE ICC（用户截图估算）',
-    historyEstimated: true,
-    companies: [
-      { company: 'Oracle', latestBp: 214, changes: { oneDayBp: 2, sevenDayBp: 10, oneMonthBp: 4 }, history: [{ date: '2026-08-19', valueBp: 214 }] },
-      { company: 'Amazon', latestBp: 63, changes: { oneDayBp: 1, sevenDayBp: 4, oneMonthBp: 1 }, history: [{ date: '2026-08-19', valueBp: 63 }] },
-    ],
-  }), 'utf8');
-  const cdsPublicClient = {
-    async fetchLatest({ referenceCompanies }) {
-      assert.deepEqual(referenceCompanies.map((row) => row.company), ['Oracle', 'Amazon']);
-      return {
-        asOf: '2026-08-24',
-        observations: [
-          { company: 'Oracle', asOf: '2026-08-24', executedAt: '2026-08-24T14:00:00Z', valueBp: 221.2, confidence: 'medium', tradeCount: 3 },
-        ],
-      };
-    },
-  };
-  const service = createAiDashboardService({
-    dataFile,
-    cdsFile,
-    collectors: { creditRisk: createDtccCreditRiskCollector({ cdsPublicClient }) },
-    now: () => new Date('2026-08-25T01:00:00.000Z'),
-  });
-
-  const refreshed = await service.refresh({ sources: ['creditRisk'], force: true });
-  const reread = await service.getSnapshot();
-
-  assert.equal(refreshed.sources.creditRisk.status, 'ready');
-  assert.equal(refreshed.sources.creditRisk.stale, false);
-  assert.equal(refreshed.creditRisk.cds5y.sourceKind, 'dtcc_public_trade_estimate');
-  assert.equal(refreshed.creditRisk.cds5y.companies[0].latestBp, 221);
-  assert.equal(refreshed.creditRisk.cds5y.companies[1].latestBp, 63);
-  assert.equal(reread.creditRisk.cds5y.companies[0].latestBp, 221);
-});
-
-test('DTCC collector failure preserves the last-good public CDS values and marks the slice stale', async (t) => {
+test('explicit ICE collector failure preserves the last-good ICE batch and marks it stale', async (t) => {
   const { dataFile } = await tempDashboard(t, 'ai-dashboard-cds-public-failure-');
   await fs.promises.writeFile(dataFile, JSON.stringify({
     schemaVersion: 2,
     generatedAt: '2026-08-24T01:00:00.000Z',
     sources: {
-      creditRisk: { status: 'ready', stale: false, asOf: '2026-08-24', url: 'https://pddata.dtcc.com/ppd/index.html' },
+      creditRisk: { status: 'ready', stale: false, asOf: '2026-08-24', url: 'https://www.ice.com/cds-settlement-prices/icc/single-name-instruments' },
     },
     creditRisk: {
       cds5y: {
-        sourceKind: 'dtcc_public_trade_estimate',
+        sourceKind: 'ice_eod_isda',
         asOf: '2026-08-24',
-        sourceLabel: 'DTCC SEC PPD · 成交隐含估算',
+        sourceLabel: 'ICE EOD Price · ISDA 换算值',
         historyEstimated: true,
         companies: [{ company: 'Oracle', latestBp: 221, changes: { oneDayBp: 7, sevenDayBp: 11, oneMonthBp: 11 }, history: [{ date: '2026-08-24', valueBp: 221 }] }],
       },
@@ -227,8 +184,7 @@ test('DTCC collector failure preserves the last-good public CDS values and marks
   }), 'utf8');
   const service = createAiDashboardService({
     dataFile,
-    cdsFile: null,
-    collectors: { async creditRisk() { throw new Error('DTCC unavailable'); } },
+    collectors: { async creditRisk() { throw new Error('ICE batch unavailable'); } },
     now: () => new Date('2026-08-25T01:00:00.000Z'),
   });
 
@@ -236,7 +192,7 @@ test('DTCC collector failure preserves the last-good public CDS values and marks
 
   assert.equal(snapshot.sources.creditRisk.status, 'error');
   assert.equal(snapshot.sources.creditRisk.stale, true);
-  assert.match(snapshot.sources.creditRisk.message, /DTCC unavailable/);
+  assert.match(snapshot.sources.creditRisk.message, /ICE batch unavailable/);
   assert.equal(snapshot.creditRisk.cds5y.companies[0].latestBp, 221);
 });
 
@@ -598,7 +554,7 @@ test('incomplete OpenRouter responses preserve the last-good week', async (t) =>
   assert.equal(snapshot.openRouter.weekTotalTokens, '123');
 });
 
-test('auto refresh schedules all public slices daily and clears every timer', async () => {
+test('auto refresh excludes import-driven ICE CDS and clears every timer', async () => {
   const timeouts = [];
   const intervals = [];
   const clearedTimeouts = [];
@@ -628,8 +584,8 @@ test('auto refresh schedules all public slices daily and clears every timer', as
   await timeouts[0].callback();
   for (const timer of intervals) await timer.callback();
   assert.deepEqual(calls, [
-    { sources: ALL_PUBLIC_SLICES },
-    { sources: ['growth', 'pricing', 'capital', 'artificialAnalysis', 'compute', 'creditRisk'] },
+    { sources: ALL_PUBLIC_SLICES.filter((source) => source !== 'creditRisk') },
+    { sources: ['growth', 'pricing', 'capital', 'artificialAnalysis', 'compute'] },
     { sources: ['openRouter'] },
     { sources: ['benchmarks'] },
   ]);
