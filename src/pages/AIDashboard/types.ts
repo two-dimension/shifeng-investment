@@ -9,7 +9,8 @@ export type DashboardSourceKey =
   | 'capital'
   | 'benchmarks'
   | 'artificialAnalysis'
-  | 'compute';
+  | 'compute'
+  | 'creditRisk';
 
 export interface MetricProvenance {
   sourceLabel: string;
@@ -415,8 +416,10 @@ export interface CdsCompanyMetric {
 
 export interface CdsRiskSnapshot {
   asOf: string | null;
+  sourceKind?: 'dtcc_public_trade_estimate' | string;
   sourceLabel: string;
   sourceUrl?: string | null;
+  lastCheckedAt?: string | null;
   historyEstimated: boolean;
   note?: string;
   companies: CdsCompanyMetric[];

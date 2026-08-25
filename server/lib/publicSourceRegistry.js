@@ -6,6 +6,7 @@ export const DASHBOARD_SOURCE_KEYS = Object.freeze([
   'benchmarks',
   'artificialAnalysis',
   'compute',
+  'creditRisk',
 ]);
 
 const SOURCE_KEY_SET = new Set(DASHBOARD_SOURCE_KEYS);

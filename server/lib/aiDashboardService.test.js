@@ -6,6 +6,7 @@ import test from 'node:test';
 import {
   createAiDashboardService,
   createAiDashboardServiceFromEnv,
+  createDtccCreditRiskCollector,
   createEmptyAiDashboardSnapshot,
   createOpenRouterClient,
   startAiDashboardAutoRefresh,
@@ -19,6 +20,7 @@ const ALL_PUBLIC_SLICES = [
   'benchmarks',
   'artificialAnalysis',
   'compute',
+  'creditRisk',
 ];
 
 async function tempDashboard(t, prefix = 'ai-dashboard-') {
@@ -37,7 +39,7 @@ function readySource(asOf, message = '公开来源同步成功') {
   };
 }
 
-test('empty dashboard snapshot uses the seven public-source schema-v2 slices', () => {
+test('empty dashboard snapshot uses the eight public-source schema-v2 slices', () => {
   const snapshot = createEmptyAiDashboardSnapshot('2026-08-23T00:00:00.000Z');
 
   assert.equal(snapshot.schemaVersion, 2);
@@ -162,6 +164,80 @@ test('platform CDS dataset overlays old snapshots without depending on any publi
   assert.equal(snapshot.creditRisk.cds5y.companies[0].company, 'Oracle');
   assert.equal(snapshot.creditRisk.cds5y.companies[0].latestBp, 207);
   assert.equal(snapshot.creditRisk.cds5y.historyEstimated, true);
+});
+
+test('DTCC public collector updates the screenshot-shaped CDS cards and survives a subsequent read', async (t) => {
+  const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-cds-public-');
+  const cdsFile = path.join(dir, 'cds-5y.json');
+  await fs.promises.writeFile(cdsFile, JSON.stringify({
+    asOf: '2026-08-19',
+    sourceLabel: 'ICE ICC（用户截图估算）',
+    historyEstimated: true,
+    companies: [
+      { company: 'Oracle', latestBp: 214, changes: { oneDayBp: 2, sevenDayBp: 10, oneMonthBp: 4 }, history: [{ date: '2026-08-19', valueBp: 214 }] },
+      { company: 'Amazon', latestBp: 63, changes: { oneDayBp: 1, sevenDayBp: 4, oneMonthBp: 1 }, history: [{ date: '2026-08-19', valueBp: 63 }] },
+    ],
+  }), 'utf8');
+  const cdsPublicClient = {
+    async fetchLatest({ referenceCompanies }) {
+      assert.deepEqual(referenceCompanies.map((row) => row.company), ['Oracle', 'Amazon']);
+      return {
+        asOf: '2026-08-24',
+        observations: [
+          { company: 'Oracle', asOf: '2026-08-24', executedAt: '2026-08-24T14:00:00Z', valueBp: 221.2, confidence: 'medium', tradeCount: 3 },
+        ],
+      };
+    },
+  };
+  const service = createAiDashboardService({
+    dataFile,
+    cdsFile,
+    collectors: { creditRisk: createDtccCreditRiskCollector({ cdsPublicClient }) },
+    now: () => new Date('2026-08-25T01:00:00.000Z'),
+  });
+
+  const refreshed = await service.refresh({ sources: ['creditRisk'], force: true });
+  const reread = await service.getSnapshot();
+
+  assert.equal(refreshed.sources.creditRisk.status, 'ready');
+  assert.equal(refreshed.sources.creditRisk.stale, false);
+  assert.equal(refreshed.creditRisk.cds5y.sourceKind, 'dtcc_public_trade_estimate');
+  assert.equal(refreshed.creditRisk.cds5y.companies[0].latestBp, 221);
+  assert.equal(refreshed.creditRisk.cds5y.companies[1].latestBp, 63);
+  assert.equal(reread.creditRisk.cds5y.companies[0].latestBp, 221);
+});
+
+test('DTCC collector failure preserves the last-good public CDS values and marks the slice stale', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-cds-public-failure-');
+  await fs.promises.writeFile(dataFile, JSON.stringify({
+    schemaVersion: 2,
+    generatedAt: '2026-08-24T01:00:00.000Z',
+    sources: {
+      creditRisk: { status: 'ready', stale: false, asOf: '2026-08-24', url: 'https://pddata.dtcc.com/ppd/index.html' },
+    },
+    creditRisk: {
+      cds5y: {
+        sourceKind: 'dtcc_public_trade_estimate',
+        asOf: '2026-08-24',
+        sourceLabel: 'DTCC SEC PPD · 成交隐含估算',
+        historyEstimated: true,
+        companies: [{ company: 'Oracle', latestBp: 221, changes: { oneDayBp: 7, sevenDayBp: 11, oneMonthBp: 11 }, history: [{ date: '2026-08-24', valueBp: 221 }] }],
+      },
+    },
+  }), 'utf8');
+  const service = createAiDashboardService({
+    dataFile,
+    cdsFile: null,
+    collectors: { async creditRisk() { throw new Error('DTCC unavailable'); } },
+    now: () => new Date('2026-08-25T01:00:00.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['creditRisk'], force: true });
+
+  assert.equal(snapshot.sources.creditRisk.status, 'error');
+  assert.equal(snapshot.sources.creditRisk.stale, true);
+  assert.match(snapshot.sources.creditRisk.message, /DTCC unavailable/);
+  assert.equal(snapshot.creditRisk.cds5y.companies[0].latestBp, 221);
 });
 
 test('environment service ignores legacy Feishu exports and accepts public collectors', async (t) => {
@@ -553,7 +629,7 @@ test('auto refresh schedules all public slices daily and clears every timer', as
   for (const timer of intervals) await timer.callback();
   assert.deepEqual(calls, [
     { sources: ALL_PUBLIC_SLICES },
-    { sources: ['growth', 'pricing', 'capital', 'artificialAnalysis', 'compute'] },
+    { sources: ['growth', 'pricing', 'capital', 'artificialAnalysis', 'compute', 'creditRisk'] },
     { sources: ['openRouter'] },
     { sources: ['benchmarks'] },
   ]);

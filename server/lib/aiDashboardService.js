@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeCdsDataset } from './aiCdsData.js';
+import { createDtccCdsClient, DTCC_PPD_URL, mergePublicCdsObservations } from './aiCdsPublicData.js';
 import { AI_CAPITAL_SOURCE_REGISTRY, createAiCapitalCollector } from './aiCapitalSources.js';
 import { AI_COMPUTE_SOURCE_REGISTRY, createAiComputeCollector } from './aiComputeSources.js';
 import { AI_GROWTH_SOURCE_REGISTRY, createAiGrowthCollector } from './aiGrowthSources.js';
@@ -28,6 +29,7 @@ const SLICE_PAYLOAD_FIELDS = Object.freeze({
   benchmarks: Object.freeze(['benchmarks']),
   artificialAnalysis: Object.freeze(['artificialAnalysis']),
   compute: Object.freeze(['computeRental', 'computeSourceReports']),
+  creditRisk: Object.freeze(['creditRisk']),
 });
 
 export const DEFAULT_AI_DASHBOARD_FILE = path.join(__dirname, '../data/ai-dashboard/snapshot.json');
@@ -73,6 +75,10 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
       benchmarks: unavailable('尚未完成首次厂商官网模型卡同步'),
       artificialAnalysis: unavailable(),
       compute: unavailable(),
+      creditRisk: {
+        ...unavailable('等待首次同步 DTCC 公开 CDS 成交数据'),
+        url: DTCC_PPD_URL,
+      },
     },
     arrAndValuation: { companies: [], valuations: [] },
     openRouter: {
@@ -240,6 +246,35 @@ export function createOfficialBenchmarkCollector({ officialBenchmarkClient } = {
   };
 }
 
+export function createDtccCreditRiskCollector({ cdsPublicClient } = {}) {
+  if (!cdsPublicClient || typeof cdsPublicClient.fetchLatest !== 'function') {
+    throw new Error('cdsPublicClient.fetchLatest is required');
+  }
+  return async ({ previous, generatedAt }) => {
+    const result = await cdsPublicClient.fetchLatest({
+      referenceCompanies: previous.creditRisk?.cds5y?.companies || [],
+    });
+    const cds5y = mergePublicCdsObservations(previous.creditRisk?.cds5y, result.observations, {
+      checkedAt: generatedAt,
+    });
+    return {
+      payload: {
+        creditRisk: {
+          ...(previous.creditRisk || {}),
+          cds5y,
+        },
+      },
+      source: {
+        status: 'ready',
+        stale: false,
+        asOf: result.asOf,
+        url: DTCC_PPD_URL,
+        message: `DTCC SEC PPD 公开成交同步成功；更新 ${result.observations.length} 家`,
+      },
+    };
+  };
+}
+
 async function readSnapshotFile(dataFile, now) {
   try {
     const parsed = JSON.parse(await fs.promises.readFile(dataFile, 'utf8'));
@@ -387,6 +422,8 @@ export function createAiDashboardService({
 
   const getSnapshot = async () => {
     const snapshot = await readSnapshotFile(dataFile, now);
+    const snapshotCds = snapshot.creditRisk?.cds5y;
+    if (snapshotCds?.sourceKind === 'dtcc_public_trade_estimate' && snapshotCds.companies?.length > 0) return snapshot;
     const cds5y = await readCdsFile(cdsFile);
     if (!cds5y) return snapshot;
     return {
@@ -526,6 +563,7 @@ export function createAiDashboardServiceFromEnv({
   capitalSourceIds,
   computeSourceIds,
   officialBenchmarkClient,
+  cdsPublicClient,
   now = () => new Date(),
 } = {}) {
   const openRouterClient = process.env.OPENROUTER_API_KEY
@@ -598,6 +636,11 @@ export function createAiDashboardServiceFromEnv({
     });
     mergedCollectors.benchmarks = createOfficialBenchmarkCollector({ officialBenchmarkClient: benchmarkClient });
   }
+  if (typeof mergedCollectors.creditRisk !== 'function' && process.env.CDS_PUBLIC_SYNC_DISABLED !== '1') {
+    mergedCollectors.creditRisk = createDtccCreditRiskCollector({
+      cdsPublicClient: cdsPublicClient || createDtccCdsClient({ fetchImpl }),
+    });
+  }
   return createAiDashboardService({
     dataFile,
     cdsFile,
@@ -618,12 +661,12 @@ export function startAiDashboardAutoRefresh(service, {
   const run = (sources) => service.refresh({ sources }).catch((error) => {
     console.error(`[ai-dashboard] automatic refresh failed: ${error.message}`);
   });
-  const researchSources = ['growth', 'pricing', 'capital', 'artificialAnalysis', 'compute'];
+  const researchSources = ['growth', 'pricing', 'capital', 'artificialAnalysis', 'compute', 'creditRisk'];
   const initial = setTimeoutImpl(() => run(DASHBOARD_SOURCE_KEYS), 5_000);
   const researchInterval = setIntervalImpl(() => run(researchSources), DAY_MS);
   const openRouterInterval = setIntervalImpl(() => run(['openRouter']), DAY_MS);
   const benchmarkInterval = setIntervalImpl(() => run(['benchmarks']), DAY_MS);
-  console.log('[ai-dashboard] scheduled seven public-source slices for daily refresh');
+  console.log('[ai-dashboard] scheduled eight public-source slices for daily refresh');
   return () => {
     clearTimeoutImpl(initial);
     clearIntervalImpl(researchInterval);

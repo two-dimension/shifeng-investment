@@ -176,7 +176,7 @@ test('AI dashboard routes are mounted and publicly readable without a separate p
     const { response, body } = await fetchJsonWithTimeout(`http://127.0.0.1:${port}/api/ai-dashboard`);
     assert.equal(response.status, 200);
     assert.equal(body.publicAccess, true);
-    assert.equal(body.data.schemaVersion, 1);
+    assert.equal(body.data.schemaVersion, 2);
   } finally {
     await stopServer(server);
   }

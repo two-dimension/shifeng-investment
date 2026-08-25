@@ -56,7 +56,7 @@ import {
   officialWinnerRows,
 } from './viewModel';
 
-const { Text, Title, Paragraph } = Typography;
+const { Text, Title, Paragraph, Link } = Typography;
 
 type DashboardProps = { data: AiDashboardSnapshot };
 
@@ -175,7 +175,17 @@ function CdsSummaryCard({ metric }: { metric: CdsCompanyMetric }) {
   );
 }
 
-function CdsTrendChart({ metric, estimated }: { metric: CdsCompanyMetric; estimated: boolean }) {
+function CdsTrendChart({
+  metric,
+  sourceLabel,
+  sourceKind,
+  estimated,
+}: {
+  metric: CdsCompanyMetric;
+  sourceLabel: string;
+  sourceKind?: string;
+  estimated: boolean;
+}) {
   const palette = useChartPalette();
   const screens = Grid.useBreakpoint();
   const compact = !screens.sm;
@@ -222,7 +232,9 @@ function CdsTrendChart({ metric, estimated }: { metric: CdsCompanyMetric; estima
     <Card className="ai-cds-chart-card" variant="outlined">
       <Title level={5}>{metric.company} 5Y CDS 信用违约互换利差（bp）</Title>
       <Text type="secondary" className="ai-cds-chart-source">
-        ICE ICC 每日 EOD 结算价{estimated ? ' · 截图估算' : ''}
+        {sourceKind === 'dtcc_public_trade_estimate'
+          ? 'DTCC SEC PPD 公开成交 · 5Y 隐含利差估算'
+          : `${sourceLabel}${estimated ? ' · 估算' : ''}`}
       </Text>
       {metric.history.length > 0
         ? <ReactECharts option={option} style={{ height: compact ? 300 : 330 }} notMerge />
@@ -243,7 +255,12 @@ function CdsRiskSection({ data }: DashboardProps) {
         </div>
         <Space size={8} wrap>
           <Tag color="blue">截至 {dateLabel(cds.asOf)}</Tag>
-          <Tag>{cds.sourceLabel}</Tag>
+          {cds.sourceUrl
+            ? <Tag><Link href={cds.sourceUrl} target="_blank" rel="noreferrer">{cds.sourceLabel}</Link></Tag>
+            : <Tag>{cds.sourceLabel}</Tag>}
+          {data.sources.creditRisk.stale && cds.sourceKind === 'dtcc_public_trade_estimate'
+            ? <Tag color="warning">同步异常 · 使用上一版</Tag>
+            : null}
         </Space>
       </Flex>
       <Row gutter={[12, 12]}>
@@ -256,7 +273,12 @@ function CdsRiskSection({ data }: DashboardProps) {
       <Row gutter={[12, 12]}>
         {cds.companies.map((metric) => (
           <Col xs={24} md={12} key={metric.company}>
-            <CdsTrendChart metric={metric} estimated={cds.historyEstimated} />
+            <CdsTrendChart
+              metric={metric}
+              sourceLabel={cds.sourceLabel}
+              sourceKind={cds.sourceKind}
+              estimated={cds.historyEstimated}
+            />
           </Col>
         ))}
       </Row>

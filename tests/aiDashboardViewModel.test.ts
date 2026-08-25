@@ -142,7 +142,7 @@ test('source status labels distinguish ready, stale errors, and missing authoriz
   assert.equal(sourceStatusLabel({ status: 'authorization_required', stale: true }), '待授权');
 });
 
-test('dashboard source entries map all seven public slices without exposing Feishu', () => {
+test('dashboard source entries map all eight public slices without exposing Feishu', () => {
   const ready = { status: 'ready' as const, stale: false, asOf: '2026-08-22' };
   const sources = {
     growth: ready,
@@ -152,6 +152,7 @@ test('dashboard source entries map all seven public slices without exposing Feis
     benchmarks: ready,
     artificialAnalysis: ready,
     compute: ready,
+    creditRisk: ready,
   };
 
   assert.deepEqual(dashboardViewModel.dashboardSourceEntries?.(sources).map(({ key, label }) => [key, label]), [
@@ -162,6 +163,7 @@ test('dashboard source entries map all seven public slices without exposing Feis
     ['benchmarks', '厂商官网模型卡'],
     ['artificialAnalysis', 'AA Index'],
     ['compute', '算力租赁'],
+    ['creditRisk', 'DTCC CDS'],
   ]);
   assert.equal('feishu' in sources, false);
 });
