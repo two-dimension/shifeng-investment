@@ -20,11 +20,64 @@
 
 .ai-dashboard-header p {
   margin-top: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
-.ai-source-row {
+.ai-source-summary-button.ant-btn {
+  height: 24px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
   font-size: 12px;
+}
+
+.ai-source-summary-button.ant-btn.is-warning {
+  color: #d48806;
+  border-color: rgb(250 173 20 / 24%);
+  background: rgb(250 173 20 / 10%);
+}
+
+.ai-source-summary-button.ant-btn.is-success {
+  color: #389e0d;
+  border-color: rgb(82 196 26 / 24%);
+  background: rgb(82 196 26 / 10%);
+}
+
+.ai-source-popover {
+  width: min(420px, calc(100vw - 40px));
+  max-height: min(460px, calc(100vh - 140px));
+  overflow-y: auto;
+}
+
+.ai-source-popover-header {
+  padding: 2px 0 8px;
+  border-bottom: 1px solid var(--ai-border);
+}
+
+.ai-source-popover-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ai-border);
+}
+
+.ai-source-popover-item:last-child {
+  padding-bottom: 2px;
+  border-bottom: 0;
+}
+
+.ai-source-popover-item .ant-tag {
+  margin-inline-end: 0;
+}
+
+.ai-source-popover-date,
+.ai-source-popover-message {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ai-source-popover-message {
+  overflow-wrap: anywhere;
 }
 
 .ai-primary-tabs > .ant-tabs-nav {
@@ -448,15 +501,6 @@
 
   .ai-primary-tabs > .ant-tabs-nav {
     padding: 0;
-  }
-
-  .ai-source-row {
-    flex-direction: column;
-    gap: 5px !important;
-  }
-
-  .ai-source-row .ant-space-item {
-    white-space: nowrap;
   }
 
   .ai-cds-section {

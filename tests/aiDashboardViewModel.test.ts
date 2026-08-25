@@ -145,24 +145,21 @@ test('source status labels distinguish fresh, partially retained, fallback, auth
   assert.equal(sourceStatusLabel({ status: 'error', stale: false }), '同步失败');
 });
 
-test('dashboard source summary flags every state that needs attention', () => {
+test('dashboard source summary counts every state that needs attention', () => {
   assert.deepEqual(dashboardSourceSummary([
     { status: 'ready', stale: false },
     { status: 'ready', stale: false },
-  ]), { label: '数据源正常', color: 'success' });
+  ]), { attentionCount: 0, label: '状态正常', color: 'success' });
 
   assert.deepEqual(dashboardSourceSummary([
     { status: 'ready', stale: false },
     { status: 'ready', stale: true },
-  ]), { label: '部分来源需关注', color: 'warning' });
+  ]), { attentionCount: 1, label: '1项需关注', color: 'warning' });
 
   assert.deepEqual(dashboardSourceSummary([
     { status: 'authorization_required', stale: false },
-  ]), { label: '部分来源需关注', color: 'warning' });
-
-  assert.deepEqual(dashboardSourceSummary([
     { status: 'error', stale: false },
-  ]), { label: '部分来源需关注', color: 'warning' });
+  ]), { attentionCount: 2, label: '2项需关注', color: 'warning' });
 });
 
 test('dashboard source entries map all eight public slices without exposing Feishu', () => {

@@ -6,6 +6,7 @@ import {
   Flex,
   Form,
   Input,
+  Popover,
   Result,
   Skeleton,
   Space,
@@ -26,7 +27,6 @@ import type {
   AiDashboardApiResponse,
   AiDashboardSnapshot,
   IceCdsImportStatus,
-  SourceStatus,
 } from './types';
 import {
   benchmarkRefreshRequest,
@@ -64,16 +64,34 @@ async function requestDashboard<T = AiDashboardSnapshot>(path = '', init?: Reque
   return payload;
 }
 
-function SourceBadge({ label, source }: { label: string; source: SourceStatus }) {
-  const content = (
-    <Space size={5}>
-      <CloudSyncOutlined />
-      <Text>{label}</Text>
-      <Tag color={sourceStatusColor(source)}>{sourceStatusLabel(source)}</Tag>
-      <Text type="secondary">{source.asOf ? source.asOf.slice(0, 16).replace('T', ' ') : '暂无日期'}</Text>
-    </Space>
+type DashboardSourceEntry = ReturnType<typeof dashboardSourceEntries>[number];
+
+function SourceStatusDetails({ entries }: { entries: DashboardSourceEntry[] }) {
+  return (
+    <div className="ai-source-popover">
+      <Flex align="center" justify="space-between" className="ai-source-popover-header">
+        <Text strong>数据源状态</Text>
+        <Text type="secondary">{entries.length} 项</Text>
+      </Flex>
+      <div className="ai-source-popover-list">
+        {entries.map(({ key, label, source }) => (
+          <div className="ai-source-popover-item" key={key}>
+            <Flex align="center" justify="space-between" gap={12}>
+              <Space size={6}>
+                <CloudSyncOutlined />
+                <Text strong>{label}</Text>
+              </Space>
+              <Tag color={sourceStatusColor(source)}>{sourceStatusLabel(source)}</Tag>
+            </Flex>
+            <Text type="secondary" className="ai-source-popover-date">
+              {source.asOf ? source.asOf.slice(0, 16).replace('T', ' ') : '暂无日期'}
+            </Text>
+            {source.message ? <Text type="secondary" className="ai-source-popover-message">{source.message}</Text> : null}
+          </div>
+        ))}
+      </div>
+    </div>
   );
-  return source.message ? <Tooltip title={source.message}>{content}</Tooltip> : content;
 }
 
 function AccessGate({ loading, onSubmit }: { loading: boolean; onSubmit: (accessCode: string) => Promise<void> }) {
@@ -273,12 +291,23 @@ export const AIDashboardPanel: React.FC = () => {
         <div>
           <Flex align="center" gap={10} wrap>
             <Title level={2}>AI 投资看板</Title>
-            <Tag color={sourceSummary.color}>{sourceSummary.label}</Tag>
+            <Popover
+              content={<SourceStatusDetails entries={sourceEntries} />}
+              placement="bottom"
+              trigger={['hover', 'click']}
+            >
+              <Button
+                aria-label={`数据源状态：${sourceSummary.label}`}
+                className={`ai-source-summary-button is-${sourceSummary.color}`}
+                icon={<CloudSyncOutlined />}
+                size="small"
+                type="text"
+              >
+                数据源 · {sourceSummary.label}
+              </Button>
+            </Popover>
           </Flex>
           <Paragraph type="secondary">聚焦 AI 公司的增长变化、公开流量、定价、融资与基础设施成本。</Paragraph>
-          <Flex gap={14} wrap className="ai-source-row">
-            {sourceEntries.map(({ key, label, source }) => <SourceBadge key={key} label={label} source={source} />)}
-          </Flex>
         </div>
         <Space wrap>
           <Button icon={<ReloadOutlined />} loading={refreshing} onClick={() => void refresh()}>刷新数据</Button>

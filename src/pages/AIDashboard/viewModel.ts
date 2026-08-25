@@ -129,11 +129,11 @@ export function sourceStatusColor(source: Pick<SourceStatus, 'status' | 'stale'>
 
 export function dashboardSourceSummary(
   sources: ReadonlyArray<Pick<SourceStatus, 'status' | 'stale'>>,
-): { label: string; color: 'success' | 'warning' } {
-  const needsAttention = sources.some((source) => source.status !== 'ready' || source.stale);
-  return needsAttention
-    ? { label: '部分来源需关注', color: 'warning' }
-    : { label: '数据源正常', color: 'success' };
+): { attentionCount: number; label: string; color: 'success' | 'warning' } {
+  const attentionCount = sources.filter((source) => source.status !== 'ready' || source.stale).length;
+  return attentionCount > 0
+    ? { attentionCount, label: `${attentionCount}项需关注`, color: 'warning' }
+    : { attentionCount, label: '状态正常', color: 'success' };
 }
 
 export function dashboardSourceEntries(sources: Record<DashboardSourceKey, SourceStatus>) {
