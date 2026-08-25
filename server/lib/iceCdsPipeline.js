@@ -350,7 +350,6 @@ function createCdsSnapshot(state, preview, generatedAt) {
     companies,
   });
 }
-
 async function readSnapshot(fsImpl, snapshotFile, generatedAt) {
   try {
     return JSON.parse(await fsImpl.readFile(snapshotFile, 'utf8'));
@@ -537,4 +536,3 @@ export function createIceCdsPipelineFromEnv(options = {}) {
     localWriteAllowed: options.localWriteAllowed ?? process.env.ICE_CDS_LOCAL_WRITES_DISABLED !== '1',
   });
 }
-

@@ -214,4 +214,3 @@ export function selectTrackedFiveYearContracts(rows, clearingDate, {
 
   return { selected, errors };
 }
-

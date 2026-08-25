@@ -257,4 +257,3 @@ export function parSpreadToCleanPrice(input) {
   const upfrontFraction = legs.protectionLegPv - contract.couponRate * legs.riskyAnnuity;
   return 100 * (1 - upfrontFraction);
 }
-

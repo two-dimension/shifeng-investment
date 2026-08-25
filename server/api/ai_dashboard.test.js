@@ -56,7 +56,7 @@ test('local ICE CDS preview, import, status, and Excel export use the pipeline',
   };
 
   const preview = await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import/preview`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+    method: 'POST', headers: { 'Content-Type': 'application/json', Origin: server.baseUrl }, body: JSON.stringify(input),
   });
   assert.equal(preview.status, 200);
   assert.equal((await preview.json()).data.batchId, 'preview-batch');
@@ -98,6 +98,27 @@ test('ICE CDS import APIs reject remote writers while status masks write access 
   const status = await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import-status`, { headers: { 'X-Forwarded-For': '198.51.100.20' } });
   assert.equal((await status.json()).data.localWriteAllowed, false);
   assert.equal((await fetch(`${server.baseUrl}/api/ai-dashboard/cds/export.xlsx`, { headers: { 'X-Forwarded-For': '198.51.100.20' } })).status, 200);
+  assert.equal(writeCalls, 0);
+});
+
+test('ICE CDS import APIs reject cross-origin browser writes even from loopback', async (t) => {
+  let writeCalls = 0;
+  const cdsPipeline = {
+    async preview() { writeCalls += 1; return {}; },
+    async import() { writeCalls += 1; return {}; },
+    async status() { return { available: true, localWriteAllowed: true, workbookAvailable: true }; },
+    async exportWorkbook() { return Buffer.from('xlsx'); },
+  };
+  const { app } = testApp({ cdsPipeline });
+  const server = await listen(app);
+  t.after(server.close);
+  const headers = { 'Content-Type': 'application/json', Origin: 'https://malicious.example' };
+  const body = JSON.stringify({ iceText: 'x', discountCurve: { nodes: [] } });
+
+  assert.equal((await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import/preview`, { method: 'POST', headers, body })).status, 403);
+  assert.equal((await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import`, { method: 'POST', headers, body })).status, 403);
+  const status = await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import-status`, { headers: { Origin: 'https://malicious.example' } });
+  assert.equal((await status.json()).data.localWriteAllowed, false);
   assert.equal(writeCalls, 0);
 });
 

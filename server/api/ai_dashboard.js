@@ -84,10 +84,21 @@ function clearedSessionCookie(isProduction) {
 
 function defaultIsLocalWriter(req) {
   const address = String(req.ip || req.socket?.remoteAddress || '').toLowerCase();
-  return address === '::1'
+  const isLoopback = address === '::1'
     || address === 'localhost'
     || address.startsWith('127.')
     || address.startsWith('::ffff:127.');
+  if (!isLoopback) return false;
+
+  const origin = String(req.get('origin') || '').trim();
+  if (!origin) return true;
+  try {
+    const parsed = new URL(origin);
+    return parsed.protocol === `${req.protocol}:`
+      && parsed.host.toLowerCase() === String(req.get('host') || '').toLowerCase();
+  } catch {
+    return false;
+  }
 }
 
 function validateCdsImportBody(body) {

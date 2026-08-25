@@ -182,4 +182,3 @@ test('backup rotation keeps the newest 30 batch pairs and archives older pairs',
   assert.equal(archivedFiles.filter((name) => name.endsWith('.xlsx')).length, 2);
   assert.equal(archivedFiles.filter((name) => name.endsWith('.json')).length, 2);
 });
-

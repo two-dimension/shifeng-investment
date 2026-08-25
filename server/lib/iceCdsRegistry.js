@@ -71,4 +71,3 @@ export const ICE_CDS_CONTRACT_REGISTRY = Object.freeze([
     couponBp: 100,
   }),
 ]);
-
