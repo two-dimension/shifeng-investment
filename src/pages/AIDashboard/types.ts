@@ -436,6 +436,55 @@ export interface CdsRiskSnapshot {
   companies: CdsCompanyMetric[];
 }
 
+export interface DiscountCurveNodeInput {
+  years: number;
+  zeroRate: number;
+}
+
+export interface DiscountCurveInput {
+  curveId: string;
+  asOf: string;
+  currency: 'USD';
+  sourceLabel?: string;
+  sourceUrl?: string;
+  nodes: DiscountCurveNodeInput[];
+}
+
+export interface IceCdsPreviewRow {
+  batchId: string;
+  clearingDate: string;
+  company: string;
+  instrumentName: string;
+  eodPrice: number;
+  spreadBp: number;
+  roundTripPrice: number;
+  priceResidual: number;
+  qualityStatus: CdsQualityStatus;
+  publishable: boolean;
+  officialSpreadBp: number | null;
+  relativeError: number | null;
+  validationMessage: string;
+}
+
+export interface IceCdsPreview {
+  batchId: string;
+  clearingDate: string;
+  rows: IceCdsPreviewRow[];
+  publishedRows: IceCdsPreviewRow[];
+  errors: Array<{ company: string; code: string; message: string }>;
+  warnings: string[];
+  blocking: boolean;
+}
+
+export interface IceCdsImportStatus {
+  available: boolean;
+  localWriteAllowed: boolean;
+  batchId: string | null;
+  asOf: string | null;
+  generatedAt: string | null;
+  workbookAvailable: boolean;
+}
+
 export interface AiDashboardSnapshot {
   schemaVersion: number;
   generatedAt: string;
@@ -499,9 +548,9 @@ export interface AiDashboardSnapshot {
   };
 }
 
-export interface AiDashboardApiResponse {
+export interface AiDashboardApiResponse<T = AiDashboardSnapshot> {
   success: boolean;
-  data?: AiDashboardSnapshot;
+  data?: T;
   publicAccess?: boolean;
   expiresAt?: string;
   sessionExpiresAt?: string;

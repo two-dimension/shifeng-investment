@@ -22,7 +22,12 @@ import {
   ReloadOutlined,
   RobotOutlined,
 } from '@ant-design/icons';
-import type { AiDashboardApiResponse, AiDashboardSnapshot, SourceStatus } from './types';
+import type {
+  AiDashboardApiResponse,
+  AiDashboardSnapshot,
+  IceCdsImportStatus,
+  SourceStatus,
+} from './types';
 import {
   benchmarkRefreshRequest,
   dashboardSourceEntries,
@@ -40,13 +45,14 @@ import {
   OpenRouterSection,
   OverviewSection,
 } from './AIDashboardSections';
+import { IceCdsImportModal } from './IceCdsImportModal';
 import './AIDashboardPanel.css';
 
 const { Title, Text, Paragraph } = Typography;
 
 type AuthState = 'checking' | 'required' | 'authenticated' | 'error';
 
-async function requestDashboard(path = '', init?: RequestInit): Promise<AiDashboardApiResponse> {
+async function requestDashboard<T = AiDashboardSnapshot>(path = '', init?: RequestInit): Promise<AiDashboardApiResponse<T>> {
   const response = await fetch(`/api/ai-dashboard${path}`, {
     credentials: 'same-origin',
     headers: init?.body ? { 'Content-Type': 'application/json', ...(init.headers || {}) } : init?.headers,
@@ -103,14 +109,19 @@ export const AIDashboardPanel: React.FC = () => {
   const [publicAccess, setPublicAccess] = useState(false);
   const [sessionExpiresAt, setSessionExpiresAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cdsImportStatus, setCdsImportStatus] = useState<IceCdsImportStatus | null>(null);
+  const [cdsImportOpen, setCdsImportOpen] = useState(false);
   const [messageApi, messageContext] = message.useMessage();
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const payload = await requestDashboard();
+      const statusPromise = requestDashboard<IceCdsImportStatus>('/cds/import-status').catch(() => null);
+      const payload = await requestDashboard<AiDashboardSnapshot>();
+      const statusPayload = await statusPromise;
       setData(payload.data || null);
+      setCdsImportStatus(statusPayload?.data || null);
       setPublicAccess(payload.publicAccess === true);
       setSessionExpiresAt(payload.sessionExpiresAt || null);
       setAuth('authenticated');
@@ -119,10 +130,12 @@ export const AIDashboardPanel: React.FC = () => {
       if (status === 401) {
         setAuth('required');
         setData(null);
+        setCdsImportStatus(null);
       } else {
         setError((requestError as Error).message);
         setAuth('error');
         setData(null);
+        setCdsImportStatus(null);
       }
     } finally {
       setLoading(false);
@@ -137,6 +150,7 @@ export const AIDashboardPanel: React.FC = () => {
     const expireSession = () => {
       setAuth('required');
       setData(null);
+      setCdsImportStatus(null);
       setSessionExpiresAt(null);
       messageApi.info('AI 看板会话已到期，请重新输入访问口令');
     };
@@ -212,8 +226,15 @@ export const AIDashboardPanel: React.FC = () => {
     try { await requestDashboard('/session', { method: 'DELETE' }); } catch { /* session is cleared locally either way */ }
     setAuth('required');
     setData(null);
+    setCdsImportStatus(null);
     setSessionExpiresAt(null);
   };
+
+  const completeCdsImport = useCallback(async (batchId: string) => {
+    await load();
+    setActiveTab('debt');
+    messageApi.success(`ICE CDS 已导入：${batchId}`);
+  }, [load, messageApi]);
 
   const tabs = useMemo(() => data ? [
     { key: 'overview', label: '总览', children: <OverviewSection data={data} /> },
@@ -223,8 +244,18 @@ export const AIDashboardPanel: React.FC = () => {
     { key: 'benchmark', label: 'Benchmark', children: <BenchmarkSection data={data} refreshing={benchmarkRefreshing} /> },
     { key: 'aa', label: 'AA 指数与成本', children: <ArtificialAnalysisSection data={data} /> },
     { key: 'compute', label: '算力租赁', children: <ComputeRentalSection data={data} /> },
-    { key: 'debt', label: '融资与债务', children: <DebtFinancingSection data={data} /> },
-  ] : [], [benchmarkRefreshing, data]);
+    {
+      key: 'debt',
+      label: '融资与债务',
+      children: (
+        <DebtFinancingSection
+          data={data}
+          cdsImportStatus={cdsImportStatus}
+          onImportIceCds={() => setCdsImportOpen(true)}
+        />
+      ),
+    },
+  ] : [], [benchmarkRefreshing, cdsImportStatus, data]);
 
   if (auth === 'checking' || (loading && !data)) return <><Skeleton active paragraph={{ rows: 8 }} />{messageContext}</>;
   if (auth === 'required') return <>{messageContext}<AccessGate loading={submitting} onSubmit={login} /></>;
@@ -257,6 +288,7 @@ export const AIDashboardPanel: React.FC = () => {
       </header>
       {error && <Alert className="ai-page-alert" type="warning" showIcon closable title="数据加载存在异常" description={error} />}
       <Tabs className="ai-primary-tabs" activeKey={activeTab} onChange={(key) => void changeTab(key)} items={tabs} destroyOnHidden={false} />
+      <IceCdsImportModal open={cdsImportOpen} onClose={() => setCdsImportOpen(false)} onImported={completeCdsImport} />
       <footer className="ai-dashboard-footer">
         数据仅供研究参考，不构成投资建议。各分片来自公开来源并独立标注状态；OpenRouter Token 流量不代表全行业使用量或模型质量。
       </footer>

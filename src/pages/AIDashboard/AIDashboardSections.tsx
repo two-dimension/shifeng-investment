@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import {
   Alert,
+  Button,
   Card,
   Col,
   Descriptions,
@@ -23,9 +24,11 @@ import {
   ArrowRightOutlined,
   ArrowUpOutlined,
   BankOutlined,
+  DownloadOutlined,
   LineChartOutlined,
   QuestionCircleOutlined,
   ThunderboltOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import { useTheme } from '../../hooks/useTheme';
 import type {
@@ -36,7 +39,9 @@ import type {
   BenchmarkModel,
   CapitalEvent,
   CdsCompanyMetric,
+  CdsQualityStatus,
   ComputeRentalQuote,
+  IceCdsImportStatus,
   PriceEvent,
   TokenPrice,
 } from './types';
@@ -159,13 +164,43 @@ function CdsChangeBadge({ value, label }: { value: number | null; label: string 
   );
 }
 
+function cdsQualityLabel(status: CdsQualityStatus | undefined): string {
+  if (status === 'validated') return '已通过官方基准验证';
+  if (status === 'model-derived') return '模型换算值';
+  if (status === 'needs-review') return '待复核';
+  if (status === 'stale') return '数据过期';
+  return '不可用';
+}
+
+function CdsQualityTag({ status }: { status?: CdsQualityStatus }) {
+  const color = status === 'validated'
+    ? 'success'
+    : status === 'model-derived'
+      ? 'blue'
+      : status === 'needs-review'
+        ? 'warning'
+        : status === 'stale' ? 'error' : 'default';
+  return <Tag color={color}>{cdsQualityLabel(status)}</Tag>;
+}
+
 function CdsSummaryCard({ metric }: { metric: CdsCompanyMetric }) {
   return (
     <Card className="ai-cds-summary-card" variant="outlined">
-      <Text className="ai-cds-summary-title">{metric.company.toUpperCase()} 5Y CDS 信用违约互换利差</Text>
-      <div className="ai-cds-latest-value">
-        {compactNumber(metric.latestBp)} <span>bp</span>
-      </div>
+      <Flex justify="space-between" align="flex-start" gap={8} wrap>
+        <Text className="ai-cds-summary-title">{metric.company.toUpperCase()} 5Y CDS 信用违约互换利差</Text>
+        <CdsQualityTag status={metric.qualityStatus} />
+      </Flex>
+      <Tooltip title={(
+        <Space direction="vertical" size={2}>
+          <Text style={{ color: 'inherit' }}>EOD Price：{metric.latestEodPrice?.toFixed(4) ?? '—'}</Text>
+          <Text style={{ color: 'inherit' }}>合约：{metric.latestInstrumentName || '—'}</Text>
+          <Text style={{ color: 'inherit' }}>状态：{cdsQualityLabel(metric.qualityStatus)}</Text>
+        </Space>
+      )}>
+        <div className="ai-cds-latest-value">
+          {compactNumber(metric.latestBp)} <span>bp</span>
+        </div>
+      </Tooltip>
       <Flex wrap gap={12} className="ai-cds-changes">
         <CdsChangeBadge value={metric.changes.oneDayBp} label="1天" />
         <CdsChangeBadge value={metric.changes.sevenDayBp} label="7天" />
@@ -177,25 +212,32 @@ function CdsSummaryCard({ metric }: { metric: CdsCompanyMetric }) {
 
 function CdsTrendChart({
   metric,
-  sourceLabel,
-  sourceKind,
-  estimated,
 }: {
   metric: CdsCompanyMetric;
-  sourceLabel: string;
-  sourceKind?: string;
-  estimated: boolean;
 }) {
   const palette = useChartPalette();
   const screens = Grid.useBreakpoint();
   const compact = !screens.sm;
   const style = CDS_CHART_STYLE[metric.company] || DEFAULT_CDS_CHART_STYLE;
   const labelInterval = Math.max(0, Math.ceil(metric.history.length / (compact ? 5 : 8)) - 1);
+  const values = metric.history.map((point) => point.valueBp);
+  const chartMin = values.length > 0 ? Math.min(style.min, Math.floor(Math.min(...values) / 10) * 10) : style.min;
+  const chartMax = values.length > 0 ? Math.max(style.max, Math.ceil(Math.max(...values) / 10) * 10) : style.max;
   const option = useMemo(() => ({
     animationDuration: 350,
     tooltip: {
       trigger: 'axis',
-      valueFormatter: (value: number) => `${compactNumber(value)} bp`,
+      formatter: (params: Array<{ dataIndex: number; marker: string }>) => {
+        const point = metric.history[params[0]?.dataIndex];
+        if (!point) return '';
+        return [
+          `<b>${escapeHtml(metric.company)} · ${escapeHtml(point.date)}</b>`,
+          `${params[0]?.marker || ''}Spread：${escapeHtml(compactNumber(point.valueBp))} bp`,
+          `EOD Price：${point.eodPrice === undefined ? '—' : escapeHtml(point.eodPrice.toFixed(4))}`,
+          `合约：${escapeHtml(point.instrumentName || '—')}`,
+          `状态：${escapeHtml(cdsQualityLabel(point.qualityStatus))}`,
+        ].join('<br/>');
+      },
     },
     grid: { left: compact ? 48 : 64, right: compact ? 10 : 18, top: 20, bottom: compact ? 62 : 58 },
     xAxis: {
@@ -211,8 +253,8 @@ function CdsTrendChart({
       name: compact ? '' : 'CDS 信用违约互换利差 (bp)',
       nameLocation: 'middle',
       nameGap: 43,
-      min: style.min,
-      max: style.max,
+      min: chartMin,
+      max: chartMax,
       axisLabel: { color: palette.text, fontSize: compact ? 9 : 11 },
       nameTextStyle: { color: palette.text, fontSize: 11 },
       splitLine: { lineStyle: { color: palette.line } },
@@ -222,20 +264,16 @@ function CdsTrendChart({
       type: 'line',
       smooth: 0.25,
       showSymbol: false,
-      data: metric.history.map((point) => point.valueBp),
+      data: metric.history.map((point) => ({ value: point.valueBp })),
       lineStyle: { color: style.color, width: 2.2 },
       itemStyle: { color: style.color },
       areaStyle: { color: style.color, opacity: 0.1 },
     }],
-  }), [compact, labelInterval, metric, palette, style]);
+  }), [chartMax, chartMin, compact, labelInterval, metric, palette, style]);
   return (
     <Card className="ai-cds-chart-card" variant="outlined">
       <Title level={5}>{metric.company} 5Y CDS 信用违约互换利差（bp）</Title>
-      <Text type="secondary" className="ai-cds-chart-source">
-        {sourceKind === 'dtcc_public_trade_estimate'
-          ? 'DTCC SEC PPD 公开成交 · 5Y 隐含利差估算'
-          : `${sourceLabel}${estimated ? ' · 估算' : ''}`}
-      </Text>
+      <Text type="secondary" className="ai-cds-chart-source">ICE EOD Price · ISDA 换算值</Text>
       {metric.history.length > 0
         ? <ReactECharts option={option} style={{ height: compact ? 300 : 330 }} notMerge />
         : <NoData description="暂无 CDS 历史数据" />}
@@ -243,9 +281,13 @@ function CdsTrendChart({
   );
 }
 
-function CdsRiskSection({ data }: DashboardProps) {
+function CdsRiskSection({
+  data,
+  importStatus,
+  onImport,
+}: DashboardProps & { importStatus?: IceCdsImportStatus | null; onImport?: () => void }) {
   const cds = data.creditRisk?.cds5y;
-  if (!cds || cds.companies.length === 0) return <ChartCard title="5Y CDS 信用风险监测"><NoData description="暂无 CDS 数据" /></ChartCard>;
+  const companies = cds?.companies || [];
   return (
     <section className="ai-cds-section" aria-labelledby="ai-cds-title">
       <Flex className="ai-cds-section-header" justify="space-between" align="flex-start" gap={16} wrap>
@@ -254,36 +296,42 @@ function CdsRiskSection({ data }: DashboardProps) {
           <Text type="secondary">信用利差越高，市场定价的信用风险通常越高</Text>
         </div>
         <Space size={8} wrap>
-          <Tag color="blue">截至 {dateLabel(cds.asOf)}</Tag>
-          {cds.sourceUrl
+          <Tag color="blue">截至 {dateLabel(cds?.asOf)}</Tag>
+          {cds?.sourceUrl
             ? <Tag><Link href={cds.sourceUrl} target="_blank" rel="noreferrer">{cds.sourceLabel}</Link></Tag>
-            : <Tag>{cds.sourceLabel}</Tag>}
-          {data.sources.creditRisk?.stale && cds.sourceKind === 'dtcc_public_trade_estimate'
-            ? <Tag color="warning">同步异常 · 使用上一版</Tag>
+            : <Tag>{cds?.sourceLabel || 'ICE EOD Price · ISDA 换算值'}</Tag>}
+          {cds?.qualityStatus ? <CdsQualityTag status={cds.qualityStatus} /> : null}
+          {data.sources.creditRisk?.stale ? <Tag color="warning">数据过期 · 使用上一版</Tag> : null}
+          {importStatus?.workbookAvailable
+            ? <Button size="small" icon={<DownloadOutlined />} href="/api/ai-dashboard/cds/export.xlsx">下载 Excel</Button>
+            : null}
+          {importStatus?.localWriteAllowed && onImport
+            ? <Button size="small" type="primary" icon={<UploadOutlined />} onClick={onImport}>导入 ICE 当日数据</Button>
             : null}
         </Space>
       </Flex>
-      <Row gutter={[12, 12]}>
-        {cds.companies.map((metric) => (
-          <Col xs={24} md={8} key={metric.company}>
-            <CdsSummaryCard metric={metric} />
-          </Col>
-        ))}
-      </Row>
-      <Row gutter={[12, 12]}>
-        {cds.companies.map((metric) => (
-          <Col xs={24} md={12} key={metric.company}>
-            <CdsTrendChart
-              metric={metric}
-              sourceLabel={cds.sourceLabel}
-              sourceKind={cds.sourceKind}
-              estimated={cds.historyEstimated}
-            />
-          </Col>
-        ))}
-      </Row>
+      {companies.length === 0 ? (
+        <Card className="ai-cds-empty-card" variant="outlined"><NoData description="等待导入 ICE EOD Price" /></Card>
+      ) : (
+        <>
+          <Row gutter={[12, 12]}>
+            {companies.map((metric) => (
+              <Col xs={24} md={8} key={metric.company}>
+                <CdsSummaryCard metric={metric} />
+              </Col>
+            ))}
+          </Row>
+          <Row gutter={[12, 12]}>
+            {companies.map((metric) => (
+              <Col xs={24} md={12} key={metric.company}>
+                <CdsTrendChart metric={metric} />
+              </Col>
+            ))}
+          </Row>
+        </>
+      )}
       <div className="ai-cds-disclosure">
-        <Text type="secondary">数据说明：{cds.note || '暂无补充说明'}</Text>
+        <Text type="secondary">数据说明：{cds?.note || 'Spread (bp) 为 ICE EOD Price 经模型换算的估算值，不代表 ICE 官方 spread。'}</Text>
       </div>
     </section>
   );
@@ -1328,7 +1376,11 @@ function CapitalHistoryChart({ events }: { events: CapitalEvent[] }) {
   return <ReactECharts option={option} style={{ height: 390 }} notMerge />;
 }
 
-export function DebtFinancingSection({ data }: DashboardProps) {
+export function DebtFinancingSection({
+  data,
+  cdsImportStatus,
+  onImportIceCds,
+}: DashboardProps & { cdsImportStatus?: IceCdsImportStatus | null; onImportIceCds?: () => void }) {
   const [selectedEntity, setSelectedEntity] = React.useState('all');
   const allEvents = data.capitalEvents || [];
   const entities = [...new Set(allEvents.map((event) => event.entity))].sort((left, right) => left.localeCompare(right, 'zh-CN'));
@@ -1371,7 +1423,7 @@ export function DebtFinancingSection({ data }: DashboardProps) {
           </ChartCard>
         </Col>
       </Row>
-      <CdsRiskSection data={data} />
+      <CdsRiskSection data={data} importStatus={cdsImportStatus} onImport={onImportIceCds} />
       <ChartCard title="股权与债务融资全量明细">
         <Table
           rowKey="id"
