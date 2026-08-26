@@ -48,6 +48,7 @@ function testFamily(testName) {
 
 function comparisonParts(score) {
   const category = classifyOfficialBenchmark(score.testName);
+  const exactTestName = cleanText(score.testName);
   const family = testFamily(score.testName);
   const version = cleanText(score.testVersion);
   const split = cleanText(score.split);
@@ -58,28 +59,30 @@ function comparisonParts(score) {
   const shots = score.shots === 0 || score.shots ? String(score.shots) : null;
   const passK = score.passK === 0 || score.passK ? String(score.passK) : null;
   const tools = cleanText(score.tools);
-  return { category, family, version, split, scoreName, agent, harness, effort, shots, passK, tools };
+  return { category, exactTestName, family, version, split, scoreName, agent, harness, effort, shots, passK, tools };
 }
 
 export function officialComparisonKey(score) {
   if (!score || score.configurationComplete !== true || !cleanText(score.testName)
     || !cleanText(score.scoreName) || !cleanText(score.unit) || !['higher', 'lower'].includes(score.direction)) return null;
   const parts = comparisonParts(score);
-  const runParts = [parts.agent, parts.harness]
-    .filter(Boolean)
-    .filter((value, index, values) => values.findIndex((candidate) => slug(candidate) === slug(value)) === index);
+  const field = (name, value) => `${name}=${slug(value) || 'none'}`;
   return [
-    parts.category,
-    parts.family,
-    parts.version,
-    parts.split,
-    parts.scoreName,
-    ...runParts,
-    parts.effort,
-    parts.shots,
-    parts.passK,
-    parts.tools,
-  ].filter((value) => value !== null && value !== undefined && value !== '').map(slug).join(':');
+    'comparison-v2',
+    field('category', parts.category),
+    field('test', parts.exactTestName),
+    field('version', parts.version),
+    field('split', parts.split),
+    field('score', parts.scoreName),
+    field('unit', score.unit),
+    field('direction', score.direction),
+    field('agent', parts.agent),
+    field('harness', parts.harness),
+    field('effort', parts.effort),
+    field('shots', parts.shots),
+    field('pass-k', parts.passK),
+    field('tools', parts.tools),
+  ].join(':');
 }
 
 export function officialDisplayKey(score) {
@@ -88,7 +91,7 @@ export function officialDisplayKey(score) {
   const parts = comparisonParts(score);
   return `display:${[
     parts.category,
-    parts.family,
+    parts.exactTestName,
     parts.version,
     parts.split,
     parts.scoreName,
@@ -97,8 +100,8 @@ export function officialDisplayKey(score) {
   ].map((value) => slug(value) || 'none').join(':')}`;
 }
 
-function metricLabel(score, family) {
-  const exact = [family, cleanText(score.testVersion), cleanText(score.split)].filter(Boolean).join(' ');
+function metricLabel(score) {
+  const exact = [cleanText(score.testName), cleanText(score.testVersion), cleanText(score.split)].filter(Boolean).join(' ');
   return `${exact} · ${cleanText(score.scoreName)}`;
 }
 
@@ -112,7 +115,7 @@ function normalizeMetric(score, key, sourceOrder, comparable) {
     testVersion: parts.version,
     split: parts.split,
     scoreName: parts.scoreName,
-    label: metricLabel(score, parts.family),
+    label: metricLabel(score),
     group: parts.category,
     unit: cleanText(score.unit),
     direction: score.direction,
@@ -163,13 +166,47 @@ function normalizeScore(score, card, metric) {
     configurationComplete: score.configurationComplete,
     comparisonKey: officialComparisonKey(score),
     comparisonNote: cleanText(score.comparisonNote),
+    sourceOrder: score.sourceOrder ?? null,
   };
 }
 
-function scoreQuality(score) {
-  if (score.configurationComplete === true) return 2;
-  if (score.configurationComplete === false) return 0;
-  return 1;
+function scoreDisclosures(score) {
+  return Array.isArray(score?.disclosures) && score.disclosures.length > 0
+    ? score.disclosures
+    : score ? [score] : [];
+}
+
+function disclosureIdentity(score) {
+  const configuration = score.configurationComplete === true
+    ? 'true'
+    : score.configurationComplete === false ? 'false' : 'unknown';
+  return JSON.stringify([
+    score.value, score.unit, score.direction, configuration,
+    score.agent, score.harness, score.effort, score.shots, score.passK, score.tools,
+  ]);
+}
+
+function disclosureSort(left, right, direction) {
+  const rank = (score) => score.configurationComplete === true ? 0 : score.configurationComplete === false ? 1 : 2;
+  const runKey = (score) => [
+    score.comparisonKey, score.agent, score.harness, score.effort, score.shots, score.passK, score.tools,
+  ].map((value) => slug(value) || 'none').join(':');
+  return rank(left) - rank(right)
+    || runKey(left).localeCompare(runKey(right), 'en')
+    || (direction === 'lower' ? left.value - right.value : right.value - left.value)
+    || String(left.sourceUrl || '').localeCompare(String(right.sourceUrl || ''), 'en');
+}
+
+function mergeScoreDisclosure(existing, score, direction) {
+  const disclosures = [...new Map([
+    ...scoreDisclosures(existing),
+    score,
+  ].map((row) => [disclosureIdentity(row), row])).values()].sort((left, right) => disclosureSort(left, right, direction));
+  return {
+    ...disclosures[0],
+    disclosures,
+    ambiguous: disclosures.length > 1,
+  };
 }
 
 function commonRunValue(scores, field) {
@@ -192,11 +229,14 @@ function runConfigurationsAreCompatible(scores) {
 }
 
 function finalizeMetric(metric, models) {
-  const scores = models.flatMap((model) => model.scores[metric.key] ? [model.scores[metric.key]] : []);
+  const cells = models.flatMap((model) => model.scores[metric.key] ? [model.scores[metric.key]] : []);
+  const disclosureSets = cells.map(scoreDisclosures);
+  const scores = disclosureSets.map((rows) => rows[0]);
   const strictKeys = scores.map((score) => score.comparisonKey).filter(Boolean);
   const isAgent = metric.category === 'Agent';
-  const hasCrossVendorCoverage = scores.length >= 2;
-  const comparable = hasCrossVendorCoverage && (isAgent
+  const hasCrossVendorCoverage = cells.length >= 2;
+  const hasUnambiguousCells = disclosureSets.every((rows) => rows.length === 1);
+  const comparable = hasCrossVendorCoverage && hasUnambiguousCells && (isAgent
     ? strictKeys.length === scores.length && new Set(strictKeys).size === 1
     : !scores.some((score) => score.configurationComplete === false) && runConfigurationsAreCompatible(scores));
 
@@ -206,12 +246,14 @@ function finalizeMetric(metric, models) {
   metric.shots = commonRunValue(scores, 'shots');
   metric.passK = commonRunValue(scores, 'passK');
   metric.tools = commonRunValue(scores, 'tools');
-  metric.scoreCount = scores.length;
+  metric.scoreCount = cells.length;
   metric.comparable = comparable;
   metric.winnerKey = comparable ? metric.key : null;
   metric.comparisonNote = comparable
     ? null
-    : isAgent
+    : !hasUnambiguousCells
+      ? '同一模型披露了多个运行配置或得分，已全部保留但不参与冠军计算'
+      : isAgent
       ? 'Agent / Harness / Effort 配置不完整或不一致，仅合并披露，不参与严格排名'
       : scores.length < 2
         ? '仅一个厂商披露，暂不生成分项冠军'
@@ -263,8 +305,7 @@ export function normalizeOfficialBenchmarks({ vendorCards = [], asOf = new Date(
         metricsByKey.set(key, metric);
       }
       const score = normalizeScore(rawScore, card, metric);
-      const existing = model.scores[key];
-      if (score && (!existing || scoreQuality(score) > scoreQuality(existing))) model.scores[key] = score;
+      if (score) model.scores[key] = mergeScoreDisclosure(model.scores[key], score, metric.direction);
     });
     return model;
   });
@@ -301,6 +342,8 @@ export function normalizeOfficialBenchmarks({ vendorCards = [], asOf = new Date(
     },
     asOf,
     sourceMode: 'official-model-cards',
+    normalizationVersion: 2,
+    normalizationPolicy: 'strict-v2',
     attributions,
   };
 }

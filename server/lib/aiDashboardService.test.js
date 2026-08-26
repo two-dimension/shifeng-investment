@@ -132,7 +132,7 @@ test('missing collectors return an empty public-source snapshot instead of fabri
   assert.deepEqual(snapshot.openRouter.topModels, []);
 });
 
-test('reading a legacy official Benchmark snapshot collapses duplicate display metrics', async (t) => {
+test('reading a legacy official Benchmark snapshot collapses display metrics without promoting old false flags', async (t) => {
   const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-migration-');
   const empty = createEmptyAiDashboardSnapshot('2026-08-23T00:00:00.000Z');
   const metric = (key, testName, version, sourceOrder) => ({
@@ -179,7 +179,8 @@ test('reading a legacy official Benchmark snapshot collapses duplicate display m
   assert.equal(terminal.length, 1);
   assert.equal(snapshot.benchmarks.models.every((model) => model.scores[terminal[0].key]), true);
   assert.equal(snapshot.benchmarks.winners[terminal[0].key], undefined);
-  assert.deepEqual(snapshot.benchmarks.winners[gpqa.key], { models: ['Gemini Latest'], value: 92 });
+  assert.equal(gpqa.comparable, false);
+  assert.equal(snapshot.benchmarks.winners[gpqa.key], undefined);
 });
 
 test('legacy screenshot CDS file cannot overlay the production snapshot', async (t) => {

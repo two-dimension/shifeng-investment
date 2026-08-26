@@ -222,6 +222,9 @@ export interface BenchmarkScore {
   configurationComplete?: boolean;
   comparisonKey?: string | null;
   comparisonNote?: string | null;
+  sourceOrder?: number | null;
+  disclosures?: BenchmarkScore[];
+  ambiguous?: boolean;
   sampleSize?: number;
   standardDeviation?: number;
   source?: string;
@@ -524,6 +527,8 @@ export interface AiDashboardSnapshot {
     sourceReports: PricingSourceReport[];
   };
   benchmarks: {
+    normalizationVersion?: number;
+    normalizationPolicy?: string;
     models: BenchmarkModel[];
     metrics: BenchmarkMetricDefinition[];
     winners: Record<string, BenchmarkWinner>;

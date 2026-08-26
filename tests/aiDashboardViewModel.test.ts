@@ -14,6 +14,7 @@ import {
   formatUsd,
   groupOfficialBenchmarkMetrics,
   officialWinnerRows,
+  officialDisclosureLeaderRows,
   sourceStatusLabel,
 } from '../src/pages/AIDashboard/viewModel.ts';
 
@@ -109,6 +110,24 @@ test('winner rows ignore legacy aggregate winner arrays instead of crashing the 
   });
 
   assert.deepEqual(rows, []);
+});
+
+test('non-comparable shared official scores produce a clearly caveated disclosure leader', () => {
+  const metrics = [{ ...metricFixture[2], comparable: false, comparisonNote: '旧快照配置未知' }];
+  const rows = officialDisclosureLeaderRows({
+    models: [
+      { vendor: 'OpenAI', model: 'GPT Latest', releasedAt: null, scores: { gpqa: { value: 91 } } },
+      { vendor: 'Gemini', model: 'Gemini Latest', releasedAt: null, scores: { gpqa: { value: 92 } } },
+    ],
+    metrics,
+    winners: {}, vendorSources: [], asOf: '2026-08-23', sourceMode: 'official-model-cards',
+    coverage: { vendors: 2, disclosedVendors: 2, metrics: 1, comparableMetrics: 0 }, attributions: [],
+  });
+
+  assert.deepEqual(rows[0].models, ['Gemini Latest']);
+  assert.equal(rows[0].formattedValue, '92.0%');
+  assert.equal(rows[0].runLabel, '官网披露最高值 · 非严格横比');
+  assert.equal(rows[0].comparable, false);
 });
 
 test('single-task formatters expose token and cost formulas without inventing missing values', () => {

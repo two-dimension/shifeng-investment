@@ -32,15 +32,37 @@ test('classifies exact tests by capability and pins Terminal-Bench first', () =>
 });
 
 test('comparison keys separate exact versions/configurations and reject incomplete records', () => {
-  assert.equal(officialComparisonKey({
+  const agentKey = officialComparisonKey({
     testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', unit: 'percent-point', direction: 'higher',
     agent: 'Claude Code', effort: 'xhigh', configurationComplete: true,
-  }), 'agent:terminal-bench:2.1:accuracy:claude-code:xhigh');
+  });
+  assert.match(agentKey, /agent=claude-code/);
+  assert.match(agentKey, /harness=none/);
   assert.notEqual(
     officialComparisonKey({ testName: 'Terminal-Bench', testVersion: '2.0', scoreName: 'Accuracy', unit: 'percent-point', direction: 'higher', agent: 'Claude Code', effort: 'xhigh', configurationComplete: true }),
     officialComparisonKey({ testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', unit: 'percent-point', direction: 'higher', agent: 'Claude Code', effort: 'xhigh', configurationComplete: true }),
   );
+  assert.notEqual(
+    officialComparisonKey({ testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', unit: 'percent-point', direction: 'higher', agent: 'Codex', configurationComplete: true }),
+    officialComparisonKey({ testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', unit: 'percent-point', direction: 'higher', harness: 'Codex', configurationComplete: true }),
+  );
   assert.equal(officialComparisonKey({ testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', unit: 'percent-point', direction: 'higher', configurationComplete: false }), null);
+});
+
+test('display keys preserve exact test names instead of collapsing related families', () => {
+  const score = (testName) => ({
+    testName, testVersion: null, scoreName: 'Accuracy', value: 90,
+    unit: 'percent-point', direction: 'higher',
+  });
+  const result = normalizeOfficialBenchmarks({
+    vendorCards: [
+      source('OpenAI', 'GPT Latest', [score('GPQA')]),
+      source('Gemini', 'Gemini Latest', [score('GPQA Diamond')]),
+    ],
+  });
+
+  assert.equal(result.metrics.length, 2);
+  assert.deepEqual(result.metrics.map((metric) => metric.testName).sort(), ['GPQA', 'GPQA Diamond']);
 });
 
 test('groups identical Terminal-Bench disclosures into one metric without inventing strict comparability', () => {
@@ -83,6 +105,57 @@ test('groups matching non-Agent official tests and derives a useful cross-vendor
   assert.deepEqual(result.winners[metric.key], { models: ['Gemini 3.7 Pro'], value: 92.4 });
 });
 
+test('retains duplicate same-model disclosures and keeps comparability input-order invariant', () => {
+  const terminal = (value, fields) => ({
+    testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', value,
+    unit: 'percent-point', direction: 'higher', configurationComplete: true, ...fields,
+  });
+  const openAiRuns = [
+    terminal(82, { agent: 'Codex', effort: 'high' }),
+    terminal(84, { harness: 'Codex', effort: 'high' }),
+  ];
+  const normalize = (runs) => normalizeOfficialBenchmarks({
+    vendorCards: [
+      source('OpenAI', 'GPT Latest', runs),
+      source('Gemini', 'Gemini Latest', [terminal(83, { agent: 'Codex', effort: 'high' })]),
+    ],
+  });
+
+  const forward = normalize(openAiRuns);
+  const reverse = normalize([...openAiRuns].reverse());
+  const forwardMetric = forward.metrics[0];
+  const reverseMetric = reverse.metrics[0];
+  assert.equal(forwardMetric.comparable, false);
+  assert.equal(reverseMetric.comparable, false);
+  assert.deepEqual(forward.winners, reverse.winners);
+  assert.equal(forward.models[0].scores[forwardMetric.key].disclosures.length, 2);
+  assert.deepEqual(
+    forward.models[0].scores[forwardMetric.key].disclosures.map((score) => score.value).sort(),
+    reverse.models[0].scores[reverseMetric.key].disclosures.map((score) => score.value).sort(),
+  );
+});
+
+test('an explicit incomplete disclosure cannot be hidden by an unknown duplicate', () => {
+  const gpqa = (value, configurationComplete) => ({
+    testName: 'GPQA', testVersion: 'Diamond', scoreName: 'Accuracy', value,
+    unit: 'percent-point', direction: 'higher', configurationComplete,
+  });
+  const normalize = (runs) => normalizeOfficialBenchmarks({
+    vendorCards: [
+      source('OpenAI', 'GPT Latest', runs),
+      source('Gemini', 'Gemini Latest', [gpqa(91, undefined)]),
+    ],
+  });
+  const forward = normalize([gpqa(92, false), gpqa(93, undefined)]);
+  const reverse = normalize([gpqa(93, undefined), gpqa(92, false)]);
+
+  assert.equal(forward.metrics[0].comparable, false);
+  assert.equal(reverse.metrics[0].comparable, false);
+  assert.deepEqual(forward.winners, {});
+  assert.deepEqual(reverse.winners, {});
+  assert.equal(forward.models[0].scores[forward.metrics[0].key].disclosures.length, 2);
+});
+
 test('normalization preserves exact tests and produces strict winners, ties, lower-is-better, and missing latest models', () => {
   const terminal = (value, version = '2.1', complete = true) => ({
     testName: 'Terminal-Bench', testVersion: version, scoreName: 'Accuracy', value,
@@ -102,7 +175,7 @@ test('normalization preserves exact tests and produces strict winners, ties, low
     }, {
       testName: 'Vendor Novel Eval', testVersion: null, scoreName: 'Error', value: 2,
       unit: 'number', direction: 'lower', configurationComplete: true,
-    }, terminal(90, '2.1', false)]),
+    }]),
     source('Gemini', 'Gemini 3.7 Flash', []),
   ];
 

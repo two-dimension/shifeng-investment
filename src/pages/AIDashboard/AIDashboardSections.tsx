@@ -59,6 +59,7 @@ import {
   formatUsd,
   groupOfficialBenchmarkMetrics,
   methodologyTooltip,
+  officialDisclosureLeaderRows,
   officialWinnerRows,
 } from './viewModel';
 
@@ -995,15 +996,22 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
   )).map((metric) => ({
     metric,
     winner: data.benchmarks.winners[metric.key],
-    scores: matrixRows.flatMap((model) => model.scores?.[metric.key]
-      ? [{ vendor: model.vendor, model: model.model, score: model.scores[metric.key] }]
-      : []).sort((left, right) => metric.direction === 'lower'
+    scores: matrixRows.flatMap((model) => {
+      const score = model.scores?.[metric.key];
+      if (!score) return [];
+      const disclosures = Array.isArray(score.disclosures) && score.disclosures.length > 0
+        ? score.disclosures
+        : [score];
+      return disclosures.map((disclosure) => ({ vendor: model.vendor, model: model.model, score: disclosure }));
+    }).sort((left, right) => metric.direction === 'lower'
       ? left.score.value - right.score.value
       : right.score.value - left.score.value),
   })).filter((row) => row.scores.length > 0);
+  const disclosureLeaderRows = officialDisclosureLeaderRows({ ...data.benchmarks, metrics });
+  const summaryRows = [...winnerRows, ...disclosureLeaderRows];
   const otherWinnerGroups = metricGroups.map((group) => ({
     category: group.category,
-    rows: winnerRows.filter((row) => row.category === group.category && !row.terminalBench),
+    rows: summaryRows.filter((row) => row.category === group.category && !row.terminalBench),
   })).filter((group) => group.rows.length > 0);
   const coverage = data.benchmarks.coverage || {
     vendors: matrixRows.length,
@@ -1045,18 +1053,18 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
                   </div>
                   <Tag color={winner ? 'blue' : 'default'}>{winner ? '严格可比' : '合并披露 · 不排名'}</Tag>
                 </Flex>
-                {scores.map(({ vendor, model, score }, index) => {
+                {scores.map(({ vendor, model, score }) => {
                   const strictChampion = winner?.models.includes(model) === true;
                   const disclosedHigh = !winner && score.value === scores[0]?.score.value;
                   return (
-                    <Flex className="ai-terminal-score-row" justify="space-between" align="start" gap={8} key={`${vendor}-${model}`}>
+                    <Flex className="ai-terminal-score-row" justify="space-between" align="start" gap={8} key={`${vendor}-${model}-${score.comparisonKey || benchmarkScoreRunLabel(score)}-${score.value}`}>
                       <Space direction="vertical" size={0}>
                         <Text>{model}</Text>
                         <Text className="ai-benchmark-run-label" type="secondary">{benchmarkScoreRunLabel(score)}</Text>
                       </Space>
                       <Flex align="center" justify="end" gap={6} wrap>
                         {strictChampion && <Tag color="blue">冠军</Tag>}
-                        {disclosedHigh && index === 0 && <Tooltip title="仅代表官网披露值最高，运行配置不足以严格横比"><Tag>披露最高值</Tag></Tooltip>}
+                        {disclosedHigh && <Tooltip title="仅代表官网披露值并列最高，运行配置不足以严格横比"><Tag>披露最高值</Tag></Tooltip>}
                         <Text strong={strictChampion}>{formatBenchmarkValue(score, metric)}</Text>
                       </Flex>
                     </Flex>

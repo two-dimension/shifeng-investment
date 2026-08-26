@@ -29,9 +29,9 @@ Benchmark 不使用 OpenRouter Benchmark API、飞书、Artificial Analysis、De
 - Tencent：`github.com/Tencent-Hunyuan`
 - xAI：`x.ai/news`
 
-每家只展示当前确认的最新旗舰/通用文本模型。官网未披露分数时显示“未披露”，读取失败时仅保留该厂商上一版官网结果并标旧，不会拿旧模型或另一家数据顶替。冠军计算要求测试名、版本、split、分数口径、Agent/Harness、推理强度、shots/Pass@k 和工具策略一致；配置不完整的分数仍可查看，但不参与冠军。Terminal-Bench 始终放在 Agent 类别首位，2.0、2.1、3.0 不合并。Fable 与 Mythos 不做名称排除。
+每家只展示当前确认的最新旗舰/通用文本模型。官网未披露分数时显示“未披露”，读取失败时仅保留该厂商上一版官网结果并标旧，不会拿旧模型或另一家数据顶替。同一测试名、版本、split、分数口径的披露合并到一个展示分项；同一模型存在多个运行配置时全部保留并标记歧义。Agent 类冠军要求 Agent、Harness、推理强度、shots/Pass@k 和工具策略逐字段一致；非 Agent 类仅在至少两家披露同一精确测试、未明确标注配置不完整且已披露配置不冲突时生成严格冠军。其他共享分项只显示“官网披露最高值 · 非严格横比”。Terminal-Bench 始终放在 Agent 类别首位，2.0、2.1、3.0 不合并。Fable 与 Mythos 不做名称排除。
 
-进入 Benchmark 页签时会触发一次范围限定的检查；15 分钟内已有同步结果则复用，强制刷新可绕过该窗口。所有公开来源每日检查一次，快照原子写入 `server/data/ai-dashboard/snapshot.json`。这些同步请求只读网页，不调用模型推理，也不产生模型 Token 费用。
+进入 Benchmark 页签时会强制触发一次仅限官网模型卡的刷新；并发刷新会合并为同一个请求。所有公开来源每日检查一次，快照原子写入 `server/data/ai-dashboard/snapshot.json`。这些同步请求只读网页，不调用模型推理，也不产生模型 Token 费用。
 
 ## 本地公网访问
 

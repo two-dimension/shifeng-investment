@@ -102,6 +102,8 @@ export function createEmptyAiDashboardSnapshot(generatedAt = new Date().toISOStr
       sourceReports: [],
     },
     benchmarks: {
+      normalizationVersion: 2,
+      normalizationPolicy: 'strict-v2',
       models: [],
       metrics: [],
       winners: {},
@@ -162,17 +164,19 @@ function migrateBenchmarks(parsedBenchmarks, emptyBenchmarks) {
     sourceMode: parsedBenchmarks.sourceMode,
     coverage: parsedBenchmarks.coverage || emptyBenchmarks.coverage,
     attributions: parsedBenchmarks.attributions || emptyBenchmarks.attributions,
+    normalizationVersion: parsedBenchmarks.normalizationVersion || null,
+    normalizationPolicy: parsedBenchmarks.normalizationPolicy || null,
   };
-  const hasLegacyPerVendorKeys = migrated.sourceMode === 'official-model-cards'
-    && migrated.metrics.some((metric) => String(metric.key || '').startsWith('incomplete:'));
-  if (!hasLegacyPerVendorKeys) return migrated;
+  const needsNormalization = migrated.sourceMode === 'official-model-cards'
+    && (migrated.normalizationVersion !== 2 || migrated.normalizationPolicy !== 'strict-v2');
+  if (!needsNormalization) return migrated;
   return normalizeOfficialBenchmarks({
-    vendorCards: [...priorOfficialVendorCards(migrated, { legacyUnknownConfiguration: true }).values()],
+    vendorCards: [...priorOfficialVendorCards(migrated, { conservativeUnknown: true }).values()],
     asOf: migrated.asOf || undefined,
   });
 }
 
-function priorOfficialVendorCards(benchmarks, { legacyUnknownConfiguration = false } = {}) {
+function priorOfficialVendorCards(benchmarks, { conservativeUnknown = false } = {}) {
   if (benchmarks?.sourceMode !== 'official-model-cards') return new Map();
   const metrics = new Map((benchmarks.metrics || []).map((metric) => [metric.key, metric]));
   const sources = new Map((benchmarks.vendorSources || []).map((source) => [source.vendor, source]));
@@ -181,35 +185,34 @@ function priorOfficialVendorCards(benchmarks, { legacyUnknownConfiguration = fal
     const scores = Object.entries(model.scores || {}).flatMap(([key, score]) => {
       const metric = metrics.get(key);
       if (!metric || !Number.isFinite(score?.value)) return [];
-      const scoreConfiguration = typeof score.configurationComplete === 'boolean'
-        ? score.configurationComplete
-        : undefined;
-      const configurationComplete = legacyUnknownConfiguration
-        && metric.category !== 'Agent'
-        && scoreConfiguration === false
-        ? undefined
-        : scoreConfiguration ?? (metric.category === 'Agent' && metric.comparable === true ? true : undefined);
-      return [{
+      const disclosures = Array.isArray(score.disclosures) && score.disclosures.length > 0
+        ? score.disclosures
+        : [score];
+      return disclosures.map((disclosure) => ({
         testName: metric.testName || metric.testFamily || metric.label,
         testVersion: metric.testVersion || null,
         split: metric.split || null,
         scoreName: metric.scoreName || score.metric || 'Score',
-        value: score.value,
-        unit: metric.unit || score.unit || 'number',
-        direction: metric.direction || score.direction || 'higher',
-        agent: score.agent || metric.agent || null,
-        harness: score.harness || metric.harness || null,
-        effort: score.effort || metric.effort || null,
-        shots: score.shots ?? metric.shots ?? null,
-        passK: score.passK ?? metric.passK ?? null,
-        tools: score.tools || metric.tools || null,
-        configurationComplete,
-        comparisonNote: metric.comparisonNote || score.comparisonNote || null,
-        sourceUrl: score.sourceUrl || metric.sourceUrl || source.sourceUrl || null,
-        publishedAt: score.publishedAt || model.releasedAt || null,
-        retrievedAt: score.retrievedAt || source.retrievedAt || null,
-        sourceOrder: metric.sourceOrder ?? 0,
-      }];
+        value: disclosure.value,
+        unit: metric.unit || disclosure.unit || 'number',
+        direction: metric.direction || disclosure.direction || 'higher',
+        agent: disclosure.agent || metric.agent || null,
+        harness: disclosure.harness || metric.harness || null,
+        effort: disclosure.effort || metric.effort || null,
+        shots: disclosure.shots ?? metric.shots ?? null,
+        passK: disclosure.passK ?? metric.passK ?? null,
+        tools: disclosure.tools || metric.tools || null,
+        configurationComplete: conservativeUnknown
+          && metric.category !== 'Agent'
+          && disclosure.configurationComplete !== true
+          ? false
+          : disclosure.configurationComplete,
+        comparisonNote: metric.comparisonNote || disclosure.comparisonNote || null,
+        sourceUrl: disclosure.sourceUrl || metric.sourceUrl || source.sourceUrl || null,
+        publishedAt: disclosure.publishedAt || model.releasedAt || null,
+        retrievedAt: disclosure.retrievedAt || source.retrievedAt || null,
+        sourceOrder: disclosure.sourceOrder ?? metric.sourceOrder ?? 0,
+      }));
     });
     return [model.vendor, {
       vendor: model.vendor,
