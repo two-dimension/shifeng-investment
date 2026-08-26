@@ -99,6 +99,34 @@ test('keeps an undisclosed configuration unknown instead of marking it explicitl
   assert.equal(card.scores[0].comparisonNote, null);
 });
 
+test('rejects narrative prose accidentally captured as a benchmark row', async () => {
+  const definition = OFFICIAL_MODEL_CARD_SOURCES.find((row) => row.vendor === 'Gemini');
+  const registry = createOfficialModelCardRegistry({
+    registry: [definition],
+    documentClient: {
+      async fetchDocument({ entryUrl }) {
+        return {
+          finalUrl: entryUrl,
+          text: `
+            <div data-model="Gemini 3.7 Flash"></div>
+            <table>
+              <tr><th>Benchmark</th><th>Gemini 3.7 Flash</th></tr>
+              <tr><td>We can rule out the CCL for this domain with reasonable confidence based on the results from our testing, but the model remains below the alert threshold.</td><td>3.7</td></tr>
+              <tr><td>GPQA Diamond</td><td>93.5%</td></tr>
+            </table>
+          `,
+          bytes: new Uint8Array(),
+          contentType: 'text/html',
+          retrievedAt: '2026-08-23T00:00:00.000Z',
+        };
+      },
+    },
+  });
+
+  const [card] = await registry.readAll();
+  assert.deepEqual(card.scores.map((score) => score.testName), ['GPQA']);
+});
+
 test('rejects GitHub and Hugging Face paths outside the registered official owner', () => {
   const qwen = OFFICIAL_MODEL_CARD_SOURCES.find((row) => row.vendor === 'Qwen');
   assert.throws(() => createOfficialModelCardRegistry({

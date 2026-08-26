@@ -1036,7 +1036,7 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
         )}
       />
       <ChartCard
-        title="Terminal-Bench 系列"
+        title="Terminal-Bench 系列 · 厂商官网披露"
         extra={<Text type="secondary">版本、Agent / Harness、Effort 完全一致才参与排名</Text>}
       >
         {terminalDisclosures.length === 0 ? (
@@ -1065,7 +1065,7 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
                       </Space>
                       <Flex align="center" justify="end" gap={6} wrap>
                         {strictChampion && <Tag color="blue">冠军</Tag>}
-                        {disclosedHigh && <Tooltip title="仅代表官网披露值并列最高，运行配置不足以严格横比"><Tag>披露最高值</Tag></Tooltip>}
+                        {disclosedHigh && <Tooltip title="仅代表当前卡片中的厂商官网披露值最高，运行配置不足以严格横比，也不代表 Terminal-Bench 官方榜单名次"><Tag>本卡披露最高</Tag></Tooltip>}
                         <Text strong={strictChampion}>{formatBenchmarkValue(score, metric)}</Text>
                       </Flex>
                     </Flex>
@@ -1075,6 +1075,12 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
             ))}
           </div>
         )}
+        <Flex className="ai-benchmark-leaderboard-links" gap={10} wrap>
+          <Text type="secondary">官方榜单另行核对：</Text>
+          <a href="https://www.tbench.ai/leaderboard/terminal-bench/2.1" target="_blank" rel="noreferrer">Terminal-Bench 2.1</a>
+          <a href="https://www.frontierbench.ai/" target="_blank" rel="noreferrer">Terminal-Bench 3.0</a>
+          <Text type="secondary">厂商自报与官方榜单的 Agent、Harness、Effort 可能不同，不能混排。</Text>
+        </Flex>
       </ChartCard>
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={7}>
@@ -1123,7 +1129,11 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
                 ...metricGroups.map((group) => ({
                   title: group.category,
                   children: group.metrics.map((metric) => ({
-                    title: <Tooltip title={`${metric.direction === 'lower' ? 'lower' : 'higher'}-is-better · ${metric.source}`}>{metric.label}</Tooltip>,
+                    title: (
+                      <Tooltip title={`${metric.label} · ${metric.direction === 'lower' ? 'lower' : 'higher'}-is-better · ${metric.source}`}>
+                        <span className="ai-benchmark-metric-title">{metric.label}</span>
+                      </Tooltip>
+                    ),
                     width: 150,
                     align: 'right' as const,
                     render: (_: unknown, row: BenchmarkModel) => {

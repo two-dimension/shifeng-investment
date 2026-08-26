@@ -211,7 +211,10 @@ function inferBenchmarkName(rawName) {
 function scoreRecord(fields, context) {
   const testName = text(fields.testName);
   const value = cellNumber(fields.value);
-  if (!testName || value === null || BANNED_SCORE_PATTERN.test(testName)) return null;
+  // Model-card tables occasionally place a numeric assessment beside a full
+  // narrative paragraph. Treating that paragraph as a benchmark name creates
+  // enormous, misleading matrix headers.
+  if (!testName || testName.length > 120 || value === null || BANNED_SCORE_PATTERN.test(testName)) return null;
   const inferred = inferBenchmarkName(testName);
   const unit = text(fields.unit) || (String(fields.value || '').includes('%') || Math.abs(value) <= 100 ? 'percent-point' : 'number');
   const configurationComplete = nullableBoolean(fields.configurationComplete);
