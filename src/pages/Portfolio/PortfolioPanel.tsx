@@ -14,10 +14,10 @@ import { searchStocks } from '../../data/stocks';
 import {
   applyTargetWeightQuote,
   calculatePortfolioMarketValue,
-  DEFAULT_PORTFOLIO_MARKET,
   getTargetWeightRebalanceCapital,
   hasUninitializedTargetWeightPositions,
 } from '../../data/usSectorFunds';
+import { createPortfolioEntryState } from './portfolioEntryState';
 import type { SorterResult, SortOrder } from 'antd/es/table/interface';
 
 const { useForm } = Form;
@@ -289,14 +289,20 @@ const PortfolioPanel: React.FC = () => {
   const navigate = useNavigate();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [isViewingDashboard, setIsViewingDashboard] = useState(true);
+  const [entryState, setEntryState] = useState(createPortfolioEntryState);
+  const { market: marketFilter, isViewingDashboard } = entryState;
+  const setMarketFilter = (market: typeof marketFilter) => {
+    setEntryState((current) => ({ ...current, market }));
+  };
+  const setIsViewingDashboard = (nextIsViewingDashboard: boolean) => {
+    setEntryState((current) => ({ ...current, isViewingDashboard: nextIsViewingDashboard }));
+  };
   const [addFundModalOpen, setAddFundModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<Position | undefined>();
   const [syncing, setSyncing] = useState(false);
   const [contributionModalOpen, setContributionModalOpen] = useState(false);
   const [navDateRange, setNavDateRange] = useState<[string | null, string | null]>([null, null]);
   const [marketTemperatureRefreshKey, setMarketTemperatureRefreshKey] = useState(0);
-  const [marketFilter, setMarketFilter] = useState<'a' | 'hk' | 'us' | 'jp' | 'kr'>(DEFAULT_PORTFOLIO_MARKET);
   const [positionSortState, setPositionSortState] = useState<PositionSortState>({ key: null, order: null });
   const positionSortKey = positionSortState.key;
   const positionSortOrder = positionSortState.order;
