@@ -143,8 +143,9 @@ test('reading a legacy official Benchmark snapshot collapses display metrics wit
     comparable: false, sourceOrder, priority: testName === 'Terminal-Bench' ? 0 : 1,
     source: 'official-model-card',
   });
-  const score = (value, configurationComplete = false) => ({
-    value, unit: 'percent-point', direction: 'higher', configurationComplete,
+  const score = (value, configurationComplete) => ({
+    value, unit: 'percent-point', direction: 'higher',
+    ...(configurationComplete === undefined ? {} : { configurationComplete }),
     source: 'official-model-card', sourceUrl: 'https://official.example/card',
   });
   empty.benchmarks = {
@@ -162,13 +163,14 @@ test('reading a legacy official Benchmark snapshot collapses display metrics wit
     ],
     models: [
       { vendor: 'OpenAI', model: 'GPT Latest', releasedAt: '2026-08-20', scores: {
-        'incomplete:openai:gpt:0': score(82), 'incomplete:openai:gpt:1': score(91, undefined),
+        'incomplete:openai:gpt:0': score(82, false), 'incomplete:openai:gpt:1': score(91),
       } },
       { vendor: 'Gemini', model: 'Gemini Latest', releasedAt: '2026-08-21', scores: {
-        'incomplete:gemini:gemini:0': score(84), 'incomplete:gemini:gemini:1': score(92),
+        'incomplete:gemini:gemini:0': score(84, false), 'incomplete:gemini:gemini:1': score(92, false),
       } },
     ],
   };
+  assert.equal('configurationComplete' in empty.benchmarks.models[0].scores['incomplete:openai:gpt:1'], false);
   await fs.promises.writeFile(dataFile, JSON.stringify(empty), 'utf8');
 
   const service = createAiDashboardService({ dataFile, now: () => new Date('2026-08-23T00:00:00.000Z') });
