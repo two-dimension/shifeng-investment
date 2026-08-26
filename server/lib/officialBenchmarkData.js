@@ -82,6 +82,21 @@ export function officialComparisonKey(score) {
   ].filter((value) => value !== null && value !== undefined && value !== '').map(slug).join(':');
 }
 
+export function officialDisplayKey(score) {
+  if (!score || !cleanText(score.testName) || !cleanText(score.scoreName)
+    || !cleanText(score.unit) || !['higher', 'lower'].includes(score.direction)) return null;
+  const parts = comparisonParts(score);
+  return `display:${[
+    parts.category,
+    parts.family,
+    parts.version,
+    parts.split,
+    parts.scoreName,
+    cleanText(score.unit),
+    score.direction,
+  ].map((value) => slug(value) || 'none').join(':')}`;
+}
+
 function metricLabel(score, family) {
   const exact = [family, cleanText(score.testVersion), cleanText(score.split)].filter(Boolean).join(' ');
   return `${exact} · ${cleanText(score.scoreName)}`;
@@ -114,12 +129,14 @@ function normalizeMetric(score, key, sourceOrder, comparable) {
     source: 'official-model-card',
     sourceUrl: cleanText(score.sourceUrl),
     winnerKey: comparable ? key : null,
+    scoreCount: 0,
   };
 }
 
 function metricSort(left, right) {
   return BENCHMARK_CATEGORY_ORDER.indexOf(left.category) - BENCHMARK_CATEGORY_ORDER.indexOf(right.category)
     || left.priority - right.priority
+    || (right.scoreCount || 0) - (left.scoreCount || 0)
     || left.sourceOrder - right.sourceOrder
     || left.label.localeCompare(right.label, 'en');
 }
@@ -137,9 +154,68 @@ function normalizeScore(score, card, metric) {
     sourceUrl: cleanText(score.sourceUrl || card.sourceUrl),
     publishedAt: cleanText(score.publishedAt || card.releasedAt),
     retrievedAt: cleanText(score.retrievedAt || card.retrievedAt),
-    configurationComplete: metric.comparable,
-    comparisonNote: metric.comparisonNote,
+    agent: cleanText(score.agent),
+    harness: cleanText(score.harness),
+    effort: cleanText(score.effort),
+    shots: score.shots ?? null,
+    passK: score.passK ?? null,
+    tools: cleanText(score.tools),
+    configurationComplete: score.configurationComplete,
+    comparisonKey: officialComparisonKey(score),
+    comparisonNote: cleanText(score.comparisonNote),
   };
+}
+
+function scoreQuality(score) {
+  if (score.configurationComplete === true) return 2;
+  if (score.configurationComplete === false) return 0;
+  return 1;
+}
+
+function commonRunValue(scores, field) {
+  const values = scores.map((score) => score[field]);
+  const concrete = values.filter((value) => value !== null && value !== undefined && value !== '');
+  if (concrete.length === 0 || concrete.length !== values.length) return null;
+  const first = concrete[0];
+  return concrete.every((value) => slug(value) === slug(first)) ? first : null;
+}
+
+function runConfigurationsAreCompatible(scores) {
+  for (const field of ['agent', 'harness', 'effort', 'shots', 'passK', 'tools']) {
+    const values = scores.map((score) => score[field]);
+    const concrete = values.filter((value) => value !== null && value !== undefined && value !== '');
+    if (concrete.length === 0) continue;
+    if (concrete.length !== values.length) return false;
+    if (!concrete.every((value) => slug(value) === slug(concrete[0]))) return false;
+  }
+  return true;
+}
+
+function finalizeMetric(metric, models) {
+  const scores = models.flatMap((model) => model.scores[metric.key] ? [model.scores[metric.key]] : []);
+  const strictKeys = scores.map((score) => score.comparisonKey).filter(Boolean);
+  const isAgent = metric.category === 'Agent';
+  const hasCrossVendorCoverage = scores.length >= 2;
+  const comparable = hasCrossVendorCoverage && (isAgent
+    ? strictKeys.length === scores.length && new Set(strictKeys).size === 1
+    : !scores.some((score) => score.configurationComplete === false) && runConfigurationsAreCompatible(scores));
+
+  metric.agent = commonRunValue(scores, 'agent');
+  metric.harness = commonRunValue(scores, 'harness');
+  metric.effort = commonRunValue(scores, 'effort');
+  metric.shots = commonRunValue(scores, 'shots');
+  metric.passK = commonRunValue(scores, 'passK');
+  metric.tools = commonRunValue(scores, 'tools');
+  metric.scoreCount = scores.length;
+  metric.comparable = comparable;
+  metric.winnerKey = comparable ? metric.key : null;
+  metric.comparisonNote = comparable
+    ? null
+    : isAgent
+      ? 'Agent / Harness / Effort 配置不完整或不一致，仅合并披露，不参与严格排名'
+      : scores.length < 2
+        ? '仅一个厂商披露，暂不生成分项冠军'
+        : '官网披露的运行配置不完整或不一致，不参与冠军计算';
 }
 
 function generateWinners(models, metrics) {
@@ -150,7 +226,7 @@ function generateWinners(models, metrics) {
       const score = model.scores[metric.key];
       return score && Number.isFinite(score.value) ? [{ model: model.model, value: score.value }] : [];
     });
-    if (scored.length === 0) continue;
+    if (scored.length < 2) continue;
     const best = metric.direction === 'lower'
       ? Math.min(...scored.map((row) => row.value))
       : Math.max(...scored.map((row) => row.value));
@@ -179,18 +255,20 @@ export function normalizeOfficialBenchmarks({ vendorCards = [], asOf = new Date(
       scores: {},
     };
     (card.scores || []).forEach((rawScore, sourceOrder) => {
-      const comparisonKey = officialComparisonKey(rawScore);
-      const key = comparisonKey || `incomplete:${slug(card.vendor)}:${slug(card.model)}:${sourceOrder}`;
+      const displayKey = officialDisplayKey(rawScore);
+      const key = displayKey || `incomplete:${slug(card.vendor)}:${slug(card.model)}:${sourceOrder}`;
       let metric = metricsByKey.get(key);
       if (!metric) {
-        metric = normalizeMetric({ ...rawScore, sourceUrl: rawScore.sourceUrl || card.sourceUrl }, key, rawScore.sourceOrder ?? sourceOrder, Boolean(comparisonKey));
+        metric = normalizeMetric({ ...rawScore, sourceUrl: rawScore.sourceUrl || card.sourceUrl }, key, rawScore.sourceOrder ?? sourceOrder, false);
         metricsByKey.set(key, metric);
       }
       const score = normalizeScore(rawScore, card, metric);
-      if (score) model.scores[key] = score;
+      const existing = model.scores[key];
+      if (score && (!existing || scoreQuality(score) > scoreQuality(existing))) model.scores[key] = score;
     });
     return model;
   });
+  for (const metric of metricsByKey.values()) finalizeMetric(metric, models);
   const metrics = [...metricsByKey.values()].sort(metricSort);
   const winners = generateWinners(models, metrics);
   const vendorSources = vendorCards.map((card) => ({

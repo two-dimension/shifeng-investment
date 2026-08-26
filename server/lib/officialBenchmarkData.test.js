@@ -43,6 +43,46 @@ test('comparison keys separate exact versions/configurations and reject incomple
   assert.equal(officialComparisonKey({ testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', unit: 'percent-point', direction: 'higher', configurationComplete: false }), null);
 });
 
+test('groups identical Terminal-Bench disclosures into one metric without inventing strict comparability', () => {
+  const terminal = (value) => ({
+    testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', value,
+    unit: 'percent-point', direction: 'higher', configurationComplete: false,
+  });
+  const result = normalizeOfficialBenchmarks({
+    vendorCards: [
+      source('Qwen', 'Qwen3.8', [terminal(86.6)]),
+      source('Gemini', 'Gemini 3.7 Flash', [terminal(85.8)]),
+      source('Kimi', 'Kimi K3', [terminal(88.3)]),
+    ],
+  });
+
+  const terminalMetrics = result.metrics.filter((metric) => metric.label === 'Terminal-Bench 2.1 · Accuracy');
+  assert.equal(terminalMetrics.length, 1);
+  const [metric] = terminalMetrics;
+  assert.deepEqual(result.models.map((model) => model.scores[metric.key]?.value), [86.6, 85.8, 88.3]);
+  assert.equal(metric.comparable, false);
+  assert.equal(result.winners[metric.key], undefined);
+});
+
+test('groups matching non-Agent official tests and derives a useful cross-vendor winner', () => {
+  const gpqa = (value) => ({
+    testName: 'GPQA', testVersion: 'Diamond', scoreName: 'Accuracy', value,
+    unit: 'percent-point', direction: 'higher',
+  });
+  const result = normalizeOfficialBenchmarks({
+    vendorCards: [
+      source('OpenAI', 'GPT-5.6 Sol', [gpqa(91.2)]),
+      source('Gemini', 'Gemini 3.7 Pro', [gpqa(92.4)]),
+    ],
+  });
+
+  const gpqaMetrics = result.metrics.filter((metric) => metric.label === 'GPQA Diamond · Accuracy');
+  assert.equal(gpqaMetrics.length, 1);
+  const [metric] = gpqaMetrics;
+  assert.equal(metric.comparable, true);
+  assert.deepEqual(result.winners[metric.key], { models: ['Gemini 3.7 Pro'], value: 92.4 });
+});
+
 test('normalization preserves exact tests and produces strict winners, ties, lower-is-better, and missing latest models', () => {
   const terminal = (value, version = '2.1', complete = true) => ({
     testName: 'Terminal-Bench', testVersion: version, scoreName: 'Accuracy', value,
@@ -69,17 +109,20 @@ test('normalization preserves exact tests and produces strict winners, ties, low
   const result = normalizeOfficialBenchmarks({ vendorCards: cards, asOf: '2026-08-23T00:00:00.000Z' });
 
   assert.equal(result.sourceMode, 'official-model-cards');
-  assert.deepEqual(result.winners['agent:terminal-bench:2.1:accuracy:claude-code:xhigh'], { models: ['Claude Fable 5'], value: 83.8 });
-  assert.deepEqual(result.winners['agent:terminal-bench:2.0:accuracy:claude-code:xhigh'], { models: ['Claude Fable 5', 'GPT 5.6 Sol'], value: 82.2 });
-  assert.deepEqual(result.winners['coding:swe-bench:verified:pass-1:official:1'], { models: ['Claude Fable 5', 'GPT 5.6 Sol'], value: 78 });
+  const terminal21 = result.metrics.find((metric) => metric.testName === 'Terminal-Bench' && metric.testVersion === '2.1');
+  const terminal20 = result.metrics.find((metric) => metric.testName === 'Terminal-Bench' && metric.testVersion === '2.0');
+  const swe = result.metrics.find((metric) => metric.testName === 'SWE-bench');
+  assert.deepEqual(result.winners[terminal21.key], { models: ['Claude Fable 5'], value: 83.8 });
+  assert.deepEqual(result.winners[terminal20.key], { models: ['Claude Fable 5', 'GPT 5.6 Sol'], value: 82.2 });
+  assert.deepEqual(result.winners[swe.key], { models: ['Claude Fable 5', 'GPT 5.6 Sol'], value: 78 });
   const lowerMetric = result.metrics.find((metric) => metric.testName === 'Vendor Novel Eval');
   assert.equal(result.winners[lowerMetric.key].value, 1.5);
-  assert.equal(result.metrics.find((metric) => metric.testName === 'Terminal-Bench' && !metric.comparable)?.winnerKey, null);
+  assert.equal(result.metrics.filter((metric) => metric.testName === 'Terminal-Bench' && metric.testVersion === '2.1').length, 1);
   assert.equal(result.metrics[0].testFamily, 'Terminal-Bench');
   assert.equal(result.metrics[0].category, 'Agent');
   assert.equal(result.models.find((model) => model.vendor === 'Gemini').model, 'Gemini 3.7 Flash');
   assert.deepEqual(result.models.find((model) => model.vendor === 'Gemini').scores, {});
-  assert.deepEqual(result.coverage, { vendors: 3, disclosedVendors: 2, metrics: 5, comparableMetrics: 4 });
+  assert.deepEqual(result.coverage, { vendors: 3, disclosedVendors: 2, metrics: 4, comparableMetrics: 4 });
   assert.equal(result.attributions.every((row) => row.source === 'official-model-card'), true);
 });
 

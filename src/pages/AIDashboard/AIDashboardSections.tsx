@@ -46,6 +46,7 @@ import type {
   TokenPrice,
 } from './types';
 import {
+  benchmarkScoreRunLabel,
   formatBenchmarkValue,
   formatArrDelta,
   formatCurrencyPrice,
@@ -995,8 +996,10 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
     metric,
     winner: data.benchmarks.winners[metric.key],
     scores: matrixRows.flatMap((model) => model.scores?.[metric.key]
-      ? [{ model: model.model, score: model.scores[metric.key] }]
-      : []),
+      ? [{ vendor: model.vendor, model: model.model, score: model.scores[metric.key] }]
+      : []).sort((left, right) => metric.direction === 'lower'
+      ? left.score.value - right.score.value
+      : right.score.value - left.score.value),
   })).filter((row) => row.scores.length > 0);
   const otherWinnerGroups = metricGroups.map((group) => ({
     category: group.category,
@@ -1040,16 +1043,25 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
                       {[metric.agent, metric.harness, metric.effort].filter(Boolean).join(' · ') || '官网未完整披露运行配置'}
                     </Text>
                   </div>
-                  <Tag color={winner ? 'blue' : 'default'}>{winner ? '严格可比冠军' : '仅披露，不排名'}</Tag>
+                  <Tag color={winner ? 'blue' : 'default'}>{winner ? '严格可比' : '合并披露 · 不排名'}</Tag>
                 </Flex>
-                {winner ? (
-                  <Text className="ai-winner-name">{winner.models.join(' / ')} · {formatBenchmarkValue({ value: winner.value }, metric)}</Text>
-                ) : scores.map(({ model, score }) => (
-                  <Flex className="ai-terminal-score-row" justify="space-between" gap={8} key={model}>
-                    <Text>{model}</Text>
-                    <Text strong>{formatBenchmarkValue(score, metric)}</Text>
-                  </Flex>
-                ))}
+                {scores.map(({ vendor, model, score }, index) => {
+                  const strictChampion = winner?.models.includes(model) === true;
+                  const disclosedHigh = !winner && score.value === scores[0]?.score.value;
+                  return (
+                    <Flex className="ai-terminal-score-row" justify="space-between" align="start" gap={8} key={`${vendor}-${model}`}>
+                      <Space direction="vertical" size={0}>
+                        <Text>{model}</Text>
+                        <Text className="ai-benchmark-run-label" type="secondary">{benchmarkScoreRunLabel(score)}</Text>
+                      </Space>
+                      <Flex align="center" justify="end" gap={6} wrap>
+                        {strictChampion && <Tag color="blue">冠军</Tag>}
+                        {disclosedHigh && index === 0 && <Tooltip title="仅代表官网披露值最高，运行配置不足以严格横比"><Tag>披露最高值</Tag></Tooltip>}
+                        <Text strong={strictChampion}>{formatBenchmarkValue(score, metric)}</Text>
+                      </Flex>
+                    </Flex>
+                  );
+                })}
               </div>
             ))}
           </div>

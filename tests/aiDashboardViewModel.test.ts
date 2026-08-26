@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as dashboardViewModel from '../src/pages/AIDashboard/viewModel.ts';
 import {
   benchmarkRefreshRequest,
+  benchmarkScoreRunLabel,
   dashboardSourceSummary,
   formatBenchmarkValue,
   formatCurrencyPrice,
@@ -43,8 +44,8 @@ const metricFixture = [
   },
 ];
 
-test('only entering the Benchmark tab requests a scoped non-forced refresh', () => {
-  assert.deepEqual(benchmarkRefreshRequest('benchmark'), { sources: ['benchmarks'], force: false });
+test('entering the Benchmark tab requests a scoped fresh official-model-card refresh', () => {
+  assert.deepEqual(benchmarkRefreshRequest('benchmark'), { sources: ['benchmarks'], force: true });
   assert.equal(benchmarkRefreshRequest('pricing'), null);
 });
 
@@ -62,6 +63,19 @@ test('groups exact benchmark names with Terminal-Bench first', () => {
   assert.equal(groups[0].metrics[0].label, 'Terminal-Bench 2.1 · Accuracy');
   assert.equal(groups[0].metrics[0].testName, 'Terminal-Bench');
   assert.equal(groups[1].metrics[0].testVersion, 'Verified');
+});
+
+test('puts metrics disclosed by more vendors before sparse metrics in each category', () => {
+  const groups = groupOfficialBenchmarkMetrics([
+    { ...metricFixture[0], key: 'sparse', label: 'Sparse', sourceOrder: 0, scoreCount: 1 },
+    { ...metricFixture[0], key: 'shared', label: 'Shared', sourceOrder: 9, scoreCount: 4 },
+  ]);
+  assert.deepEqual(groups[0].metrics.map((metric) => metric.key), ['shared', 'sparse']);
+});
+
+test('formats per-model benchmark run configurations without pretending missing values match', () => {
+  assert.equal(benchmarkScoreRunLabel({ agent: 'Claude Code', harness: null, effort: 'xhigh', shots: null, passK: null, tools: null }), 'Claude Code · xhigh');
+  assert.equal(benchmarkScoreRunLabel({}), '配置未完整披露');
 });
 
 test('winner rows retain exact tests, winning scores, ties, and run configurations', () => {

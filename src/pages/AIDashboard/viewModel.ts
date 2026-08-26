@@ -157,8 +157,8 @@ export function showDashboardSessionControls(publicAccess: boolean | undefined):
   return publicAccess !== true;
 }
 
-export function benchmarkRefreshRequest(activeTab: string): { sources: ['benchmarks']; force: false } | null {
-  return activeTab === 'benchmark' ? { sources: ['benchmarks'], force: false } : null;
+export function benchmarkRefreshRequest(activeTab: string): { sources: ['benchmarks']; force: true } | null {
+  return activeTab === 'benchmark' ? { sources: ['benchmarks'], force: true } : null;
 }
 
 export function formatBenchmarkValue(
@@ -187,6 +187,7 @@ function benchmarkMetricSort(left: BenchmarkMetricDefinition, right: BenchmarkMe
   return (leftIndex < 0 ? OFFICIAL_BENCHMARK_CATEGORY_ORDER.length : leftIndex)
     - (rightIndex < 0 ? OFFICIAL_BENCHMARK_CATEGORY_ORDER.length : rightIndex)
     || (left.priority ?? 1) - (right.priority ?? 1)
+    || (right.scoreCount ?? 0) - (left.scoreCount ?? 0)
     || (left.sourceOrder ?? 0) - (right.sourceOrder ?? 0)
     || left.label.localeCompare(right.label, 'en');
 }
@@ -200,15 +201,21 @@ export function groupOfficialBenchmarkMetrics(metrics: BenchmarkMetricDefinition
   return [...groups].map(([category, groupedMetrics]) => ({ category, metrics: groupedMetrics }));
 }
 
-function benchmarkRunLabel(metric: BenchmarkMetricDefinition): string {
-  const run = [metric.agent, metric.harness]
+export function benchmarkScoreRunLabel(score: Pick<BenchmarkScore,
+  'agent' | 'harness' | 'effort' | 'shots' | 'passK' | 'tools'>): string {
+  const run = [score.agent, score.harness]
     .filter((value): value is string => Boolean(value))
     .filter((value, index, values) => values.indexOf(value) === index);
-  if (metric.effort) run.push(metric.effort);
-  if (metric.shots !== null && metric.shots !== undefined) run.push(`${metric.shots}-shot`);
-  if (metric.passK !== null && metric.passK !== undefined) run.push(`Pass@${metric.passK}`);
-  if (metric.tools) run.push(metric.tools);
-  return run.join(' · ') || (metric.comparable ? '官网同口径' : '配置未完整披露');
+  if (score.effort) run.push(score.effort);
+  if (score.shots !== null && score.shots !== undefined) run.push(`${score.shots}-shot`);
+  if (score.passK !== null && score.passK !== undefined) run.push(`Pass@${score.passK}`);
+  if (score.tools) run.push(score.tools);
+  return run.join(' · ') || '配置未完整披露';
+}
+
+function benchmarkRunLabel(metric: BenchmarkMetricDefinition): string {
+  const label = benchmarkScoreRunLabel(metric);
+  return label === '配置未完整披露' && metric.comparable ? '官网同测试口径' : label;
 }
 
 export function officialWinnerRows(benchmarks: AiDashboardSnapshot['benchmarks']) {

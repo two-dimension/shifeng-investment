@@ -152,7 +152,7 @@ function migrateSources(parsedSources, emptySources) {
 function migrateBenchmarks(parsedBenchmarks, emptyBenchmarks) {
   if (!parsedBenchmarks || typeof parsedBenchmarks !== 'object') return emptyBenchmarks;
   if (!['none', 'official-model-cards'].includes(parsedBenchmarks.sourceMode)) return emptyBenchmarks;
-  return {
+  const migrated = {
     ...emptyBenchmarks,
     models: parsedBenchmarks.models || emptyBenchmarks.models,
     metrics: parsedBenchmarks.metrics || emptyBenchmarks.metrics,
@@ -163,9 +163,16 @@ function migrateBenchmarks(parsedBenchmarks, emptyBenchmarks) {
     coverage: parsedBenchmarks.coverage || emptyBenchmarks.coverage,
     attributions: parsedBenchmarks.attributions || emptyBenchmarks.attributions,
   };
+  const hasLegacyPerVendorKeys = migrated.sourceMode === 'official-model-cards'
+    && migrated.metrics.some((metric) => String(metric.key || '').startsWith('incomplete:'));
+  if (!hasLegacyPerVendorKeys) return migrated;
+  return normalizeOfficialBenchmarks({
+    vendorCards: [...priorOfficialVendorCards(migrated, { legacyUnknownConfiguration: true }).values()],
+    asOf: migrated.asOf || undefined,
+  });
 }
 
-function priorOfficialVendorCards(benchmarks) {
+function priorOfficialVendorCards(benchmarks, { legacyUnknownConfiguration = false } = {}) {
   if (benchmarks?.sourceMode !== 'official-model-cards') return new Map();
   const metrics = new Map((benchmarks.metrics || []).map((metric) => [metric.key, metric]));
   const sources = new Map((benchmarks.vendorSources || []).map((source) => [source.vendor, source]));
@@ -174,6 +181,14 @@ function priorOfficialVendorCards(benchmarks) {
     const scores = Object.entries(model.scores || {}).flatMap(([key, score]) => {
       const metric = metrics.get(key);
       if (!metric || !Number.isFinite(score?.value)) return [];
+      const scoreConfiguration = typeof score.configurationComplete === 'boolean'
+        ? score.configurationComplete
+        : undefined;
+      const configurationComplete = legacyUnknownConfiguration
+        && metric.category !== 'Agent'
+        && scoreConfiguration === false
+        ? undefined
+        : scoreConfiguration ?? (metric.category === 'Agent' && metric.comparable === true ? true : undefined);
       return [{
         testName: metric.testName || metric.testFamily || metric.label,
         testVersion: metric.testVersion || null,
@@ -182,13 +197,13 @@ function priorOfficialVendorCards(benchmarks) {
         value: score.value,
         unit: metric.unit || score.unit || 'number',
         direction: metric.direction || score.direction || 'higher',
-        agent: metric.agent || null,
-        harness: metric.harness || null,
-        effort: metric.effort || null,
-        shots: metric.shots ?? null,
-        passK: metric.passK ?? null,
-        tools: metric.tools || null,
-        configurationComplete: metric.comparable === true,
+        agent: score.agent || metric.agent || null,
+        harness: score.harness || metric.harness || null,
+        effort: score.effort || metric.effort || null,
+        shots: score.shots ?? metric.shots ?? null,
+        passK: score.passK ?? metric.passK ?? null,
+        tools: score.tools || metric.tools || null,
+        configurationComplete,
         comparisonNote: metric.comparisonNote || score.comparisonNote || null,
         sourceUrl: score.sourceUrl || metric.sourceUrl || source.sourceUrl || null,
         publishedAt: score.publishedAt || model.releasedAt || null,

@@ -180,8 +180,12 @@ function nullableNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function boolean(value) {
-  return /^(?:true|yes|1|完整)$/i.test(String(value || '').trim());
+function nullableBoolean(value) {
+  const normalized = String(value ?? '').trim();
+  if (!normalized) return undefined;
+  if (/^(?:true|yes|1|完整)$/i.test(normalized)) return true;
+  if (/^(?:false|no|0|不完整)$/i.test(normalized)) return false;
+  return undefined;
 }
 
 function inferBenchmarkName(rawName) {
@@ -210,7 +214,7 @@ function scoreRecord(fields, context) {
   if (!testName || value === null || BANNED_SCORE_PATTERN.test(testName)) return null;
   const inferred = inferBenchmarkName(testName);
   const unit = text(fields.unit) || (String(fields.value || '').includes('%') || Math.abs(value) <= 100 ? 'percent-point' : 'number');
-  const configurationComplete = boolean(fields.configurationComplete);
+  const configurationComplete = nullableBoolean(fields.configurationComplete);
   return {
     testName: inferred.testName,
     testVersion: text(fields.testVersion) || inferred.testVersion,
@@ -226,7 +230,7 @@ function scoreRecord(fields, context) {
     passK: nullableNumber(fields.passK),
     tools: text(fields.tools),
     configurationComplete,
-    comparisonNote: configurationComplete ? null : '官网未完整披露可比运行配置',
+    comparisonNote: configurationComplete === false ? '官网明确标注运行配置不完整' : null,
     sourceUrl: context.sourceUrl,
     publishedAt: context.releasedAt,
     retrievedAt: context.retrievedAt,

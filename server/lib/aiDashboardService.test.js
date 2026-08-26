@@ -132,6 +132,56 @@ test('missing collectors return an empty public-source snapshot instead of fabri
   assert.deepEqual(snapshot.openRouter.topModels, []);
 });
 
+test('reading a legacy official Benchmark snapshot collapses duplicate display metrics', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-migration-');
+  const empty = createEmptyAiDashboardSnapshot('2026-08-23T00:00:00.000Z');
+  const metric = (key, testName, version, sourceOrder) => ({
+    key, category: testName === 'Terminal-Bench' ? 'Agent' : 'Reasoning & Knowledge',
+    group: testName === 'Terminal-Bench' ? 'Agent' : 'Reasoning & Knowledge',
+    testName, testFamily: testName, testVersion: version, split: null, scoreName: 'Accuracy',
+    label: `${testName} ${version} · Accuracy`, unit: 'percent-point', direction: 'higher',
+    comparable: false, sourceOrder, priority: testName === 'Terminal-Bench' ? 0 : 1,
+    source: 'official-model-card',
+  });
+  const score = (value) => ({
+    value, unit: 'percent-point', direction: 'higher', configurationComplete: false,
+    source: 'official-model-card', sourceUrl: 'https://official.example/card',
+  });
+  empty.benchmarks = {
+    sourceMode: 'official-model-cards', asOf: '2026-08-23', winners: {}, attributions: [],
+    coverage: { vendors: 2, disclosedVendors: 2, metrics: 4, comparableMetrics: 0 },
+    vendorSources: [
+      { vendor: 'OpenAI', model: 'GPT Latest', status: 'ready', stale: false, sourceUrl: 'https://official.example/openai' },
+      { vendor: 'Gemini', model: 'Gemini Latest', status: 'ready', stale: false, sourceUrl: 'https://official.example/gemini' },
+    ],
+    metrics: [
+      metric('incomplete:openai:gpt:0', 'Terminal-Bench', '2.1', 0),
+      metric('incomplete:gemini:gemini:0', 'Terminal-Bench', '2.1', 0),
+      metric('incomplete:openai:gpt:1', 'GPQA', 'Diamond', 1),
+      metric('incomplete:gemini:gemini:1', 'GPQA', 'Diamond', 1),
+    ],
+    models: [
+      { vendor: 'OpenAI', model: 'GPT Latest', releasedAt: '2026-08-20', scores: {
+        'incomplete:openai:gpt:0': score(82), 'incomplete:openai:gpt:1': score(91),
+      } },
+      { vendor: 'Gemini', model: 'Gemini Latest', releasedAt: '2026-08-21', scores: {
+        'incomplete:gemini:gemini:0': score(84), 'incomplete:gemini:gemini:1': score(92),
+      } },
+    ],
+  };
+  await fs.promises.writeFile(dataFile, JSON.stringify(empty), 'utf8');
+
+  const service = createAiDashboardService({ dataFile, now: () => new Date('2026-08-23T00:00:00.000Z') });
+  const snapshot = await service.getSnapshot();
+  const terminal = snapshot.benchmarks.metrics.filter((row) => row.label === 'Terminal-Bench 2.1 · Accuracy');
+  const gpqa = snapshot.benchmarks.metrics.find((row) => row.label === 'GPQA Diamond · Accuracy');
+
+  assert.equal(terminal.length, 1);
+  assert.equal(snapshot.benchmarks.models.every((model) => model.scores[terminal[0].key]), true);
+  assert.equal(snapshot.benchmarks.winners[terminal[0].key], undefined);
+  assert.deepEqual(snapshot.benchmarks.winners[gpqa.key], { models: ['Gemini Latest'], value: 92 });
+});
+
 test('legacy screenshot CDS file cannot overlay the production snapshot', async (t) => {
   const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-cds-');
   const cdsFile = path.join(dir, 'cds-5y.json');
@@ -438,7 +488,8 @@ test('official Benchmark client publishes only first-party model-card records', 
   assert.equal(snapshot.benchmarks.sourceMode, 'official-model-cards');
   assert.equal(snapshot.benchmarks.models[0].model, 'GPT-5.6 Sol');
   assert.equal(snapshot.benchmarks.attributions.every((row) => row.source === 'official-model-card'), true);
-  assert.deepEqual(Object.values(snapshot.benchmarks.winners)[0], { models: ['GPT-5.6 Sol'], value: 88.8 });
+  assert.deepEqual(snapshot.benchmarks.winners, {});
+  assert.equal(snapshot.benchmarks.coverage.comparableMetrics, 0);
 });
 
 test('a failed official vendor retains only that vendor last-good card and becomes stale', async (t) => {

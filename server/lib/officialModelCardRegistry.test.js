@@ -77,6 +77,28 @@ test('reads compact official excerpts and preserves exact score configurations',
   assert.equal(cards.flatMap((card) => card.scores).some((score) => /Artificial Analysis|Design Arena|OpenRouter/i.test(score.testName)), false);
 });
 
+test('keeps an undisclosed configuration unknown instead of marking it explicitly incomplete', async () => {
+  const definition = OFFICIAL_MODEL_CARD_SOURCES.find((row) => row.vendor === 'Anthropic');
+  const registry = createOfficialModelCardRegistry({
+    registry: [definition],
+    documentClient: {
+      async fetchDocument({ entryUrl }) {
+        return {
+          finalUrl: entryUrl,
+          text: '<div data-model="Claude Opus 5"></div><table><tr><th>Benchmark</th><th>Claude Opus 5</th></tr><tr><td>GPQA Diamond</td><td>91.2%</td></tr></table>',
+          bytes: new Uint8Array(),
+          contentType: 'text/html',
+          retrievedAt: '2026-08-23T00:00:00.000Z',
+        };
+      },
+    },
+  });
+
+  const [card] = await registry.readAll();
+  assert.equal(card.scores[0].configurationComplete, undefined);
+  assert.equal(card.scores[0].comparisonNote, null);
+});
+
 test('rejects GitHub and Hugging Face paths outside the registered official owner', () => {
   const qwen = OFFICIAL_MODEL_CARD_SOURCES.find((row) => row.vendor === 'Qwen');
   assert.throws(() => createOfficialModelCardRegistry({

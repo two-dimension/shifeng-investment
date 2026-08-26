@@ -213,7 +213,14 @@ export interface BenchmarkScore {
   asOf?: string | null;
   publishedAt?: string | null;
   retrievedAt?: string | null;
+  agent?: string | null;
+  harness?: string | null;
+  effort?: string | null;
+  shots?: number | null;
+  passK?: number | null;
+  tools?: string | null;
   configurationComplete?: boolean;
+  comparisonKey?: string | null;
   comparisonNote?: string | null;
   sampleSize?: number;
   standardDeviation?: number;
@@ -246,6 +253,7 @@ export interface BenchmarkMetricDefinition {
   source: string;
   sourceUrl?: string | null;
   winnerKey?: string | null;
+  scoreCount?: number;
 }
 
 export interface BenchmarkModel {
