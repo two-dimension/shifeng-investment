@@ -60,8 +60,7 @@ import {
   formatUsd,
   groupOfficialBenchmarkMetrics,
   methodologyTooltip,
-  officialDisclosureLeaderRows,
-  officialWinnerRows,
+  officialBenchmarkSummaryRows,
 } from './viewModel';
 
 const { Text, Title, Paragraph, Link } = Typography;
@@ -991,7 +990,7 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
     : benchmarkMetrics(data.benchmarks.models).map((key) => legacyMetricDefinition(key, data.benchmarks.models));
   const matrixRows = data.benchmarks.models.map((model) => ({ ...model, key: `${model.vendor}-${model.model}` }));
   const metricGroups = groupOfficialBenchmarkMetrics(metrics);
-  const winnerRows = officialWinnerRows({ ...data.benchmarks, metrics });
+  const summaryRows = officialBenchmarkSummaryRows({ ...data.benchmarks, metrics });
   const terminalDisclosures = metrics.filter((metric) => (
     metric.testFamily === 'Terminal-Bench' || /terminal[- ]bench/i.test(metric.testName || '')
   )).map((metric) => ({
@@ -1008,8 +1007,6 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
       ? left.score.value - right.score.value
       : right.score.value - left.score.value),
   })).filter((row) => row.scores.length > 0);
-  const disclosureLeaderRows = officialDisclosureLeaderRows({ ...data.benchmarks, metrics });
-  const summaryRows = [...winnerRows, ...disclosureLeaderRows];
   const otherWinnerGroups = metricGroups.map((group) => ({
     category: group.category,
     rows: summaryRows.filter((row) => row.category === group.category && !row.terminalBench),
@@ -1056,7 +1053,6 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
                 </Flex>
                 {scores.map(({ vendor, model, score }) => {
                   const strictChampion = winner?.models.includes(model) === true;
-                  const disclosedHigh = !winner && score.value === scores[0]?.score.value;
                   return (
                     <Flex className="ai-terminal-score-row" justify="space-between" align="start" gap={8} key={`${vendor}-${model}-${benchmarkDisclosureKey(score)}`}>
                       <Space direction="vertical" size={0}>
@@ -1065,7 +1061,6 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
                       </Space>
                       <Flex align="center" justify="end" gap={6} wrap>
                         {strictChampion && <Tag color="blue">冠军</Tag>}
-                        {disclosedHigh && <Tooltip title="仅代表当前卡片中的厂商官网披露值最高，运行配置不足以严格横比，也不代表 Terminal-Bench 官方榜单名次"><Tag>本卡披露最高</Tag></Tooltip>}
                         <Text strong={strictChampion}>{formatBenchmarkValue(score, metric)}</Text>
                       </Flex>
                     </Flex>
@@ -1075,12 +1070,9 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
             ))}
           </div>
         )}
-        <Flex className="ai-benchmark-leaderboard-links" gap={10} wrap>
-          <Text type="secondary">官方榜单另行核对：</Text>
-          <a href="https://www.tbench.ai/leaderboard/terminal-bench/2.1" target="_blank" rel="noreferrer">Terminal-Bench 2.1</a>
-          <a href="https://www.frontierbench.ai/" target="_blank" rel="noreferrer">Terminal-Bench 3.0</a>
-          <Text type="secondary">厂商自报与官方榜单的 Agent、Harness、Effort 可能不同，不能混排。</Text>
-        </Flex>
+        <Text className="ai-benchmark-source-policy" type="secondary">
+          每条成绩仅引用该模型厂商自己的官网或官方模型卡；Agent、Harness、Effort 不一致时只展示，不排名。
+        </Text>
       </ChartCard>
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={7}>

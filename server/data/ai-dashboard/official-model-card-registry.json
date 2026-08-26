@@ -89,14 +89,15 @@
   },
   {
     "vendor": "Kimi",
-    "indexUrl": "https://github.com/MoonshotAI",
-    "cardUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
-    "allowedHosts": ["github.com", "raw.githubusercontent.com", "api.github.com"],
+    "indexUrl": "https://www.kimi.com/en/blog/kimi-k3",
+    "cardUrl": "https://www.kimi.com/en/blog/kimi-k3",
+    "fetchUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
+    "allowedHosts": ["www.kimi.com", "kimi.com", "github.com", "raw.githubusercontent.com", "api.github.com"],
     "format": "markdown",
-    "discoveryMode": "official-github",
+    "discoveryMode": "official-site-model-card",
     "officialOwner": "MoonshotAI",
     "model": "Kimi K3",
-    "releasedAt": "2026-08-10"
+    "releasedAt": "2026-07-17"
   },
   {
     "vendor": "Meta",

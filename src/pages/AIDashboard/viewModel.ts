@@ -259,37 +259,10 @@ export function officialWinnerRows(benchmarks: AiDashboardSnapshot['benchmarks']
   });
 }
 
-export function officialDisclosureLeaderRows(benchmarks: AiDashboardSnapshot['benchmarks']) {
-  const metrics = [...benchmarks.metrics].sort(benchmarkMetricSort);
-  return metrics.flatMap((metric) => {
-    const category = metric.category || metric.group || '其他';
-    if (category === 'Agent' || benchmarks.winners[metric.key]) return [];
-    const disclosed = benchmarks.models.flatMap((model) => {
-      const score = model.scores[metric.key];
-      if (!score) return [];
-      const rows = Array.isArray(score.disclosures) && score.disclosures.length > 0
-        ? score.disclosures
-        : [score];
-      return rows.filter((row) => Number.isFinite(row.value)).map((row) => ({ model: model.model, value: row.value }));
-    });
-    if (new Set(disclosed.map((row) => row.model)).size < 2) return [];
-    const best = metric.direction === 'lower'
-      ? Math.min(...disclosed.map((row) => row.value))
-      : Math.max(...disclosed.map((row) => row.value));
-    return [{
-      category,
-      metricKey: metric.key,
-      label: metric.label,
-      testName: metric.testName || metric.testFamily || metric.label,
-      testVersion: metric.testVersion || null,
-      models: [...new Set(disclosed.filter((row) => row.value === best).map((row) => row.model))].sort((left, right) => left.localeCompare(right, 'en')),
-      formattedValue: formatBenchmarkValue({ value: best }, metric),
-      runLabel: '官网披露最高值 · 非严格横比',
-      terminalBench: false,
-      direction: metric.direction,
-      comparable: false,
-    }];
-  });
+export function officialBenchmarkSummaryRows(benchmarks: AiDashboardSnapshot['benchmarks']) {
+  // Vendor model cards often use different harnesses, agents and effort levels.
+  // Only the normalized, configuration-identical winners belong in a cross-vendor summary.
+  return officialWinnerRows(benchmarks);
 }
 
 export function formatTaskTokenBreakdown(row: Pick<ArtificialAnalysisTaskCost, 'answerTokens' | 'reasoningTokens' | 'outputTokens'>): string {

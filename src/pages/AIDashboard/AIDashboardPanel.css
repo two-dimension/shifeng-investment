@@ -251,7 +251,8 @@
   font-size: 12px;
 }
 
-.ai-benchmark-leaderboard-links {
+.ai-benchmark-source-policy {
+  display: block;
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--ai-border);

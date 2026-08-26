@@ -18,13 +18,15 @@ function productionFiles() {
   return [...serverFiles, path.join(rootDir, 'server/api/ai_dashboard.js'), ...pageFiles];
 }
 
-test('AI dashboard production path contains no Feishu or aggregated OpenRouter Benchmark runtime', () => {
+test('AI dashboard production path contains no Feishu or third-party Benchmark aggregation runtime', () => {
   const banned = [
     /\bfeishu\b/i,
     /open\.feishu\.cn/i,
     /normalizeFeishuWorkbook/,
     /\/api\/v1\/benchmarks/i,
     /OpenRouter\s+(?:Evals|Benchmark)/i,
+    /tbench\.ai/i,
+    /frontierbench\.ai/i,
     /飞书(?:源表|补数|模型基准)/,
   ];
   const violations = [];

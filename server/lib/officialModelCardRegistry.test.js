@@ -45,6 +45,9 @@ test('registers exactly the 12 tracked vendors on vendor-controlled entry points
   assert.deepEqual(OFFICIAL_MODEL_CARD_SOURCES.map((row) => row.vendor), TRACKED_OFFICIAL_VENDORS);
   assert.equal(new Set(OFFICIAL_MODEL_CARD_SOURCES.map((row) => row.vendor)).size, 12);
   assert.ok(OFFICIAL_MODEL_CARD_SOURCES.every((row) => row.allowedHosts.includes(new URL(row.indexUrl).hostname)));
+  const kimi = OFFICIAL_MODEL_CARD_SOURCES.find((row) => row.vendor === 'Kimi');
+  assert.equal(kimi.cardUrl, 'https://www.kimi.com/en/blog/kimi-k3');
+  assert.equal(new URL(kimi.fetchUrl).hostname, 'raw.githubusercontent.com');
 });
 
 test('reads compact official excerpts and preserves exact score configurations', async () => {
