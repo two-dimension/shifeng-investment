@@ -203,14 +203,34 @@ export function groupOfficialBenchmarkMetrics(metrics: BenchmarkMetricDefinition
 
 export function benchmarkScoreRunLabel(score: Pick<BenchmarkScore,
   'agent' | 'harness' | 'effort' | 'shots' | 'passK' | 'tools'>): string {
-  const run = [score.agent, score.harness]
-    .filter((value): value is string => Boolean(value))
-    .filter((value, index, values) => values.indexOf(value) === index);
-  if (score.effort) run.push(score.effort);
-  if (score.shots !== null && score.shots !== undefined) run.push(`${score.shots}-shot`);
-  if (score.passK !== null && score.passK !== undefined) run.push(`Pass@${score.passK}`);
-  if (score.tools) run.push(score.tools);
+  const run: string[] = [];
+  if (score.agent) run.push(`Agent: ${score.agent}`);
+  if (score.harness) run.push(`Harness: ${score.harness}`);
+  if (score.effort) run.push(`Effort: ${score.effort}`);
+  if (score.shots !== null && score.shots !== undefined) run.push(`Shots: ${score.shots}`);
+  if (score.passK !== null && score.passK !== undefined) run.push(`Pass@k: ${score.passK}`);
+  if (score.tools) run.push(`Tools: ${score.tools}`);
   return run.join(' · ') || '配置未完整披露';
+}
+
+export function benchmarkDisclosureKey(score: Pick<BenchmarkScore,
+  'value' | 'agent' | 'harness' | 'effort' | 'shots' | 'passK' | 'tools'
+  | 'configurationComplete' | 'sourceOrder' | 'sourceUrl'>): string {
+  const configuration = score.configurationComplete === true
+    ? 'true'
+    : score.configurationComplete === false ? 'false' : 'unknown';
+  return [
+    ['value', score.value],
+    ['agent', score.agent],
+    ['harness', score.harness],
+    ['effort', score.effort],
+    ['shots', score.shots],
+    ['passK', score.passK],
+    ['tools', score.tools],
+    ['configuration', configuration],
+    ['sourceOrder', score.sourceOrder],
+    ['sourceUrl', score.sourceUrl],
+  ].map(([name, value]) => `${name}=${encodeURIComponent(String(value ?? 'none'))}`).join('&');
 }
 
 function benchmarkRunLabel(metric: BenchmarkMetricDefinition): string {

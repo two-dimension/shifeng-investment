@@ -4,6 +4,7 @@ import * as dashboardViewModel from '../src/pages/AIDashboard/viewModel.ts';
 import {
   benchmarkRefreshRequest,
   benchmarkScoreRunLabel,
+  benchmarkDisclosureKey,
   dashboardSourceSummary,
   formatBenchmarkValue,
   formatCurrencyPrice,
@@ -75,8 +76,16 @@ test('puts metrics disclosed by more vendors before sparse metrics in each categ
 });
 
 test('formats per-model benchmark run configurations without pretending missing values match', () => {
-  assert.equal(benchmarkScoreRunLabel({ agent: 'Claude Code', harness: null, effort: 'xhigh', shots: null, passK: null, tools: null }), 'Claude Code · xhigh');
+  assert.equal(benchmarkScoreRunLabel({ agent: 'Claude Code', harness: null, effort: 'xhigh', shots: null, passK: null, tools: null }), 'Agent: Claude Code · Effort: xhigh');
   assert.equal(benchmarkScoreRunLabel({}), '配置未完整披露');
+});
+
+test('Agent and Harness roles stay distinct in labels and disclosure row keys', () => {
+  const agent = { value: 83, agent: 'Codex', configurationComplete: false };
+  const harness = { value: 83, harness: 'Codex', configurationComplete: false };
+  assert.equal(benchmarkScoreRunLabel(agent), 'Agent: Codex');
+  assert.equal(benchmarkScoreRunLabel(harness), 'Harness: Codex');
+  assert.notEqual(benchmarkDisclosureKey(agent), benchmarkDisclosureKey(harness));
 });
 
 test('winner rows retain exact tests, winning scores, ties, and run configurations', () => {
@@ -92,7 +101,7 @@ test('winner rows retain exact tests, winning scores, ties, and run configuratio
   assert.deepEqual(rows[0], {
     category: 'Agent', metricKey: 'terminal', label: 'Terminal-Bench 2.1 · Accuracy',
     testName: 'Terminal-Bench', testVersion: '2.1', models: ['Claude Opus 5'],
-    formattedValue: '83.8%', runLabel: 'Claude Code · xhigh', terminalBench: true,
+    formattedValue: '83.8%', runLabel: 'Agent: Claude Code · Effort: xhigh', terminalBench: true,
     direction: 'higher', comparable: true,
   });
   assert.deepEqual(rows[1].models, ['Claude Opus 5', 'GPT-5.6 Sol']);

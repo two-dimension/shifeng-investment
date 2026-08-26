@@ -46,6 +46,7 @@ import type {
   TokenPrice,
 } from './types';
 import {
+  benchmarkDisclosureKey,
   benchmarkScoreRunLabel,
   formatBenchmarkValue,
   formatArrDelta,
@@ -1057,7 +1058,7 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
                   const strictChampion = winner?.models.includes(model) === true;
                   const disclosedHigh = !winner && score.value === scores[0]?.score.value;
                   return (
-                    <Flex className="ai-terminal-score-row" justify="space-between" align="start" gap={8} key={`${vendor}-${model}-${score.comparisonKey || benchmarkScoreRunLabel(score)}-${score.value}`}>
+                    <Flex className="ai-terminal-score-row" justify="space-between" align="start" gap={8} key={`${vendor}-${model}-${benchmarkDisclosureKey(score)}`}>
                       <Space direction="vertical" size={0}>
                         <Text>{model}</Text>
                         <Text className="ai-benchmark-run-label" type="secondary">{benchmarkScoreRunLabel(score)}</Text>

@@ -143,8 +143,8 @@ test('reading a legacy official Benchmark snapshot collapses display metrics wit
     comparable: false, sourceOrder, priority: testName === 'Terminal-Bench' ? 0 : 1,
     source: 'official-model-card',
   });
-  const score = (value) => ({
-    value, unit: 'percent-point', direction: 'higher', configurationComplete: false,
+  const score = (value, configurationComplete = false) => ({
+    value, unit: 'percent-point', direction: 'higher', configurationComplete,
     source: 'official-model-card', sourceUrl: 'https://official.example/card',
   });
   empty.benchmarks = {
@@ -162,7 +162,7 @@ test('reading a legacy official Benchmark snapshot collapses display metrics wit
     ],
     models: [
       { vendor: 'OpenAI', model: 'GPT Latest', releasedAt: '2026-08-20', scores: {
-        'incomplete:openai:gpt:0': score(82), 'incomplete:openai:gpt:1': score(91),
+        'incomplete:openai:gpt:0': score(82), 'incomplete:openai:gpt:1': score(91, undefined),
       } },
       { vendor: 'Gemini', model: 'Gemini Latest', releasedAt: '2026-08-21', scores: {
         'incomplete:gemini:gemini:0': score(84), 'incomplete:gemini:gemini:1': score(92),
@@ -528,6 +528,42 @@ test('a failed official vendor retains only that vendor last-good card and becom
   assert.equal(Object.values(gemini.scores)[0].value, 89);
   assert.deepEqual(Object.values(snapshot.benchmarks.winners)[0], { models: ['Gemini 3.7 Flash'], value: 89 });
   assert.equal(snapshot.sources.benchmarks.stale, true);
+});
+
+test('failed-vendor last-good fallback preserves every nested disclosure', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-disclosure-fallback-');
+  let round = 0;
+  const terminal = (value, fields) => ({
+    testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', value,
+    unit: 'percent-point', direction: 'higher', effort: 'high', configurationComplete: true, ...fields,
+  });
+  const service = createAiDashboardService({
+    dataFile,
+    officialBenchmarkClient: {
+      async readAll() {
+        round += 1;
+        return round === 1 ? [
+          { vendor: 'OpenAI', model: 'GPT Latest', status: 'ready', stale: false, sourceUrl: 'https://openai.com/card', scores: [
+            terminal(82, { agent: 'Codex' }), terminal(84, { harness: 'Codex' }),
+          ] },
+          { vendor: 'Gemini', model: 'Gemini Latest', status: 'ready', stale: false, sourceUrl: 'https://deepmind.google/card', scores: [terminal(83, { agent: 'Codex' })] },
+        ] : [
+          { vendor: 'OpenAI', model: 'GPT Latest', status: 'error', stale: true, sourceUrl: 'https://openai.com/card', scores: [], error: 'temporary failure' },
+          { vendor: 'Gemini', model: 'Gemini Latest', status: 'ready', stale: false, sourceUrl: 'https://deepmind.google/card', scores: [terminal(83, { agent: 'Codex' })] },
+        ];
+      },
+    },
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  await service.refresh({ sources: ['benchmarks'], force: true });
+  const snapshot = await service.refresh({ sources: ['benchmarks'], force: true });
+  const openAi = snapshot.benchmarks.models.find((model) => model.vendor === 'OpenAI');
+  const score = Object.values(openAi.scores)[0];
+
+  assert.deepEqual(score.disclosures.map((row) => row.value).sort(), [82, 84]);
+  assert.equal(score.ambiguous, true);
+  assert.deepEqual(snapshot.benchmarks.winners, {});
 });
 
 test('overlapping forced Benchmark refreshes share a single official collector request', async (t) => {
