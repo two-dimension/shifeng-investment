@@ -6,10 +6,6 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import {
-  isExactMissingOptionalModuleError,
-  validateQuantStrategyExports,
-} from './lib/validateQuantStrategy.js';
 
 async function reservePort() {
   const server = net.createServer();
@@ -128,7 +124,7 @@ async function stopServer(server) {
   }
 }
 
-test('server starts when the optional quant strategy module is unavailable', async () => {
+test('server starts with the restored quant strategy module', async () => {
   const port = await reservePort();
   const server = startServer(port);
 
@@ -152,17 +148,15 @@ test('root index.js starts the backend server', async () => {
   }
 });
 
-test('missing quant strategy does not fabricate quant results', async () => {
+test('restored quant strategy serves a real overview', async () => {
   const port = await reservePort();
   const server = startServer(port);
   try {
     await waitForHealth(port, server.child, server.stderr);
     const { response, body } = await fetchJsonWithTimeout(`http://127.0.0.1:${port}/api/quant/overview`);
-    assert.equal(response.status, 500);
-    assert.deepEqual(body, {
-      success: false,
-      error: 'Quant strategy module is unavailable in this checkout',
-    });
+    assert.equal(response.status, 200);
+    assert.equal(body.success, true);
+    assert.equal(typeof body.data, 'object');
   } finally {
     await stopServer(server);
   }
@@ -216,27 +210,4 @@ test('reports static route honors the isolated research reports directory', asyn
     await stopServer(server);
     await rm(tempRoot, { recursive: true, force: true });
   }
-});
-
-test('quant strategy validation rejects missing required exports', () => {
-  assert.throws(
-    () => validateQuantStrategyExports({ getQuantOverview() {} }),
-    /Quant strategy module export getQuantExperiments must be a function/,
-  );
-});
-
-test('only the exact optional quant strategy file may be absent', () => {
-  const optionalModuleUrl = new URL('./lib/quantStrategy.js', import.meta.url).href;
-  assert.equal(isExactMissingOptionalModuleError({
-    code: 'ERR_MODULE_NOT_FOUND',
-    url: optionalModuleUrl,
-  }, optionalModuleUrl), true);
-  assert.equal(isExactMissingOptionalModuleError({
-    code: 'ERR_MODULE_NOT_FOUND',
-    url: new URL('./lib/transitiveDependency.js', import.meta.url).href,
-  }, optionalModuleUrl), false);
-  assert.equal(isExactMissingOptionalModuleError({
-    code: 'ERR_PACKAGE_PATH_NOT_EXPORTED',
-    url: optionalModuleUrl,
-  }, optionalModuleUrl), false);
 });
