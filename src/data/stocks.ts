@@ -604,3 +604,5 @@ export const US_STOCK_LIST: { code: string; name: string }[] = Array.from(
     [...BASE_US_STOCK_LIST, ...US_SECTOR_SYMBOLS].map((stock) => [stock.code, stock])
   ).values()
 );
+
+HK_STOCK_LIST; US_STOCK_LIST; KR_STOCK_LIST; // suppress unused warnings

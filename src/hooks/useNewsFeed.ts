@@ -218,11 +218,7 @@ const flattenNewsPayload = (payload: NewsEntry | NewsArchive | null) => {
   flattened.sort((a, b) => b.__sortTime - a.__sortTime);
 
   return {
-    news: flattened.slice(0, HISTORY_ITEM_LIMIT).map((item) => {
-      const newsItem: Partial<typeof item> = { ...item };
-      delete newsItem.__sortTime;
-      return newsItem as NewsItem;
-    }),
+    news: flattened.slice(0, HISTORY_ITEM_LIMIT).map(({ __sortTime, ...item }) => item),
     lastUpdated: (payload as NewsArchive).lastCheckedAt || (payload as NewsArchive).lastUpdated || entries[0]?.createdAt || new Date().toISOString(),
   };
 };

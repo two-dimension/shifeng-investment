@@ -49,16 +49,11 @@ const StockDetailPanel: React.FC = () => {
 
   useEffect(() => {
     if (!code) return;
-    let cancelled = false;
-    const loadKline = async () => {
-      await Promise.resolve();
-      if (cancelled) return;
-      setLoading(true);
-      setError(null);
-      setRealtimeQuote(null);
-      try {
-        const data = await fetchKline(code, 300, period);
-        if (cancelled) return;
+    setLoading(true);
+    setError(null);
+    setRealtimeQuote(null);
+    fetchKline(code, 300, period)
+      .then(data => {
         if (data.success && data.data) {
           setKlineData(data.data);
           // 日K且当天非最新K线时，获取今日实时报价拼入图表
@@ -66,38 +61,34 @@ const StockDetailPanel: React.FC = () => {
             const today = dayjs().format('YYYY-MM-DD');
             const latestDate = data.data[0]?.date;
             if (latestDate !== today && dayjs().day() >= 1 && dayjs().day() <= 5) {
-              try {
-                const response = await fetch(`/api/quote?code=${code}`);
-                const quote = await response.json();
-                if (!cancelled && quote.trade_date === today) {
-                  setRealtimeQuote({
-                    open: quote.open,
-                    close: quote.close,
-                    high: quote.high,
-                    low: quote.low,
-                    volume: quote.volume,
-                    pre_close: quote.pre_close,
-                    pct_chg: quote.pct_chg,
-                  });
-                }
-              } catch {
-                // The historical chart remains usable when a realtime quote is unavailable.
-              }
+              fetch(`/api/quote?code=${code}`)
+                .then(r => r.json())
+                .then(q => {
+                  if (q.trade_date === today) {
+                    setRealtimeQuote({
+                      open: q.open,
+                      close: q.close,
+                      high: q.high,
+                      low: q.low,
+                      volume: q.volume,
+                      pre_close: q.pre_close,
+                      pct_chg: q.pct_chg,
+                    });
+                  }
+                })
+                .catch(() => {});
             }
           }
         } else {
           setError(data.error || '获取K线数据失败');
         }
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : '网络错误');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void loadKline();
-    return () => {
-      cancelled = true;
-    };
+      })
+      .catch(err => {
+        setError(err.message || '网络错误');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [code, period]);
 
   // 拼接今日实时K线（日K模式下，若当日未收盘则插入实时K线）
@@ -179,7 +170,24 @@ const StockDetailPanel: React.FC = () => {
       dea,
       macd,
     };
-  }, [displayData]);
+  }, [klineData]);
+
+  // 最新 MACD 值（DIF, DEA, MACD 柱）
+  const latestMACD = useMemo(() => {
+    const m = indicators.macd;
+    if (m.length === 0) return null;
+    return {
+      dif: indicators.dif[m.length - 1],
+      dea: indicators.dea[m.length - 1],
+      bar: m[m.length - 1],
+    };
+  }, [indicators]);
+
+  // 最新成交量
+  const latestVolume = useMemo(() => {
+    if (klineData.length === 0) return null;
+    return klineData[klineData.length - 1].volume;
+  }, [klineData]);
 
   // K线图 ECharts 配置
   const klineOption = useMemo(() => {
@@ -273,7 +281,7 @@ const StockDetailPanel: React.FC = () => {
         { type: 'slider', start: 85, end: 100, xAxisIndex: [0, 1, 2], height: 18, bottom: 2, borderColor: 'transparent', backgroundColor: theme === 'dark' ? '#1f1f1f' : '#f0f0f0', fillerColor: 'rgba(100,149,237,0.2)', handleStyle: { color: '#6495ed' } },
       ],
     };
-  }, [displayData, indicators, realtimeQuote, theme]);
+  }, [klineData, indicators, theme, latestMACD, latestVolume]);
 
   if (!code) {
     return <Empty description="无效的股票代码" />;
