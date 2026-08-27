@@ -34,6 +34,7 @@ server/data/funds.json
 server/data/news.json
 server/data/macd_cache.json
 server/data/price-tracking/
+server/data/python-venv/
 server/data/quant/
 server/data/research/
 server/data/tmt-margin/
