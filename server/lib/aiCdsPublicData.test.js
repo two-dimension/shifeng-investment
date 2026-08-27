@@ -195,3 +195,68 @@ test('DTCC client discovers the current public bucket and reads the latest SEC c
   assert.equal(calls.length, 3);
   assert.match(calls[1], /public-bucket\.s3\.amazonaws\.com\/dashboard\/Cumulative\.json/);
 });
+
+test('DTCC client rejects credit archive URLs outside the discovered HTTPS S3 bucket', async () => {
+  let calls = 0;
+  const client = createDtccCdsClient({
+    fetchImpl: async (url) => {
+      calls += 1;
+      if (String(url).endsWith('/api/general/bucketname')) return new Response('public-bucket');
+      if (String(url).endsWith('/dashboard/Cumulative.json')) {
+        return Response.json({ SEC_CR: [{
+          dissemDTM: '2026-08-25T00:00:00Z',
+          fileName: 'SEC_CUMULATIVE_CREDITS_2026_08_24.zip',
+          fullFilePath: 'https://attacker.example/oversized.zip',
+        }] });
+      }
+      throw new Error('unexpected archive request');
+    },
+  });
+
+  await assert.rejects(client.fetchLatest(), /approved DTCC S3 bucket/);
+  assert.equal(calls, 2);
+});
+
+test('DTCC client rejects a credit archive whose declared compressed size exceeds 64 MiB', async () => {
+  const client = createDtccCdsClient({
+    fetchImpl: async (url) => {
+      if (String(url).endsWith('/api/general/bucketname')) return new Response('public-bucket');
+      if (String(url).endsWith('/dashboard/Cumulative.json')) {
+        return Response.json({ SEC_CR: [{
+          dissemDTM: '2026-08-25T00:00:00Z',
+          fileName: 'SEC_CUMULATIVE_CREDITS_2026_08_24.zip',
+          fullFilePath: 'https://public-bucket.s3.amazonaws.com/sec/eod/SEC_CUMULATIVE_CREDITS_2026_08_24.zip',
+        }] });
+      }
+      return new Response(new Uint8Array(), { headers: { 'content-length': String(64 * 1024 * 1024 + 1) } });
+    },
+  });
+
+  await assert.rejects(client.fetchLatest(), /compressed archive exceeds 64 MiB/);
+});
+
+test('DTCC client rejects a ZIP whose central directory declares more than 512 MiB expanded data', async () => {
+  const archive = new Uint8Array(68);
+  const view = new DataView(archive.buffer);
+  view.setUint32(0, 0x02014b50, true);
+  view.setUint32(24, 512 * 1024 * 1024 + 1, true);
+  view.setUint32(46, 0x06054b50, true);
+  view.setUint16(56, 1, true);
+  view.setUint32(58, 46, true);
+  view.setUint32(62, 0, true);
+  const client = createDtccCdsClient({
+    fetchImpl: async (url) => {
+      if (String(url).endsWith('/api/general/bucketname')) return new Response('public-bucket');
+      if (String(url).endsWith('/dashboard/Cumulative.json')) {
+        return Response.json({ SEC_CR: [{
+          dissemDTM: '2026-08-25T00:00:00Z',
+          fileName: 'SEC_CUMULATIVE_CREDITS_2026_08_24.zip',
+          fullFilePath: 'https://public-bucket.s3.amazonaws.com/sec/eod/SEC_CUMULATIVE_CREDITS_2026_08_24.zip',
+        }] });
+      }
+      return new Response(archive);
+    },
+  });
+
+  await assert.rejects(client.fetchLatest(), /expanded archive exceeds 512 MiB/);
+});

@@ -491,7 +491,7 @@ export function createIceCdsPipeline({
   };
   const performImport = (input) => enqueueIceCdsSnapshotWrite(
     () => performImportUnlocked(input),
-    { lockFile: `${snapshotFile}.write.lock` },
+    { lockFile: `${snapshotFile}.lock` },
   );
 
   return {

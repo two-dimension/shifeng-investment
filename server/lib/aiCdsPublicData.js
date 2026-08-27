@@ -5,6 +5,8 @@ export const DTCC_PPD_URL = 'https://pddata.dtcc.com/ppd/index.html';
 const QUARTER_YEARS = 0.25;
 const RECOVERY_RATE = 0.4;
 const RISK_FREE_RATE = 0.04;
+const MAX_COMPRESSED_ARCHIVE_BYTES = 64 * 1024 * 1024;
+const MAX_EXPANDED_ARCHIVE_BYTES = 512 * 1024 * 1024;
 
 const COMPANY_ALIASES = [
   { company: 'Oracle', aliases: ['ORACLE CORPORATION', 'ORACLE CORP', 'ORACLE COP'] },
@@ -266,6 +268,55 @@ async function requireOk(response, label) {
   return response;
 }
 
+function validateDtccArchiveUrl(value, bucketName) {
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('DTCC credit archive URL is invalid');
+  }
+  const approvedHost = `${bucketName}.s3.amazonaws.com`.toLowerCase();
+  if (url.protocol !== 'https:' || url.username || url.password || url.hostname.toLowerCase() !== approvedHost) {
+    throw new Error('DTCC credit archive URL is outside the approved DTCC S3 bucket');
+  }
+  return url;
+}
+
+function assertBoundedZipExpansion(bytes) {
+  if (bytes.byteLength < 22) throw new Error('DTCC SEC credit archive is not a valid ZIP file');
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const earliest = Math.max(0, bytes.byteLength - 65_557);
+  let eocdOffset = -1;
+  for (let offset = bytes.byteLength - 22; offset >= earliest; offset -= 1) {
+    if (view.getUint32(offset, true) === 0x06054b50) {
+      eocdOffset = offset;
+      break;
+    }
+  }
+  if (eocdOffset < 0) throw new Error('DTCC SEC credit archive is not a valid ZIP file');
+  const entryCount = view.getUint16(eocdOffset + 10, true);
+  const centralDirectoryBytes = view.getUint32(eocdOffset + 12, true);
+  let cursor = view.getUint32(eocdOffset + 16, true);
+  if (cursor + centralDirectoryBytes > eocdOffset) throw new Error('DTCC SEC credit archive has an invalid central directory');
+
+  let expandedBytes = 0;
+  for (let index = 0; index < entryCount; index += 1) {
+    if (cursor + 46 > eocdOffset || view.getUint32(cursor, true) !== 0x02014b50) {
+      throw new Error('DTCC SEC credit archive has an invalid central directory');
+    }
+    const declaredBytes = view.getUint32(cursor + 24, true);
+    if (declaredBytes === 0xffffffff) throw new Error('DTCC SEC credit archive uses unsupported ZIP64 sizes');
+    expandedBytes += declaredBytes;
+    if (expandedBytes > MAX_EXPANDED_ARCHIVE_BYTES) {
+      throw new Error('DTCC SEC credit expanded archive exceeds 512 MiB');
+    }
+    const fileNameBytes = view.getUint16(cursor + 28, true);
+    const extraBytes = view.getUint16(cursor + 30, true);
+    const commentBytes = view.getUint16(cursor + 32, true);
+    cursor += 46 + fileNameBytes + extraBytes + commentBytes;
+  }
+}
+
 export function createDtccCdsClient({ fetchImpl = fetch } = {}) {
   return {
     async fetchLatest({ referenceCompanies = [] } = {}) {
@@ -279,8 +330,18 @@ export function createDtccCdsClient({ fetchImpl = fetch } = {}) {
         .filter((row) => row?.fullFilePath && row?.fileName)
         .toSorted((left, right) => String(right.dissemDTM || '').localeCompare(String(left.dissemDTM || '')))[0];
       if (!latest) throw new Error('DTCC cumulative metadata has no SEC credit file');
-      const zipResponse = await requireOk(await fetchImpl(latest.fullFilePath), 'DTCC SEC credit download');
-      const archive = unzipSync(new Uint8Array(await zipResponse.arrayBuffer()));
+      const archiveUrl = validateDtccArchiveUrl(latest.fullFilePath, bucketName);
+      const zipResponse = await requireOk(await fetchImpl(archiveUrl), 'DTCC SEC credit download');
+      const declaredCompressedBytes = Number(zipResponse.headers.get('content-length'));
+      if (Number.isFinite(declaredCompressedBytes) && declaredCompressedBytes > MAX_COMPRESSED_ARCHIVE_BYTES) {
+        throw new Error('DTCC SEC credit compressed archive exceeds 64 MiB');
+      }
+      const compressedArchive = new Uint8Array(await zipResponse.arrayBuffer());
+      if (compressedArchive.byteLength > MAX_COMPRESSED_ARCHIVE_BYTES) {
+        throw new Error('DTCC SEC credit compressed archive exceeds 64 MiB');
+      }
+      assertBoundedZipExpansion(compressedArchive);
+      const archive = unzipSync(compressedArchive);
       const csvName = Object.keys(archive).find((name) => name.toLowerCase().endsWith('.csv'));
       if (!csvName) throw new Error('DTCC SEC credit archive contains no CSV file');
       const trades = parseDtccCdsCsv(strFromU8(archive[csvName]));

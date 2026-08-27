@@ -527,7 +527,7 @@ export function createAiDashboardService({
   };
   const performRefresh = (options) => enqueueIceCdsSnapshotWrite(
     () => performRefreshUnlocked(options),
-    { lockFile: `${dataFile}.write.lock` },
+    { lockFile: `${dataFile}.lock` },
   );
 
   return {

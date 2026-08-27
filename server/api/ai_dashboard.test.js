@@ -122,6 +122,45 @@ test('ICE CDS import APIs reject cross-origin browser writes even from loopback'
   assert.equal(writeCalls, 0);
 });
 
+test('ICE CDS import APIs reject writes forwarded through a public host even when the proxy connection is loopback', async (t) => {
+  let writeCalls = 0;
+  const cdsPipeline = {
+    async preview() { writeCalls += 1; return {}; },
+    async import() { writeCalls += 1; return {}; },
+    async status() { return { available: true, localWriteAllowed: true, workbookAvailable: true }; },
+    async exportWorkbook() { return Buffer.from('xlsx'); },
+  };
+  const { app } = testApp({ cdsPipeline });
+  const server = await listen(app);
+  t.after(server.close);
+  const headers = {
+    'Content-Type': 'application/json',
+    Host: 'dashboard.example',
+    Origin: 'http://dashboard.example',
+  };
+  const body = JSON.stringify({ iceText: 'x', discountCurve: { nodes: [] } });
+  const request = (pathname, { method = 'GET', payload } = {}) => new Promise((resolve, reject) => {
+    const target = new URL(pathname, server.baseUrl);
+    const req = http.request(target, { method, headers }, (response) => {
+      const chunks = [];
+      response.on('data', (chunk) => chunks.push(chunk));
+      response.on('end', () => resolve({
+        status: response.statusCode,
+        body: JSON.parse(Buffer.concat(chunks).toString('utf8')),
+      }));
+    });
+    req.on('error', reject);
+    if (payload) req.write(payload);
+    req.end();
+  });
+
+  assert.equal((await request('/api/ai-dashboard/cds/import/preview', { method: 'POST', payload: body })).status, 403);
+  assert.equal((await request('/api/ai-dashboard/cds/import', { method: 'POST', payload: body })).status, 403);
+  const status = await request('/api/ai-dashboard/cds/import-status');
+  assert.equal(status.body.data.localWriteAllowed, false);
+  assert.equal(writeCalls, 0);
+});
+
 test('ICE CDS import validation rejects oversized text, excessive curve nodes, and unknown fields', async (t) => {
   let calls = 0;
   const cdsPipeline = {
