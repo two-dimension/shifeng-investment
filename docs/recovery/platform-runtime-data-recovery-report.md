@@ -37,8 +37,23 @@ The merged code passed automated tests, but the live Vite page at `http://localh
 - Removed copied or stale lock files before restarting services.
 - Added `SHIFENG_TASKS_DIR` support and current-machine fallback discovery for all four research task roots.
 - Added a project-local Python runtime resolver and installed the legacy platform requirements in the ignored `server/data/python-venv` directory.
+- Replaced the MACD script's `/Users/rayw` paths with portable defaults. It now reads the platform's `server/data/funds.json`, deduplicates the portfolio positions, and still accepts the legacy UTF-16 watchlist through `MACD_WATCHLIST_PATH`.
 - The research task path, Python runtime, research API, and startup tests pass.
-- Live API after the first recovery restart returned 1,168 CNINFO announcements, 269 MACD rows, a compatible 40-day standard-TMT history, and 404 flattened news items.
+- A fresh MACD run at 2026-08-27 14:51 generated 400 rows from the restored platform watchlist; this is not the 269-row legacy cache.
+- Live UI verification returned 1,168 CNINFO announcements, 400 MACD rows, a compatible 40-day standard-TMT history, 404 flattened news items, 83 portfolios, and populated calendar events.
+
+## Verification
+
+- Node test suite: 248 tests passed. The first sandboxed run was rejected by macOS with `listen EPERM`; the same full suite passed outside the network-listen sandbox.
+- Python test suite: 28 tests passed, including the new MACD path regression test.
+- Quant strategy regression test passed.
+- TypeScript and Vite production build passed.
+- All AI dashboard preservation hashes passed.
+
+## Honest degraded states
+
+- The home news card says there is no current hot-news item because the restored archive ends on August 18 and the latest refresh added no non-duplicate August 27 items. The news page itself contains the restored history.
+- Standard TMT is populated but warns that its August 14 margin snapshot is three trading days stale. A live refresh currently fails the upstream four-industry completeness gate, so the platform correctly preserves the last good cache.
 
 ## Remaining external dependency
 
