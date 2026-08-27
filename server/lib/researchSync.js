@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -22,10 +23,15 @@ const CNINFO_HEADERS = {
 const RESEARCH_DIR = process.env.RESEARCH_DATA_DIR || path.join(SERVER_DIR, 'data/research');
 const REPORTS_DIR = process.env.RESEARCH_REPORTS_DIR || path.join(SERVER_DIR, 'public/reports');
 const RESEARCH_KINDS = ['cninfo', 'earnings', 'earnings-report', 'risk'];
+const LEGACY_DOCUMENTS_ROOT = '/Users/rayw/Documents';
+const RECOVERED_TASKS_ROOT = path.join(os.homedir(), 'Downloads', '石锋平台要用的');
+const TASKS_ROOT = process.env.SHIFENG_TASKS_DIR
+  ? path.resolve(process.env.SHIFENG_TASKS_DIR)
+  : (fs.existsSync(RECOVERED_TASKS_ROOT) ? RECOVERED_TASKS_ROOT : LEGACY_DOCUMENTS_ROOT);
 
 function resolveEarningsReportRoot() {
   if (process.env.EARNINGS_REPORT_OUTPUT_DIR) return process.env.EARNINGS_REPORT_OUTPUT_DIR;
-  const directRoot = '/Users/rayw/Documents/业绩报告';
+  const directRoot = path.join(TASKS_ROOT, '业绩报告');
   const hasDirectDateDirs = fs.existsSync(directRoot) && fs.readdirSync(directRoot, { withFileTypes: true })
     .some((entry) => entry.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(entry.name));
   if (hasDirectDateDirs) return directRoot;
@@ -35,11 +41,11 @@ function resolveEarningsReportRoot() {
 
 const SOURCE_CONFIG = {
   cninfo: {
-    root: process.env.CNINFO_OUTPUT_DIR || '/Users/rayw/Documents/巨潮资讯/output',
+    root: process.env.CNINFO_OUTPUT_DIR || path.join(TASKS_ROOT, '巨潮资讯', 'output'),
     reportDir: path.join(REPORTS_DIR, 'cninfo'),
   },
   earnings: {
-    root: process.env.EARNINGS_OUTPUT_DIR || '/Users/rayw/Documents/业绩预告/业绩预告',
+    root: process.env.EARNINGS_OUTPUT_DIR || path.join(TASKS_ROOT, '业绩预告', '业绩预告'),
     reportDir: path.join(REPORTS_DIR, 'earnings'),
   },
   'earnings-report': {
@@ -47,7 +53,7 @@ const SOURCE_CONFIG = {
     reportDir: path.join(REPORTS_DIR, 'earnings-report'),
   },
   risk: {
-    root: process.env.RISK_OUTPUT_DIR || '/Users/rayw/Documents/风险提示/output',
+    root: process.env.RISK_OUTPUT_DIR || path.join(TASKS_ROOT, '风险提示', 'output'),
     reportDir: path.join(REPORTS_DIR, 'risk'),
   },
 };
