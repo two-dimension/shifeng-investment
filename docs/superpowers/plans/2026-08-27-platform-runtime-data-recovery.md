@@ -209,7 +209,27 @@ server/data/python-venv/bin/python -c "import requests, pandas, openpyxl, bs4, l
 
 Expected: 所有导入成功；venv 保持在 Git ignored 的 `server/data` 下。
 
-### Task 5: 重启服务并逐页验收
+### Task 5: 移除 MACD 的旧电脑路径依赖
+
+**Files:**
+
+- Modify: `macd screener/macd_screener.py`
+- Create: `tests/test_macd_paths.py`
+
+**Interfaces:**
+
+- Consumes: `MACD_WATCHLIST_PATH`，默认使用平台的 `server/data/funds.json`。
+- Produces: 去重后的 A 股代码和 MACD 元数据；输出目录默认留在脚本目录。
+
+- [x] **Step 1: 写失败测试并确认旧路径报错**
+
+- [x] **Step 2: 支持平台持仓 JSON、旧 CSV 和环境变量覆盖**
+
+- [x] **Step 3: 用实际 `funds.json` 验证自选池可读取**
+
+Expected: 当前平台读取 437 个去重后的可识别证券代码，不再访问 `/Users/rayw`。
+
+### Task 6: 重启服务并逐页验收
 
 **Files:**
 
