@@ -3,7 +3,6 @@ import {
   CalendarDataError,
   DEFAULT_CALENDAR_FILE,
   DEFAULT_FUNDS_FILE,
-  DEFAULT_MANUAL_CALENDAR_FILE,
   readCalendarStore,
   selectCalendarEvents,
   validateCalendarRange,
@@ -32,25 +31,17 @@ function sendCalendarError(res, error) {
 
 export function createCalendarRouter({
   dataFile = DEFAULT_CALENDAR_FILE,
-  manualFile,
   fundsFile = DEFAULT_FUNDS_FILE,
   now = () => new Date(),
   fetchImpl,
   refreshCalendar: refreshCalendarData = refreshCalendar,
 } = {}) {
   const router = express.Router();
-  const resolvedManualFile = manualFile || (dataFile === DEFAULT_CALENDAR_FILE
-    ? DEFAULT_MANUAL_CALENDAR_FILE
-    : undefined);
 
   router.get('/', async (req, res) => {
     try {
       const { start, end, days } = validateCalendarRange(req.query.start, req.query.end);
-      const store = await readCalendarStore({
-        dataFile,
-        manualFile: resolvedManualFile,
-        fundsFile,
-      });
+      const store = await readCalendarStore({ dataFile, fundsFile });
       const events = selectCalendarEvents(store.events, start, end);
       res.setHeader('Cache-Control', 'no-store');
       return res.json({
@@ -73,17 +64,12 @@ export function createCalendarRouter({
       const { start, end, days } = validateCalendarRange(req.query.start, req.query.end);
       const refreshed = await refreshCalendarData({
         dataFile,
-        manualFile: resolvedManualFile,
         start,
         end,
         fetchImpl,
         now,
       });
-      const store = await readCalendarStore({
-        dataFile,
-        manualFile: resolvedManualFile,
-        fundsFile,
-      });
+      const store = await readCalendarStore({ dataFile, fundsFile });
       const events = selectCalendarEvents(store.events, start, end);
       res.setHeader('Cache-Control', 'no-store');
       return res.json({

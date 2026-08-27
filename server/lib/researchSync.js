@@ -1,8 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { fetchCninfoMarketDay } from './cninfoAnnouncements.js';
-import { buildDirectCninfoSummary, buildPortfolioUniverse } from './announcementJudgement.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -78,20 +76,14 @@ function sourceGeneratedAt(filePath) {
   return fs.statSync(filePath).mtime.toISOString();
 }
 
-function writeJsonAtomicIfChanged(filePath, data) {
+function writeJsonIfChanged(filePath, data) {
   ensureDir(path.dirname(filePath));
   const next = JSON.stringify(data, null, 2);
   if (fs.existsSync(filePath)) {
     const prev = fs.readFileSync(filePath, 'utf-8');
     if (prev === next) return false;
   }
-  const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
-  try {
-    fs.writeFileSync(tempPath, next, 'utf-8');
-    fs.renameSync(tempPath, filePath);
-  } finally {
-    if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { force: true });
-  }
+  fs.writeFileSync(filePath, next, 'utf-8');
   return true;
 }
 
@@ -228,7 +220,7 @@ function mapCninfoEntry(item, idx) {
   };
 }
 
-function buildImportedCninfoSummary(date, processed, files, processedPath) {
+function buildCninfoSummary(date, processed, files, processedPath) {
   const coverage = processed?.coverage || {};
   const sentiment = processed?.sentiment || {};
   const fetchMeta = processed?.fetch_meta || {};
@@ -1201,7 +1193,7 @@ function buildRiskSummary(date, processed, files, processedPath) {
 }
 
 function writeSummary(kind, date, summary) {
-  return writeJsonAtomicIfChanged(path.join(RESEARCH_DIR, kind, `${date}.json`), summary);
+  return writeJsonIfChanged(path.join(RESEARCH_DIR, kind, `${date}.json`), summary);
 }
 
 function syncCninfoDate(date, force) {
@@ -1216,7 +1208,7 @@ function syncCninfoDate(date, force) {
   if (!files.length) {
     throw new Error(`no cninfo report files for ${date}`);
   }
-  const summary = buildImportedCninfoSummary(date, processed, files, processedPath);
+  const summary = buildCninfoSummary(date, processed, files, processedPath);
   const summaryWritten = writeSummary('cninfo', date, summary);
   return {
     kind: 'cninfo',
@@ -1229,45 +1221,6 @@ function syncCninfoDate(date, force) {
       summary: processedPath,
       reports: reportSourceDir,
     },
-  };
-}
-
-async function syncDirectCninfoDate(date, dependencies = {}) {
-  const fetchDay = dependencies.fetchCninfoMarketDayImpl || fetchCninfoMarketDay;
-  const fundsFile = dependencies.fundsFile || path.join(SERVER_DIR, 'data/funds.json');
-  const marketDay = await fetchDay({ date });
-  if (marketDay.totalCount === 0) {
-    return {
-      kind: 'cninfo',
-      date,
-      success: false,
-      skipped: true,
-      error: `CNINFO has no announcements for ${date}`,
-    };
-  }
-  const universe = buildPortfolioUniverse(readJson(fundsFile));
-  const summary = buildDirectCninfoSummary({
-    date,
-    totalCount: marketDay.totalCount,
-    announcements: marketDay.announcements,
-    universe,
-    generatedAt: new Date().toISOString(),
-  });
-  const summaryWritten = writeJsonAtomicIfChanged(
-    path.join(RESEARCH_DIR, 'cninfo', `${date}.json`),
-    summary,
-  );
-  return {
-    kind: 'cninfo',
-    date,
-    success: true,
-    summaryWritten,
-    filesCopied: 0,
-    filesSkipped: 0,
-    source: 'cninfo-direct',
-    fetched: marketDay.announcements.length,
-    matched: summary.watchlistHits,
-    totalCount: marketDay.totalCount,
   };
 }
 
@@ -1327,14 +1280,10 @@ function syncRiskDate(date, force) {
   };
 }
 
-async function syncOne(kind, date, force, dependencies) {
+async function syncOne(kind, date, force) {
   assertDate(date);
   try {
-    if (kind === 'cninfo') {
-      return isAutoSyncableDate('cninfo', date)
-        ? syncCninfoDate(date, force)
-        : await syncDirectCninfoDate(date, dependencies);
-    }
+    if (kind === 'cninfo') return syncCninfoDate(date, force);
     if (kind === 'risk') return syncRiskDate(date, force);
     return await syncEarningsDate(kind, date, force);
   } catch (error) {
@@ -1347,43 +1296,17 @@ async function syncOne(kind, date, force, dependencies) {
   }
 }
 
-function getShanghaiDateKey(now = new Date()) {
-  const parts = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
-function recentShanghaiWeekdays(now, lookbackDays) {
-  const limit = Math.max(1, Math.min(Number(lookbackDays) || 14, 120));
-  const date = new Date(`${getShanghaiDateKey(now)}T00:00:00.000Z`);
-  const weekdays = [];
-  while (weekdays.length < limit) {
-    const day = date.getUTCDay();
-    if (day !== 0 && day !== 6) weekdays.push(date.toISOString().slice(0, 10));
-    date.setUTCDate(date.getUTCDate() - 1);
-  }
-  return weekdays;
-}
-
-function pickDates(kind, date, days, now) {
+function pickDates(kind, date, days) {
   if (date) return [date];
+  const root = SOURCE_CONFIG[kind].root;
   const limit = Math.max(1, Math.min(Number(days) || 14, 120));
-  if (kind === 'cninfo') return recentShanghaiWeekdays(now, limit);
-  return listDateDirs(SOURCE_CONFIG[kind].root)
+  return listDateDirs(root)
     .reverse()
     .filter((currentDate) => isAutoSyncableDate(kind, currentDate))
     .slice(0, limit);
 }
 
-export async function syncResearch(
-  { kind = 'all', date = null, days = 14, force = false } = {},
-  dependencies = {},
-) {
+export async function syncResearch({ kind = 'all', date = null, days = 14, force = false } = {}) {
   assertKind(kind);
   if (date) assertDate(date);
 
@@ -1397,30 +1320,9 @@ export async function syncResearch(
   const kinds = kind === 'all' ? RESEARCH_KINDS : [kind];
   const results = [];
   for (const currentKind of kinds) {
-    const dates = pickDates(currentKind, date, days, dependencies.now);
-    const isRecentCninfoSync = currentKind === 'cninfo' && !date;
-    for (const currentDate of dates) {
-      const result = await syncOne(currentKind, currentDate, force, dependencies);
-      if (result.skipped) continue;
-      results.push(result);
-      if (isRecentCninfoSync) break;
+    for (const currentDate of pickDates(currentKind, date, days)) {
+      results.push(await syncOne(currentKind, currentDate, force));
     }
-  }
-
-  if (results.length === 0) {
-    return {
-      success: false,
-      error: kind === 'all' ? '未找到可同步的数据源' : `未找到可同步的 ${kind} 数据源`,
-      totals: {
-        attempted: 0,
-        succeeded: 0,
-        failed: 0,
-        changedDates: 0,
-        filesCopied: 0,
-        filesSkipped: 0,
-      },
-      results: [],
-    };
   }
 
   const failures = results.filter((result) => !result.success).length;
@@ -1453,11 +1355,6 @@ export function getResearchSourceStatus() {
       root: SOURCE_CONFIG.cninfo.root,
       exists: fs.existsSync(SOURCE_CONFIG.cninfo.root),
       latestDates: listDateDirs(SOURCE_CONFIG.cninfo.root).reverse().slice(0, 5),
-      direct: {
-        enabled: true,
-        endpoint: 'https://www.cninfo.com.cn/new/hisAnnouncement/query',
-        markets: ['sse', 'szse'],
-      },
     },
     earnings: {
       root: SOURCE_CONFIG.earnings.root,

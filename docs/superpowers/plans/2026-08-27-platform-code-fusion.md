@@ -192,6 +192,7 @@ git commit -m "restore: use legacy non-ai frontend"
 - Modify: `server/lib/newsIntelligence.js`
 - Modify: `server/lib/researchSync.js`
 - Preserve for Task 4: `server/index.js`
+- Preserve for Task 4: `server/startup.test.js`
 - Preserve: current AI API, services, scripts, fixtures, and `server/data/ai-dashboard/**`
 - Delete: `server/lib/validateQuantStrategy.js`
 
@@ -202,7 +203,8 @@ git commit -m "restore: use legacy non-ai frontend"
 ```bash
 rsync -ain --delete \
   --exclude='.DS_Store' --exclude='__pycache__/***' --exclude='*.pyc' \
-  --exclude='/index.js' --exclude='/data/***' --exclude='/public/***' --exclude='/price_tracking/***' \
+  --exclude='/index.js' --exclude='/startup.test.js' --exclude='/data/***' --exclude='/public/***' --exclude='/price_tracking/***' \
+  --exclude='/fixtures/ice-cds/***' \
   --exclude='/api/ai_dashboard*' \
   --exclude='/lib/aiCapital*' --exclude='/lib/aiCds*' --exclude='/lib/aiCompute*' \
   --exclude='/lib/aiDashboard*' --exclude='/lib/aiGrowth*' --exclude='/lib/aiPricing*' \
