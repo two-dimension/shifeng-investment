@@ -525,7 +525,10 @@ export function createAiDashboardService({
     await writeSnapshotFile(dataFile, next);
     return next;
   };
-  const performRefresh = (options) => enqueueIceCdsSnapshotWrite(() => performRefreshUnlocked(options));
+  const performRefresh = (options) => enqueueIceCdsSnapshotWrite(
+    () => performRefreshUnlocked(options),
+    { lockFile: `${dataFile}.lock` },
+  );
 
   return {
     getSnapshot,
