@@ -25,36 +25,12 @@ import {
   startIceCdsAutoRefresh,
 } from './lib/iceCdsPublicSource.js';
 import {
-  isExactMissingOptionalModuleError,
-  validateQuantStrategyExports,
-} from './lib/validateQuantStrategy.js';
-
-const quantStrategyModuleUrl = new URL('./lib/quantStrategy.js', import.meta.url).href;
-let quantStrategy;
-try {
-  quantStrategy = await import('./lib/quantStrategy.js');
-} catch (error) {
-  if (!isExactMissingOptionalModuleError(error, quantStrategyModuleUrl)) throw error;
-  const unavailable = () => {
-    throw new Error('Quant strategy module is unavailable in this checkout');
-  };
-  quantStrategy = {
-    getQuantExperiments: unavailable,
-    getQuantOverview: unavailable,
-    runQuantBacktest: unavailable,
-    runQuantHistoryBackfill: unavailable,
-    runQuantIteration: unavailable,
-  };
-  console.warn('[quant] server/lib/quantStrategy.js is missing; quant endpoints are unavailable');
-}
-validateQuantStrategyExports(quantStrategy);
-const {
   getQuantExperiments,
   getQuantOverview,
   runQuantBacktest,
   runQuantHistoryBackfill,
   runQuantIteration,
-} = quantStrategy;
+} from './lib/quantStrategy.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -2392,7 +2368,7 @@ app.delete('/api/news', (req, res) => {
   }
 });
 
-// 按 /Users/rayw/Documents/新闻资讯/news-intelligence skill 的来源与算法刷新新闻
+// 按 news-intelligence 任务的来源与算法刷新新闻
 app.post('/api/news/refresh', async (req, res) => {
   const requestedMode = typeof req.query.mode === 'string' ? req.query.mode : undefined;
   const mode = requestedMode === 'full' ? 'full' : 'quick';

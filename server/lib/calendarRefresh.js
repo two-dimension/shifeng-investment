@@ -226,9 +226,6 @@ const readStoreFile = async (dataFile) => {
     if (!isPlainObject(data) || !Array.isArray(data.events)) throw new Error('invalid store');
     return data;
   } catch (error) {
-    if (error?.code === 'ENOENT') {
-      return { schemaVersion: 1, updatedAt: null, sources: {}, events: [] };
-    }
     throw new CalendarDataError(`${path.basename(dataFile)} could not be refreshed`, {
       code: 'CALENDAR_STORE_UNAVAILABLE',
       status: 500,
@@ -240,7 +237,6 @@ const readStoreFile = async (dataFile) => {
 const writeStoreFile = async (dataFile, data) => {
   const tempFile = `${dataFile}.${process.pid}.${Date.now()}.tmp`;
   try {
-    await fs.promises.mkdir(path.dirname(dataFile), { recursive: true });
     await fs.promises.writeFile(tempFile, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
     await fs.promises.rename(tempFile, dataFile);
   } catch (error) {
@@ -491,44 +487,6 @@ const dateKeys = (start, end) => {
   return dates;
 };
 
-const boundedDateRanges = (start, end, maximumDays = 7) => {
-  const ranges = [];
-  let cursor = new Date(`${start}T12:00:00.000Z`);
-  const last = new Date(`${end}T12:00:00.000Z`);
-  while (cursor <= last) {
-    const rangeStart = cursor.toISOString().slice(0, 10);
-    const rangeEndDate = new Date(Math.min(
-      cursor.getTime() + ((maximumDays - 1) * 86_400_000),
-      last.getTime(),
-    ));
-    ranges.push({ start: rangeStart, end: rangeEndDate.toISOString().slice(0, 10) });
-    cursor = new Date(rangeEndDate.getTime() + 86_400_000);
-  }
-  return ranges;
-};
-
-const fetchEarningsHubRanges = async (start, end, requestCalendar) => {
-  const results = await Promise.all(boundedDateRanges(start, end).map(async (range) => {
-    try {
-      const query = new URLSearchParams(range);
-      const payload = await requestJson(
-        `${EARNINGS_HUB_CALENDAR_URL}?${query.toString()}`,
-        requestCalendar,
-      );
-      if (!Array.isArray(payload) || payload.length > 2_000) {
-        throw new Error('invalid EarningsHub payload');
-      }
-      return { payload };
-    } catch (error) {
-      return { payload: [], error };
-    }
-  }));
-  return {
-    payload: results.flatMap((result) => result.payload),
-    errors: results.filter((result) => result.error).map((result) => result.error),
-  };
-};
-
 const fetchNasdaqDays = async (start, end, requestCalendar) => {
   const dates = dateKeys(start, end);
   const days = [];
@@ -564,9 +522,19 @@ export async function refreshEarningsHubCalendar({
   now = () => new Date(),
 }) {
   const requestCalendar = fetchImpl || fetchWithNodeHttps;
-  const hub = await fetchEarningsHubRanges(start, end, requestCalendar);
-  const hubPayload = hub.payload;
-  const hubError = hub.errors[0];
+  const hubQuery = new URLSearchParams({ start, end });
+  let hubPayload = [];
+  let hubError;
+  try {
+    const payload = await requestJson(
+      `${EARNINGS_HUB_CALENDAR_URL}?${hubQuery.toString()}`,
+      requestCalendar,
+    );
+    if (!Array.isArray(payload) || payload.length > 2_000) throw new Error('invalid EarningsHub payload');
+    hubPayload = payload;
+  } catch (error) {
+    hubError = error;
+  }
 
   const nasdaq = await fetchNasdaqDays(start, end, requestCalendar);
   if (hubError && nasdaq.days.length === 0) {
@@ -621,7 +589,7 @@ export async function refreshEarningsHubCalendar({
         status: hubError ? 'stale' : 'ready',
         updatedAt: hubError ? store.sources?.earningshub?.updatedAt || null : fetchedAt,
         message: hubError
-          ? `EarningsHub 有${hub.errors.length}个日期区间未连接成功，当前保留 Nasdaq 日程与已取得的预期字段。`
+          ? 'EarningsHub 本次未连接成功，当前保留 Nasdaq 日程与已有预期字段。'
           : '由用户点击刷新按钮后，从 EarningsHub 补充营收预期及精确发布时间。',
       },
     },
@@ -855,28 +823,6 @@ const nbsSource = (release, fetchedAt) => ({
   fetchedAt,
 });
 
-const buildNbsHousingEvent = ({ release, fetchedAt }) => {
-  const referenceMatch = release.title.match(/(?:(\d{4})年)?(\d{1,2})月份?70个大中城市/);
-  const referenceYear = Number(referenceMatch?.[1]) || Number(release.date.slice(0, 4));
-  const referenceMonth = Number(referenceMatch?.[2]) || Number(release.date.slice(5, 7));
-  const monthText = String(referenceMonth).padStart(2, '0');
-  return {
-    id: `macro-cn-home-prices-70-cities-${referenceYear}-${monthText}`,
-    kind: 'macro',
-    title: `中国${referenceMonth}月70个大中城市商品住宅销售价格`,
-    region: 'CN',
-    date: release.date,
-    startAt: `${release.date}T09:30:00+08:00`,
-    timezone: 'Asia/Shanghai',
-    timePrecision: 'exact',
-    importance: 4,
-    status: 'released',
-    tags: ['房地产', '房价'],
-    summary: '国家统计局已发布当月70个大中城市商品住宅销售价格数据。',
-    source: nbsSource(release, fetchedAt),
-  };
-};
-
 const buildNbsReleaseEvents = ({ release, metrics, fetchedAt }) => {
   const year = Number(release.date.slice(0, 4));
   const startAt = `${release.date}T10:00:00+08:00`;
@@ -1021,14 +967,11 @@ export async function refreshNbsMacroCalendar({
       });
     }
   }
-  const housingEvent = housingRelease
-    ? buildNbsHousingEvent({ release: housingRelease, fetchedAt })
-    : undefined;
-  const officialEvents = housingEvent ? [...releasedEvents, housingEvent] : releasedEvents;
 
   const store = await readStoreFile(dataFile);
-  const replacements = new Map(officialEvents.map((event) => [event.id, event]));
+  const replacements = new Map(releasedEvents.map((event) => [event.id, event]));
   let aggregateUpdated = false;
+  let housingUpdated = 0;
   const retainedEvents = store.events.map((event) => {
     if (replacements.has(event.id)) {
       const replacement = replacements.get(event.id);
@@ -1056,10 +999,12 @@ export async function refreshNbsMacroCalendar({
       && event.region === 'CN'
       && event.date === housingRelease.date
       && /70个大中城市.*商品住宅销售价格/.test(String(event.title || ''))) {
-      replacements.delete(housingEvent.id);
+      housingUpdated += 1;
       return {
-        ...housingEvent,
-        id: event.id,
+        ...event,
+        status: 'released',
+        summary: '国家统计局已发布当月70个大中城市商品住宅销售价格数据。',
+        source: nbsSource(housingRelease, fetchedAt),
       };
     }
     return event;
@@ -1074,7 +1019,7 @@ export async function refreshNbsMacroCalendar({
         updatedAt: fetchedAt,
         message: [
           releasedEvents.length > 0 ? `已更新${releasedEvents.length}项中国宏观实际值` : '',
-          housingEvent ? '已同步70城房价发布' : '',
+          housingUpdated > 0 ? '已确认70城房价数据发布' : '',
         ].filter(Boolean).join('；') + '。',
       },
     },
@@ -1086,14 +1031,14 @@ export async function refreshNbsMacroCalendar({
     source: 'nbs',
     range: { start, end },
     checked: Number(Boolean(economicRelease)) + Number(Boolean(housingRelease)),
-    updated: officialEvents.length + (aggregateUpdated ? 1 : 0),
+    updated: releasedEvents.length + (aggregateUpdated ? 1 : 0) + housingUpdated,
     inserted: insertedEvents.length,
     message: nextStore.sources.official.message,
   };
 }
 
-const reloadAShareCalendarSnapshot = async ({ manualFile, start, end }) => {
-  const store = await readStoreFile(manualFile);
+const reloadAShareCalendarSnapshot = async ({ dataFile, start, end }) => {
+  const store = await readStoreFile(dataFile);
   const count = store.events.filter((event) => event?.kind === 'a_share'
     && event.date <= end
     && (event.endDate || event.date) >= start).length;
@@ -1104,7 +1049,7 @@ const reloadAShareCalendarSnapshot = async ({ manualFile, start, end }) => {
     checked: count,
     updated: 0,
     updatedAt: store.sources?.wechat?.updatedAt || null,
-    message: 'A股事件已重新读取最近导入的《A股投资日历》PDF 快照。',
+    message: 'A股事件没有在线同步源，本次仅重新读取最近导入快照。',
   };
 };
 
@@ -1115,13 +1060,11 @@ const refreshFailure = (error) => ({
 
 export async function refreshCalendar({
   dataFile,
-  manualFile,
   start,
   end,
   fetchImpl,
   now = () => new Date(),
 }) {
-  const resolvedManualFile = manualFile || path.join(path.dirname(dataFile), 'manual-events.json');
   const results = {};
   const macroSources = {};
   try {
@@ -1146,19 +1089,15 @@ export async function refreshCalendar({
   } catch (error) {
     macroSources.nbs = refreshFailure(error);
   }
-  const scheduleStore = await readStoreFile(resolvedManualFile);
-  const scheduleCount = scheduleStore.events.filter((event) => event?.kind === 'macro'
-    && event?.source?.name === 'jin10'
-    && event.date <= end
-    && (event.endDate || event.date) >= start).length;
+  const scheduleStore = await readStoreFile(dataFile);
   macroSources.schedule = {
     status: 'manual',
     source: 'jin10-snapshot',
     range: { start, end },
-    checked: scheduleCount,
+    checked: 0,
     updated: 0,
     updatedAt: scheduleStore.sources?.jin10?.updatedAt || null,
-    message: '宏观日程已重新读取通过已登录金十网页人工核验的快照。',
+    message: '宏观日程没有获授权的在线同步源，本次继续使用最近核验快照。',
   };
   const macroFailed = Object.values(macroSources).some((result) => result.status === 'failed');
   results.macro = {
@@ -1187,11 +1126,7 @@ export async function refreshCalendar({
     results.earnings = refreshFailure(error);
   }
   try {
-    results.aShare = await reloadAShareCalendarSnapshot({
-      manualFile: resolvedManualFile,
-      start,
-      end,
-    });
+    results.aShare = await reloadAShareCalendarSnapshot({ dataFile, start, end });
   } catch (error) {
     results.aShare = refreshFailure(error);
   }

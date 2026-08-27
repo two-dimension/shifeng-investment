@@ -42,8 +42,6 @@ const isMarketTapeNoise = (item: { title?: string }) => {
 };
 const INVESTABLE_SIGNAL_CONTEXT_PATTERN = /ai|算力|gpu|hbm|dram|nand|ssd|mlcc|pcb|ccl|cowos|芯片|半导体|服务器|数据中心|光模块|铜箔|玻纤布|钨|钨矿|金属|涨价|降价|报价|均价|asp|订单|客户|出货|产能|库存|供给|供应|需求|景气|复苏|回暖|capex|资本开支|公司|收入|利润|销量|交付|消费|零售|电商|汽车|家电|白酒|餐饮|旅游|美妆/i;
 const DEMAND_SIGNAL_CONTEXT_PATTERN = /订单|客户|采购|购买|批准|获批|h200|nvidia|英伟达|算力|出货|销量|交付|下游|景气|复苏|回暖|需求改善|需求回升|需求强劲|需求增长|库存去化|供需|产能|收入|利润|业绩/i;
-// Shared with the home dashboard; this constant is safe to export alongside the component.
-// eslint-disable-next-line react-refresh/only-export-components
 export const SIGNAL_TONE: Record<SignalBucket, { color: string; bg: string; mark: string }> = {
   利好涨价: { color: '#dc2626', bg: '#fee2e2', mark: '↑' },
   利空降价: { color: '#16a34a', bg: '#dcfce7', mark: '↓' },
@@ -303,7 +301,6 @@ const hasTopicKeyword = (text: string, keywords: string[]) =>
 const isNewsTopic = (topic?: string): topic is NewsTopic =>
   Boolean(topic && TOPIC_OPTIONS.includes(topic as NewsTopic) && topic !== '全部');
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const inferSignalBucket = (item: { title?: string; snippet?: string; signalType?: string }): SignalBucket => {
   const text = normalizeForTopic(`${item.title || ''} ${item.snippet || ''} ${item.signalType || ''}`);
   const hasIndustryPriceSubject = /slc|mlc|nand|dram|ddr|hbm|ssd|mlcc|pcb|ccl|wafer|memory|semiconductor|半导体|芯片|晶圆|内存|铜箔|玻纤布|钨精矿|钨粉|废钨|金属/.test(text);
@@ -411,7 +408,6 @@ const formatChinaFullDateTime = (time?: string | null) => {
   return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second} 北京时间`;
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const formatNewsTime = (time?: string) => {
   if (!time || !time.trim()) return '刚刚';
   if (time.includes('小时') || time.includes('分钟') || /^\d{1,2}:\d{2}$/.test(time)) return time;
@@ -426,7 +422,6 @@ const formatTimelineTime = (time?: string) => {
   return formatNewsTime(time).replace(/^.*? /, '');
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const compactSourceName = (source?: string) => {
   const raw = (source || '').trim();
   if (!raw) return '未知';
@@ -1200,17 +1195,14 @@ const ensureSpecificDisplayTitle = (candidate: string, original: string) => {
     : candidate;
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const getDisplayTitle = (item: NewsDisplayLike) => {
   const original = getOriginalNewsText(item);
   const candidate = isXNewsItem(item) ? summarizeXTitle(item) : summarizeNewsFromText(original);
   return ensureSpecificDisplayTitle(candidate, original);
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const getDisplayBodyLabel = () => '原文：';
+export const getDisplayBodyLabel = (_item?: NewsDisplayLike) => '原文：';
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const getDisplayBody = (item: NewsDisplayLike) =>
   getOriginalNewsText(item);
 
@@ -1395,7 +1387,6 @@ const shouldShowPriceSignal = (item: EnrichedNewsItem) => {
   return true;
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const enrichNewsItems = (news: NewsItem[], newNewsIds: Set<string> = new Set()): EnrichedNewsItem[] => {
   const todayLabel = `今天 ${dayjs().format('M月D日')} 周${WEEKDAY_MAP[dayjs().day()]}`;
   return news.map((item) => {
@@ -1419,7 +1410,6 @@ export const enrichNewsItems = (news: NewsItem[], newNewsIds: Set<string> = new 
   });
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const selectTodayHotNewsItems = (enriched: EnrichedNewsItem[]) => {
   const visibleEnriched = enriched.filter((item) => {
     const signalBucket = inferSignalBucket(item);
@@ -1484,7 +1474,7 @@ export const HotListItem: React.FC<{
   const signalBucket = inferSignalBucket(item);
   const tone = SIGNAL_TONE[signalBucket];
   const displayTitle = getDisplayTitle(item);
-  const bodyLabel = getDisplayBodyLabel();
+  const bodyLabel = getDisplayBodyLabel(item);
   const bodyText = getDisplayBody(item);
 
   return (
@@ -1609,7 +1599,7 @@ const DailyNewsItem: React.FC<{
   const dotColor = tone.color;
   const displayTitle = getDisplayTitle(item);
   const bodyText = getDisplayBody(item);
-  const bodyLabel = getDisplayBodyLabel();
+  const bodyLabel = getDisplayBodyLabel(item);
 
   return (
     <a

@@ -33,7 +33,6 @@ export function useResearchSummary(
   });
 
   const fetchData = useCallback(async () => {
-    await Promise.resolve();
     if (!date) {
       setState({ data: null, loading: false, error: null });
       return;
@@ -54,8 +53,7 @@ export function useResearchSummary(
   }, [kind, date]);
 
   useEffect(() => {
-    const requestId = window.setTimeout(() => void fetchData(), 0);
-    return () => window.clearTimeout(requestId);
+    fetchData();
   }, [fetchData]);
 
   return { ...state, refetch: fetchData };
@@ -72,7 +70,6 @@ export function useResearchLatest(
   });
 
   const fetchData = useCallback(async () => {
-    await Promise.resolve();
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
       const data = await fetchJson<ResearchSummary | null>(
@@ -89,8 +86,7 @@ export function useResearchLatest(
   }, [kind]);
 
   useEffect(() => {
-    const requestId = window.setTimeout(() => void fetchData(), 0);
-    return () => window.clearTimeout(requestId);
+    fetchData();
   }, [fetchData]);
 
   return { ...state, refetch: fetchData };
@@ -107,7 +103,6 @@ export function useResearchHistory(
   });
 
   const fetchData = useCallback(async () => {
-    await Promise.resolve();
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
       const data = await fetchJson<ResearchHistoryResponse>(
@@ -124,8 +119,7 @@ export function useResearchHistory(
   }, [kind]);
 
   useEffect(() => {
-    const requestId = window.setTimeout(() => void fetchData(), 0);
-    return () => window.clearTimeout(requestId);
+    fetchData();
   }, [fetchData]);
 
   return { ...state, refetch: fetchData };

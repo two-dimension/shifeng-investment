@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Form, Input, InputNumber, Select } from 'antd';
 import { type Fund } from '../../types/fund';
 
@@ -20,13 +20,14 @@ interface AddFundModalProps {
 const AddFundModal: React.FC<AddFundModalProps> = ({ open, fund, onClose, onSave }) => {
   const [form] = Form.useForm();
   const isEdit = !!fund;
-  const market = (Form.useWatch('market', form) as 'a' | 'hk' | 'us' | 'jp' | 'kr' | undefined) ?? 'a';
+  const [market, setMarket] = useState<'a' | 'hk' | 'us' | 'jp' | 'kr'>('a');
 
   useEffect(() => {
     if (open) {
       if (fund) {
         form.setFieldsValue({ name: fund.name, initialCapital: Math.round(fund.initialCapital) });
       } else {
+        setMarket('a');
         form.setFieldsValue({ initialCapital: 1000000, market: 'a' });
       }
     }
@@ -45,6 +46,7 @@ const AddFundModal: React.FC<AddFundModalProps> = ({ open, fund, onClose, onSave
   };
 
   const handleMarketChange = (v: 'a' | 'hk' | 'us' | 'jp' | 'kr') => {
+    setMarket(v);
     form.setFieldsValue({ initialCapital: INITIAL_MAP[v].value });
   };
 

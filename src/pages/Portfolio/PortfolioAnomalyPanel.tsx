@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Alert, Button, Card, Empty, Space, Spin, Statistic, Table, Tag, Typography } from 'antd';
 import { ArrowLeftOutlined, ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons';
@@ -271,7 +271,7 @@ const getFundDailyReturn = (positions: Position[]) => {
 
 const getThemeKeywords = (fundName: string) => {
   const stripped = fundName.replace(/^(美股|日股|韩国|韩股|港股|A股)/, '');
-  const baseKeywords = [fundName, stripped, ...stripped.split(/[/\s-]+/)].filter((word) => word.length >= 2);
+  const baseKeywords = [fundName, stripped, ...stripped.split(/[\/\s-]+/)].filter((word) => word.length >= 2);
   const aliasKeywords = themeAliasMap
     .filter((item) => normalize(fundName).includes(normalize(item.keyword)) || normalize(stripped).includes(normalize(item.keyword)))
     .flatMap((item) => item.aliases);
@@ -501,7 +501,7 @@ const PortfolioAnomalyPanel: React.FC = () => {
 
   const topDriver = rows[0];
 
-  const runActiveResearch = useCallback(async (key: string, payload: Record<string, unknown>) => {
+  const runActiveResearch = async (key: string, payload: Record<string, unknown>) => {
     if (!fund) return;
     if (activeResearchRequestedRef.current.has(key)) return;
     activeResearchRequestedRef.current.add(key);
@@ -529,7 +529,7 @@ const PortfolioAnomalyPanel: React.FC = () => {
     } finally {
       setActiveResearchLoading((prev) => ({ ...prev, [key]: false }));
     }
-  }, [fund, fundDailyReturn]);
+  };
 
   useEffect(() => {
     if (!fund || loadingEvidence) return;
@@ -548,7 +548,7 @@ const PortfolioAnomalyPanel: React.FC = () => {
         });
       }, index * 600);
     });
-  }, [fund, loadingEvidence, rows, themeEvidence.length, runActiveResearch]);
+  }, [fund, loadingEvidence, rows, themeEvidence.length]);
 
   if (!fund) {
     return (

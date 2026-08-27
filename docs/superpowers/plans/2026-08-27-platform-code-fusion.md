@@ -80,7 +80,7 @@ Expected: 旧仓库状态只被读取，不发生任何写入。
 ```bash
 find src/pages/AIDashboard server/api server/lib server/scripts tests -type f \( -path 'src/pages/AIDashboard/*' -o -name 'ai_dashboard*' -o -iname 'ai*' -o -iname 'artificialAnalysis*' -o -iname 'iceCds*' -o -iname 'isdaCds*' -o -iname 'official*' -o -iname 'publicSourceRegistry*' -o -iname 'sourceLedgerValidation*' -o -iname 'taskCostMetrics*' -o -name 'aiDashboardViewModel.test.ts' \) -print0 | sort -z | xargs -0 shasum -a 256 > docs/recovery/current-ai-files.sha256
 find /Users/ray_wang/Downloads/shifeng-investment/src /Users/ray_wang/Downloads/shifeng-investment/server /Users/ray_wang/Downloads/shifeng-investment/scripts /Users/ray_wang/Downloads/shifeng-investment/tests -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.ts' -o -name '*.tsx' -o -name '*.py' -o -name '*.sh' \) -not -path '*/server/data/*' -not -path '*/public/*' -not -path '*/price_tracking/*' -not -path '*/__pycache__/*' -print0 | sort -z | xargs -0 shasum -a 256 > docs/recovery/legacy-code-files.sha256
-shasum -a 256 /Users/ray_wang/Downloads/shifeng-investment/package.json /Users/ray_wang/Downloads/shifeng-investment/package-lock.json /Users/ray_wang/Downloads/shifeng-investment/index.js /Users/ray_wang/Downloads/shifeng-investment/wrangler.toml >> docs/recovery/legacy-code-files.sha256
+shasum -a 256 /Users/ray_wang/Downloads/shifeng-investment/package.json /Users/ray_wang/Downloads/shifeng-investment/package-lock.json /Users/ray_wang/Downloads/shifeng-investment/wrangler.toml >> docs/recovery/legacy-code-files.sha256
 ```
 
 Expected: 两个清单均非空；清单只包含文件哈希，不包含文件内容或密钥。
@@ -192,6 +192,7 @@ git commit -m "restore: use legacy non-ai frontend"
 - Modify: `server/lib/newsIntelligence.js`
 - Modify: `server/lib/researchSync.js`
 - Preserve for Task 4: `server/index.js`
+- Preserve for Task 4: `server/startup.test.js`
 - Preserve: current AI API, services, scripts, fixtures, and `server/data/ai-dashboard/**`
 - Delete: `server/lib/validateQuantStrategy.js`
 
@@ -202,7 +203,8 @@ git commit -m "restore: use legacy non-ai frontend"
 ```bash
 rsync -ain --delete \
   --exclude='.DS_Store' --exclude='__pycache__/***' --exclude='*.pyc' \
-  --exclude='/index.js' --exclude='/data/***' --exclude='/public/***' --exclude='/price_tracking/***' \
+  --exclude='/index.js' --exclude='/startup.test.js' --exclude='/data/***' --exclude='/public/***' --exclude='/price_tracking/***' \
+  --exclude='/fixtures/ice-cds/***' \
   --exclude='/api/ai_dashboard*' \
   --exclude='/lib/aiCapital*' --exclude='/lib/aiCds*' --exclude='/lib/aiCompute*' \
   --exclude='/lib/aiDashboard*' --exclude='/lib/aiGrowth*' --exclude='/lib/aiPricing*' \
@@ -282,7 +284,7 @@ git commit -m "restore: recover legacy non-ai backend and quant"
 
 - Modify: `server/index.js`
 - Modify: `server/startup.test.js`
-- Preserve: `index.js`
+- Preserve: current-only root `index.js` (the legacy repository has no root entrypoint)
 - Verify: `src/App.tsx`
 - Verify: `src/components/Layout/MainLayout.tsx`
 - Verify: `src/pages/index.ts`

@@ -578,7 +578,7 @@ const HomeHotNewsRow: React.FC<{
   const signalBucket = inferSignalBucket(item);
   const tone = SIGNAL_TONE[signalBucket];
   const displayTitle = getDisplayTitle(item);
-  const bodyLabel = getDisplayBodyLabel();
+  const bodyLabel = getDisplayBodyLabel(item);
   const bodyText = getDisplayBody(item);
   const sourceName = compactSourceName(item.source);
 
