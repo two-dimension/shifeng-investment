@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-23T16:49:26.977Z",
+  "generatedAt": "2026-08-27T05:26:55.359Z",
   "sources": [
     {
       "id": "artificial-analysis-index",
@@ -18,7 +18,7 @@
       "slice": "benchmarks",
       "entity": "Anthropic",
       "sourceKind": "official",
-      "entryUrl": "https://anthropic.com/claude-opus-5-system-card",
+      "entryUrl": "https://www-cdn.anthropic.com/ceaf5c7ff2783855203fde8208ec311252dced5b/Claude%20Opus%205%20System%20Card.pdf",
       "allowedHosts": [
         "www.anthropic.com",
         "anthropic.com",
@@ -31,13 +31,14 @@
       "slice": "benchmarks",
       "entity": "DeepSeek",
       "sourceKind": "official",
-      "entryUrl": "https://github.com/deepseek-ai",
+      "entryUrl": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813",
       "allowedHosts": [
         "github.com",
         "raw.githubusercontent.com",
-        "api.github.com"
+        "api.github.com",
+        "huggingface.co"
       ],
-      "status": "discovery"
+      "status": "active"
     },
     {
       "id": "benchmark:Gemini",
@@ -55,8 +56,10 @@
       "slice": "benchmarks",
       "entity": "Kimi",
       "sourceKind": "official",
-      "entryUrl": "https://raw.githubusercontent.com/MoonshotAI/Kimi-K3/main/README.md",
+      "entryUrl": "https://www.kimi.com/en/blog/kimi-k3",
       "allowedHosts": [
+        "www.kimi.com",
+        "kimi.com",
         "github.com",
         "raw.githubusercontent.com",
         "api.github.com"
@@ -68,33 +71,34 @@
       "slice": "benchmarks",
       "entity": "Meta",
       "sourceKind": "official",
-      "entryUrl": "https://developer.meta.com/ai/models/",
+      "entryUrl": "https://research.meta.ai/blog/introducing-muse-code-and-muse-spark-1-2",
       "allowedHosts": [
-        "www.llama.com",
-        "llama.com",
-        "developer.meta.com"
+        "research.meta.ai",
+        "ai.meta.com"
       ],
-      "status": "discovery"
+      "status": "active"
     },
     {
       "id": "benchmark:Mimo",
       "slice": "benchmarks",
       "entity": "Mimo",
       "sourceKind": "official",
-      "entryUrl": "https://github.com/XiaomiMiMo",
+      "entryUrl": "https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro",
       "allowedHosts": [
         "github.com",
         "raw.githubusercontent.com",
-        "api.github.com"
+        "api.github.com",
+        "huggingface.co",
+        "mimo.mi.com"
       ],
-      "status": "discovery"
+      "status": "active"
     },
     {
       "id": "benchmark:MiniMax",
       "slice": "benchmarks",
       "entity": "MiniMax",
       "sourceKind": "official",
-      "entryUrl": "https://raw.githubusercontent.com/MiniMax-AI/MiniMax-M2.7/main/README.md",
+      "entryUrl": "https://github.com/MiniMax-AI/MiniMax-M3",
       "allowedHosts": [
         "github.com",
         "raw.githubusercontent.com",
@@ -107,9 +111,10 @@
       "slice": "benchmarks",
       "entity": "OpenAI",
       "sourceKind": "official",
-      "entryUrl": "https://deploymentsafety.openai.com/gpt-5-6",
+      "entryUrl": "https://openai.com/index/gpt-5-6/",
       "allowedHosts": [
-        "deploymentsafety.openai.com"
+        "openai.com",
+        "developers.openai.com"
       ],
       "status": "active"
     },
@@ -118,8 +123,9 @@
       "slice": "benchmarks",
       "entity": "Qwen",
       "sourceKind": "official",
-      "entryUrl": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B",
+      "entryUrl": "https://huggingface.co/Qwen/Qwen3.8-Flash-Next",
       "allowedHosts": [
+        "qwen.ai",
         "github.com",
         "raw.githubusercontent.com",
         "api.github.com",
@@ -148,7 +154,8 @@
       "entryUrl": "https://x.ai/news/grok-4-6",
       "allowedHosts": [
         "x.ai",
-        "data.x.ai"
+        "data.x.ai",
+        "docs.x.ai"
       ],
       "status": "active"
     },
@@ -157,9 +164,10 @@
       "slice": "benchmarks",
       "entity": "智谱",
       "sourceKind": "official",
-      "entryUrl": "https://docs.bigmodel.cn/cn/guide/start/model-overview",
+      "entryUrl": "https://z.ai/blog/glm-5.3-flash",
       "allowedHosts": [
-        "docs.bigmodel.cn"
+        "huggingface.co",
+        "z.ai"
       ],
       "status": "active"
     },
@@ -676,6 +684,17 @@
       "status": "active"
     },
     {
+      "id": "xai-pricing",
+      "slice": "pricing",
+      "entity": "xAI",
+      "sourceKind": "official",
+      "entryUrl": "https://docs.x.ai/developers/models/grok-4.6",
+      "allowedHosts": [
+        "docs.x.ai"
+      ],
+      "status": "active"
+    },
+    {
       "id": "zhipu-coding-plan",
       "slice": "pricing",
       "entity": "GLM Coding Plan",
@@ -691,9 +710,9 @@
       "slice": "pricing",
       "entity": "智谱",
       "sourceKind": "official",
-      "entryUrl": "https://docs.bigmodel.cn/cn/guide/start/model-overview",
+      "entryUrl": "https://docs.z.ai/guides/overview/pricing",
       "allowedHosts": [
-        "docs.bigmodel.cn"
+        "docs.z.ai"
       ],
       "status": "active"
     }
