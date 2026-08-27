@@ -27,6 +27,8 @@
 
 Cloudflare Worker 同时承载前端静态文件和公告 API。请求 `/api/*` 时先进入 Worker，其余请求交给 Vite 构建后的静态资源。配置从 `wrangler.toml` 迁到 `wrangler.jsonc`，声明 Worker 入口、静态资源、D1 和 R2 绑定。
 
+本次只把公告监控的数据能力搬上云，不假装其他本机 API 已经云化。主域名切到 Worker 后，网站外壳和公告监控始终可用；新闻、持仓、行情等仍依赖本机 Express 的接口，电脑在线时由 Worker 转发到一个独立的 Tunnel 源站域名，电脑关机时这些接口明确返回 `503`，不会被误当成空数据。后续可以再按模块逐个迁移。
+
 数据流如下：
 
 1. 用户打开公告监控，页面立即读取 D1 中最后一次成功结果；
@@ -81,7 +83,7 @@ CREATE TABLE research_refresh_state (
 research/{kind}/{date}/{filename}
 ```
 
-Worker 通过现有 files API 返回文件列表，并通过受控下载路由读取 R2，补齐正确的 `Content-Type` 和 `Content-Disposition`。当前约 44 MB、596 个文件可在首次部署时一次性迁入，页面上线后不会从空白状态开始。
+摘要 JSON 中继续携带现有 `files` 列表，Worker 通过受控下载路由读取 R2，补齐正确的 `Content-Type` 和 `Content-Disposition`。当前约 44 MB、596 个文件可在首次部署时一次性迁入，页面上线后不会从空白状态开始。
 
 ## API 契约
 
@@ -90,7 +92,9 @@ Worker 通过现有 files API 返回文件列表，并通过受控下载路由�
 - `GET /api/research/:kind/latest`
 - `GET /api/research/:kind/history`
 - `GET /api/research/:kind/:date`
-- `GET /api/research/:kind/:date/files`
+- `GET /api/research/files/:kind/:date/:filename`
+
+除 `/api/research/*` 外的 `/api/*` 请求由 Worker 转发至非敏感配置 `LEGACY_API_ORIGIN`。该地址必须是与主站不同的 Tunnel 源站域名，防止请求递归；未配置或源站离线时返回结构化 `503`。
 
 刷新接口改为云端语义：
 
@@ -103,7 +107,7 @@ Worker 通过现有 files API 返回文件列表，并通过受控下载路由�
 - 上传单个报告文件；
 - 标记任务开始、成功或失败。
 
-这些接口要求 `Authorization: Bearer <RESEARCH_PUBLISH_TOKEN>`。公开读取不需要登录。
+这些接口要求 `Authorization: Bearer` 加发布密钥。公开读取不需要登录。
 
 ## 刷新与防重复
 
@@ -175,4 +179,4 @@ GitHub dispatch token 只授予目标仓库所需的最小 Contents 写权限。
 
 ## 非目标
 
-第一版不把抓取程序直接塞进 Cloudflare Worker，不引入 Google Drive，不增加付费数据库，不重做公告监控 UI，也不改变 AI 看板和其他平台模块。
+第一版不把抓取程序直接塞进 Cloudflare Worker，不引入 Google Drive，不增加付费数据库，不重做公告监控 UI，也不把新闻、持仓、行情、AI 看板等其他本机 API 一并迁上云。
