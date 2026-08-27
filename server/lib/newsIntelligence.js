@@ -773,7 +773,7 @@ async function fetchOneSource(sourceId, source, limit, sinceDate) {
   }));
 }
 
-async function fetchHackerNews(limit = 15) {
+async function fetchHackerNews(limit = 15, sinceDate = null) {
   const query = 'AI OR LLM OR GPT OR "large language model"';
   const params = new URLSearchParams({
     query,
@@ -784,25 +784,32 @@ async function fetchHackerNews(limit = 15) {
   const data = JSON.parse(text);
   const sourcePriority = SOURCE_PRIORITY_WEIGHTS.developer;
 
-  return (data.hits || []).slice(0, limit).map((hit) => {
-    const article = {
-      title: hit.title || 'Untitled',
-      url: hit.url || `https://news.ycombinator.com/item?id=${hit.objectID || ''}`,
-      source_id: 'hn-algolia',
-      source_name: 'Hacker News',
-      source_type: 'developer',
-      language: 'en',
-      published_at: hit.created_at || '',
-      content_snippet: `score ${hit.points || 0}, comments ${hit.num_comments || 0}`,
-      score: hit.points || 0,
-      comments_count: hit.num_comments || 0,
-      source_priority_weight: sourcePriority,
-    };
-    return {
-      ...article,
-      hotness_score: calculateHotness(article, sourcePriority) + (hit.points || 0) / 20 + (hit.num_comments || 0) / 30,
-    };
-  });
+  return (data.hits || [])
+    .filter((hit) => {
+      if (!sinceDate) return true;
+      const publishedDate = parseDate(hit.created_at);
+      return !publishedDate || publishedDate >= sinceDate;
+    })
+    .slice(0, limit)
+    .map((hit) => {
+      const article = {
+        title: hit.title || 'Untitled',
+        url: hit.url || `https://news.ycombinator.com/item?id=${hit.objectID || ''}`,
+        source_id: 'hn-algolia',
+        source_name: 'Hacker News',
+        source_type: 'developer',
+        language: 'en',
+        published_at: hit.created_at || '',
+        content_snippet: `score ${hit.points || 0}, comments ${hit.num_comments || 0}`,
+        score: hit.points || 0,
+        comments_count: hit.num_comments || 0,
+        source_priority_weight: sourcePriority,
+      };
+      return {
+        ...article,
+        hotness_score: calculateHotness(article, sourcePriority) + (hit.points || 0) / 20 + (hit.num_comments || 0) / 30,
+      };
+    });
 }
 
 function priorityFairDeduplicate(articlesBySource, outputPerSource = 1) {
@@ -891,7 +898,7 @@ async function fetchOnce({ since, limit, outputPerSource }) {
     if (articles.length > 0) articlesBySource[sourceId] = articles;
   });
 
-  const hnResult = await Promise.allSettled([fetchHackerNews(15)]);
+  const hnResult = await Promise.allSettled([fetchHackerNews(15, sinceDate)]);
   if (hnResult[0].status === 'fulfilled' && hnResult[0].value.length > 0) {
     articlesBySource['hn-algolia'] = hnResult[0].value;
   }
@@ -1346,6 +1353,7 @@ async function fetchWeixinOpenCliFallback({ since, limit }) {
 
 async function runAiNewsChannels({ since = '24h', rssLimit, wechatLimit, xLimit, newsletterLimit, mode = 'full' }) {
   const quickMode = mode === 'quick';
+  const warnings = [];
   const xTargets = loadXTargetAccounts();
   const xAccounts = xTargets.accounts.length ? xTargets.accounts : ['OpenAI'];
   const xPerAccountLimit = Math.max(1, Math.min(Number(xLimit) || DEFAULT_X_PER_ACCOUNT_LIMIT, DEFAULT_X_PER_ACCOUNT_LIMIT));
@@ -1423,6 +1431,7 @@ async function runAiNewsChannels({ since = '24h', rssLimit, wechatLimit, xLimit,
       args: rssSourceArgs(sourceId),
       timeoutMs: quickMode ? 8000 : 18000,
   }));
+  const externalRssCollectorAvailable = fs.existsSync(path.join(NEWS_INTELLIGENCE_ROOT, 'scripts', 'fetch_rss.py'));
   const xSpecs = !quickMode && ENABLE_LIVE_X_FETCH ? xAccounts.map((account) => ({
     channel: `x-${account}`,
     collectionChannel: 'x',
@@ -1431,9 +1440,9 @@ async function runAiNewsChannels({ since = '24h', rssLimit, wechatLimit, xLimit,
     timeoutMs: 35000,
   })) : [];
   const nonXChannelSpecs = quickMode
-    ? [...rssSpecs]
+    ? [...(externalRssCollectorAvailable ? rssSpecs : [])]
     : [
-        ...rssSpecs,
+        ...(externalRssCollectorAvailable ? rssSpecs : []),
         {
           channel: 'wechat',
           script: 'fetch_wechat_mp.py',
@@ -1447,19 +1456,37 @@ async function runAiNewsChannels({ since = '24h', rssLimit, wechatLimit, xLimit,
           timeoutMs: 45000,
         },
       ];
-  const channelSpecs = [...nonXChannelSpecs, ...xSpecs];
+  const channelSpecs = [...nonXChannelSpecs, ...xSpecs]
+    .filter((spec) => {
+      const available = fs.existsSync(path.join(NEWS_INTELLIGENCE_ROOT, 'scripts', spec.script));
+      if (!available) warnings.push(`[WARN] ${spec.channel}: collector script unavailable (${spec.script})`);
+      return available;
+    });
+  const runnableNonXSpecs = channelSpecs.filter((spec) => !spec.channel.startsWith('x-'));
+  const runnableXSpecs = channelSpecs.filter((spec) => spec.channel.startsWith('x-'));
+  const nativeRssPromise = externalRssCollectorAvailable
+    ? Promise.resolve({ news: [], meta: null })
+    : fetchOnce({
+        since,
+        limit: Number(rssLimit) || (quickMode ? 2 : 5),
+        outputPerSource: 1,
+      });
 
-  const [nonXResults, xResults, blsCpiItems] = await Promise.all([
-    Promise.all(nonXChannelSpecs.map(runSkillChannel)),
-    runWithConcurrency(xSpecs, DEFAULT_X_CONCURRENCY, runSkillChannel),
+  if (!externalRssCollectorAvailable) {
+    warnings.push('[WARN] rss: external collector unavailable; using built-in RSS collector');
+  }
+
+  const [nonXResults, xResults, blsCpiItems, nativeRss] = await Promise.all([
+    Promise.all(runnableNonXSpecs.map(runSkillChannel)),
+    runWithConcurrency(runnableXSpecs, DEFAULT_X_CONCURRENCY, runSkillChannel),
     fetchBlsCpiNews().catch((error) => {
       warnings.push(`[WARN] bls-cpi: ${error.message}`);
       return [];
     }),
+    nativeRssPromise,
   ]);
   const results = [...nonXResults, ...xResults];
   const items = [];
-  const warnings = [];
   if (xTargets.warning) warnings.push(`[WARN] x-watch: ${xTargets.warning}`);
   if (!ENABLE_LIVE_X_FETCH && !xDigest.items.length) {
     warnings.push('[WARN] x-watch: digest snapshot has no X posts in the selected time range');
@@ -1490,6 +1517,20 @@ async function runAiNewsChannels({ since = '24h', rssLimit, wechatLimit, xLimit,
       .filter((line) => line.includes('[WARN]'))
       .forEach((line) => warnings.push(line));
   }
+  nativeRss.news.forEach((item) => {
+    items.push({
+      title: item.title,
+      source_name: item.source,
+      source_id: item.sourceId,
+      source_type: item.sourceCategory,
+      collection_channel: 'rss',
+      published_at: item.time,
+      url: item.url,
+      content_snippet: item.snippet,
+      language: item.language,
+      hotness_score: item.score,
+    });
+  });
 
   if (!quickMode && wechatItems === 0) {
     const fallback = await fetchWeixinOpenCliFallback({ since, limit: wechatLimit || 5 });

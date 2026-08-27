@@ -90,6 +90,19 @@ function defaultIsLocalWriter(req) {
     || address.startsWith('::ffff:127.');
   if (!isLoopback) return false;
 
+  let requestHostname;
+  try {
+    requestHostname = new URL(`${req.protocol}://${String(req.get('host') || '')}`)
+      .hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  } catch {
+    return false;
+  }
+  const isLocalRequestHost = requestHostname === 'localhost'
+    || requestHostname.endsWith('.localhost')
+    || requestHostname === '::1'
+    || requestHostname.startsWith('127.');
+  if (!isLocalRequestHost) return false;
+
   const origin = String(req.get('origin') || '').trim();
   if (!origin) return true;
   try {

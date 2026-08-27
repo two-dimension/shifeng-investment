@@ -489,7 +489,10 @@ export function createIceCdsPipeline({
     await commitAtomically({ fsImpl, dataDir, snapshotFile, workbookFile, state, snapshot });
     return { snapshot, batchId: state.batchId, workbookPath: workbookFile };
   };
-  const performImport = (input) => enqueueIceCdsSnapshotWrite(() => performImportUnlocked(input));
+  const performImport = (input) => enqueueIceCdsSnapshotWrite(
+    () => performImportUnlocked(input),
+    { lockFile: `${snapshotFile}.lock` },
+  );
 
   return {
     preview,
