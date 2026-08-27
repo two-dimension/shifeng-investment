@@ -15,6 +15,7 @@ from typing import Optional, List, Dict, Tuple
 import time
 import json
 import os
+from pathlib import Path
 
 # ---------- 配置 ----------
 HEADERS = {
@@ -29,19 +30,29 @@ MACD_DAILY_BARS = 90
 MACD_15M_BARS = 100
 MACD_WORKERS = 18
 
-WATCHLIST_PATH = "/Users/rayw/Desktop/自选股.csv"
-OUTPUT_DIR = "/Users/rayw/shifeng-investment/macd screener"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+WATCHLIST_PATH = Path(
+    os.environ.get("MACD_WATCHLIST_PATH", PROJECT_ROOT / "server" / "data" / "funds.json")
+)
+OUTPUT_DIR = Path(os.environ.get("MACD_OUTPUT_DIR", SCRIPT_DIR))
 
 
 # ---------- 工具函数 ----------
 def normalize_stock_code(raw_code) -> str:
     c = str(raw_code).strip().strip("'")
+    if c.endswith(".0"):
+        c = c[:-2]
+    if c.startswith(("sh", "sz", "bj")) and len(c) == 8:
+        return c
+    c = c.zfill(6)
     if c.startswith(("600", "601", "603", "605", "688")):
         return f"sh{c}"
     if c.startswith(("000", "001", "002", "003", "300")):
         return f"sz{c}"
-    return f"sh{c}"
+    if c.startswith(("4", "8", "9")) and len(c) == 6:
+        return f"bj{c}"
+    return ""
 
 
 def parse_float(value) -> Optional[float]:
@@ -56,8 +67,38 @@ def parse_float(value) -> Optional[float]:
         return None
 
 
-def load_watchlist_meta() -> Tuple[List[str], Dict[str, Dict]]:
-    df = pd.read_csv(WATCHLIST_PATH, encoding="utf-16", sep="\t")
+def _empty_watchlist_meta(name="", price=None) -> Dict:
+    return {
+        "股票名称": str(name or "").strip(),
+        "现价": parse_float(price),
+        "涨幅": "",
+        "涨幅数值": None,
+        "换手": "",
+        "成交额": "",
+        "所属行业": "",
+    }
+
+
+def _load_platform_funds(path: Path) -> Tuple[List[str], Dict[str, Dict]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    codes = []
+    meta = {}
+    for fund in payload.get("funds", []):
+        for position in fund.get("positions", []):
+            code = normalize_stock_code(position.get("code"))
+            if not code:
+                continue
+            if code not in meta:
+                codes.append(code)
+            meta[code] = _empty_watchlist_meta(
+                position.get("name", ""),
+                position.get("currentPrice"),
+            )
+    return codes, meta
+
+
+def _load_legacy_watchlist(path: Path) -> Tuple[List[str], Dict[str, Dict]]:
+    df = pd.read_csv(path, encoding="utf-16", sep="\t")
     codes = []
     meta = {}
     for _, row in df.iterrows():
@@ -65,7 +106,10 @@ def load_watchlist_meta() -> Tuple[List[str], Dict[str, Dict]]:
         if pd.isna(raw_code):
             continue
         code = normalize_stock_code(raw_code)
-        codes.append(code)
+        if not code:
+            continue
+        if code not in meta:
+            codes.append(code)
         meta[code] = {
             "股票名称": str(row.get("名称", "")).strip(),
             "现价": parse_float(row.get("最新")),
@@ -76,6 +120,12 @@ def load_watchlist_meta() -> Tuple[List[str], Dict[str, Dict]]:
             "所属行业": str(row.get("所属行业", "")).strip(),
         }
     return codes, meta
+
+
+def load_watchlist_meta() -> Tuple[List[str], Dict[str, Dict]]:
+    if WATCHLIST_PATH.suffix.lower() == ".json":
+        return _load_platform_funds(WATCHLIST_PATH)
+    return _load_legacy_watchlist(WATCHLIST_PATH)
 
 
 def load_watchlist() -> List[str]:
@@ -474,7 +524,8 @@ def main():
     else:
         df_result = df_result.reset_index(drop=True)
 
-    out_path = os.path.join(OUTPUT_DIR, f"MACD拐点_{today}.xlsx")
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = OUTPUT_DIR / f"MACD拐点_{today}.xlsx"
     df_result.to_excel(out_path, index=False, sheet_name="MACD拐点")
     print(f"完成！输出: {out_path}")
     print(f"共 {len(df_result)} 只通过基础版拐点")
