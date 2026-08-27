@@ -10,6 +10,7 @@ import {
   createOpenRouterClient,
   startAiDashboardAutoRefresh,
 } from './aiDashboardService.js';
+import { createIceCdsPipeline } from './iceCdsPipeline.js';
 
 const ALL_PUBLIC_SLICES = [
   'growth',
@@ -277,6 +278,84 @@ test('explicit ICE collector failure preserves the last-good ICE batch and marks
   assert.equal(snapshot.creditRisk.cds5y.companies[0].latestBp, 221);
 });
 
+test('a delayed dashboard refresh cannot erase a complete ICE batch imported while it is running', async (t) => {
+  const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-cds-refresh-race-');
+  const dataDir = path.join(dir, 'ice-cds');
+  await fs.promises.writeFile(dataFile, JSON.stringify({
+    schemaVersion: 2,
+    generatedAt: '2026-08-24T00:00:00.000Z',
+    sources: {},
+  }), 'utf8');
+
+  let releaseGrowth;
+  const growthGate = new Promise((resolve) => { releaseGrowth = resolve; });
+  let collectorStarted;
+  const collectorStartedGate = new Promise((resolve) => { collectorStarted = resolve; });
+  const service = createAiDashboardService({
+    dataFile,
+    collectors: {
+      async growth() {
+        collectorStarted();
+        await growthGate;
+        return {
+          payload: { arrAndValuation: { companies: [{ company: 'Anthropic' }], valuations: [] } },
+          source: readySource('2026-08-25'),
+        };
+      },
+    },
+    now: () => new Date('2026-08-26T00:00:00.000Z'),
+  });
+  const pipeline = createIceCdsPipeline({
+    dataDir,
+    snapshotFile: dataFile,
+    now: () => new Date('2026-08-26T00:01:00.000Z'),
+  });
+  const rows = [
+    ['ORACLE CORP', 'ORCL', 100, 95.24],
+    ['COREWEAVE INC', 'CRWV', 500, 88.125],
+    ['NVIDIA CORP', 'NVDA', 100, 100.42],
+    ['AMAZON.COM INC', 'AMZN', 100, 100.2],
+    ['ALPHABET INC', 'GOOGL', 100, 100.25],
+    ['MICROSOFT CORP', 'MSFT', 100, 100.3],
+    ['META PLATFORMS INC', 'META', 100, 99.7],
+  ];
+  const iceText = [
+    'Clearing Date\tName\tInstrument Name\tEOD Price',
+    ...rows.map(([name, symbol, couponBp, price]) => (
+      `2026-08-25\t${name}\t${symbol}.SNRFOR.USD.XR14.${couponBp}.2031-06-20\t${price}`
+    )),
+  ].join('\n');
+  const discountCurve = {
+    curveId: 'usd-sofr-2026-08-25-test',
+    asOf: '2026-08-25',
+    currency: 'USD',
+    sourceLabel: 'USD SOFR zero curve',
+    sourceUrl: 'https://example.test/curve',
+    nodes: [
+      { years: 0.25, zeroRate: 0.041 },
+      { years: 1, zeroRate: 0.039 },
+      { years: 3, zeroRate: 0.037 },
+      { years: 5, zeroRate: 0.036 },
+      { years: 10, zeroRate: 0.038 },
+    ],
+  };
+
+  const delayedRefresh = service.refresh({ sources: ['growth'], force: true });
+  await collectorStartedGate;
+  const cdsImport = pipeline.import({ iceText, discountCurve });
+  await Promise.race([
+    cdsImport,
+    new Promise((resolve) => setTimeout(resolve, 200)),
+  ]);
+  releaseGrowth();
+  await Promise.all([delayedRefresh, cdsImport]);
+
+  const snapshot = await service.getSnapshot();
+  assert.equal(snapshot.creditRisk.cds5y.asOf, '2026-08-25');
+  assert.equal(snapshot.creditRisk.cds5y.companies.length, 7);
+  assert.equal(snapshot.arrAndValuation.companies[0].company, 'Anthropic');
+});
+
 test('environment service ignores legacy Feishu exports and accepts public collectors', async (t) => {
   const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-no-feishu-');
   const feishuExportFile = path.join(dir, 'feishu-export.json');
@@ -508,10 +587,10 @@ test('a failed official vendor retains only that vendor last-good card and becom
       async readAll() {
         round += 1;
         return round === 1 ? [
-          { vendor: 'OpenAI', model: 'GPT-5.6 Sol', status: 'ready', stale: false, sourceUrl: 'https://openai.com/card', scores: [terminal(88)] },
+          { vendor: 'OpenAI', model: 'GPT-5.6 Sol', status: 'ready', stale: false, sourceUrl: 'https://openai.com/card', scores: [terminal(88)], specs: { contextWindowTokens: 1000000, contextWindowLabel: '1M tokens', sourceUrl: 'https://openai.com/specs' } },
           { vendor: 'Gemini', model: 'Gemini 3.7 Flash', status: 'ready', stale: false, sourceUrl: 'https://deepmind.google/card', scores: [terminal(80)] },
         ] : [
-          { vendor: 'OpenAI', model: 'GPT-5.6 Sol', status: 'error', stale: true, sourceUrl: 'https://openai.com/card', scores: [], error: 'temporary failure' },
+          { vendor: 'OpenAI', model: 'GPT-5.6 Sol', status: 'error', stale: true, sourceUrl: 'https://openai.com/card', scores: [], specs: { contextWindowTokens: 1050000, contextWindowLabel: '1,050,000 tokens', sourceUrl: 'https://openai.com/latest-specs' }, error: 'temporary failure' },
           { vendor: 'Gemini', model: 'Gemini 3.7 Flash', status: 'ready', stale: false, sourceUrl: 'https://deepmind.google/card', scores: [terminal(89)] },
         ];
       },
@@ -527,6 +606,8 @@ test('a failed official vendor retains only that vendor last-good card and becom
   assert.equal(openai.status, 'error');
   assert.equal(openai.stale, true);
   assert.equal(Object.values(openai.scores)[0].value, 88);
+  assert.equal(openai.specs.contextWindowTokens, 1050000);
+  assert.equal(openai.specs.sourceUrl, 'https://openai.com/latest-specs');
   assert.equal(Object.values(gemini.scores)[0].value, 89);
   assert.deepEqual(Object.values(snapshot.benchmarks.winners)[0], { models: ['Gemini 3.7 Flash'], value: 89 });
   assert.equal(snapshot.sources.benchmarks.stale, true);
@@ -566,6 +647,35 @@ test('failed-vendor last-good fallback preserves every nested disclosure', async
   assert.deepEqual(score.disclosures.map((row) => row.value).sort(), [82, 84]);
   assert.equal(score.ambiguous, true);
   assert.deepEqual(snapshot.benchmarks.winners, {});
+});
+
+test('a blocked live page still publishes configured first-party score rows instead of older fallback scores', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-pinned-fallback-');
+  let round = 0;
+  const terminal = (value) => ({
+    testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', value,
+    unit: 'percent-point', direction: 'higher', effort: 'max', configurationComplete: false,
+  });
+  const service = createAiDashboardService({
+    dataFile,
+    officialBenchmarkClient: {
+      async readAll() {
+        round += 1;
+        return [{
+          vendor: 'OpenAI', model: 'GPT Latest', status: round === 1 ? 'ready' : 'error', stale: round > 1,
+          sourceUrl: 'https://openai.com/card', scores: [terminal(round === 1 ? 88 : 91.9)],
+          error: round > 1 ? 'HTTP 403; using pinned official table rows' : null,
+        }];
+      },
+    },
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  await service.refresh({ sources: ['benchmarks'], force: true });
+  const snapshot = await service.refresh({ sources: ['benchmarks'], force: true });
+  const score = Object.values(snapshot.benchmarks.models[0].scores)[0];
+  assert.equal(snapshot.benchmarks.models[0].status, 'error');
+  assert.equal(score.value, 91.9);
 });
 
 test('overlapping forced Benchmark refreshes share a single official collector request', async (t) => {

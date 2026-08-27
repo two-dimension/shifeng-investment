@@ -42,10 +42,18 @@ test('official Chinese pricing adapter parses CNY per-million token rows without
   const parsed = adapter.parsePricing(document(readFixture('minimax-pricing.html'), source.entryUrl));
 
   assert.equal(parsed.token[0].vendor, 'MiniMax');
+  assert.equal(parsed.token[0].model, 'MiniMax M3');
   assert.equal(parsed.token[0].currency, 'CNY');
   assert.equal(parsed.token[0].inputPrice, 2.1);
+  assert.equal(parsed.token[0].outputPrice, 8.4);
+  assert.equal(parsed.token[0].cacheReadPrice, 0.42);
+  assert.equal(parsed.token[0].contextTier, '≤ 512K input tokens');
+  assert.equal(parsed.token[1].contextTier, '> 512K input tokens');
+  assert.equal(parsed.token[1].inputPrice, 4.2);
+  assert.equal(parsed.token[1].outputPrice, 16.8);
   assert.equal(parsed.token[0].currentGeneration, true);
-  assert.equal(parsed.token[1].currentGeneration, false);
+  assert.equal(parsed.token[1].currentGeneration, true);
+  assert.equal(parsed.token.filter((row) => row.serviceTier === 'priority').length, 2);
 });
 
 test('official Kimi markdown adapter parses the latest K3 cache-hit, cache-miss, and output prices', () => {
@@ -65,6 +73,29 @@ test('official Kimi markdown adapter parses the latest K3 cache-hit, cache-miss,
     output: parsed.token[0].outputPrice,
     current: parsed.token[0].currentGeneration,
   }, { model: 'Kimi K3', currency: 'USD', input: 3, cache: 0.3, output: 15, current: true });
+});
+
+test('official xAI model page records Grok input, cached-input, and output API prices', () => {
+  const source = definition('xai-pricing');
+  const adapter = createOfficialPricingAdapter(source);
+  const parsed = adapter.parsePricing(document(`
+    <main>
+      <h1>Grok 4.6</h1>
+      <section><h2>Pricing</h2>
+        <h4>Input</h4><p>Tokens</p><p>$2.00 / 1M tokens</p>
+        <p>Cached tokens</p><p>$0.50 / 1M tokens</p>
+        <h4>Output</h4><p>Tokens</p><p>$6.00 / 1M tokens</p>
+      </section>
+    </main>
+  `, source.entryUrl));
+
+  assert.deepEqual({
+    vendor: parsed.token[0].vendor,
+    model: parsed.token[0].model,
+    input: parsed.token[0].inputPrice,
+    cache: parsed.token[0].cacheReadPrice,
+    output: parsed.token[0].outputPrice,
+  }, { vendor: 'xAI', model: 'Grok 4.6', input: 2, cache: 0.5, output: 6 });
 });
 
 test('video and Coding Plan adapters preserve non-comparable units and inquiry-only rows', () => {
@@ -123,7 +154,7 @@ test('collector retains verified ledger coverage notes when an accessible offici
     registry: [source],
     documentClient: {
       async fetchDocument() {
-        return document('<main><h1>GLM-5.2</h1><p>模型总览</p></main>', source.entryUrl);
+        return document('<main><h1>GLM-5.3-Flash</h1><p>价格页暂未列出该模型</p></main>', source.entryUrl);
       },
     },
   });
@@ -132,7 +163,7 @@ test('collector retains verified ledger coverage notes when an accessible offici
       modelPricing: {
         sourceReports: [{
           sourceId: 'zhipu-models', status: 'unavailable', rows: 0,
-          message: 'GLM-5.2 最新代已确认；官网未公开可复核 Token 单价。',
+          message: 'GLM-5.3-Flash 最新代已确认；官网未公开可复核 Token 单价。',
         }],
       },
     },
@@ -143,4 +174,5 @@ test('collector retains verified ledger coverage notes when an accessible offici
   assert.equal(report.status, 'ready');
   assert.equal(report.rows, 0);
   assert.match(report.message, /未公开可复核/);
+  assert.match(report.message, /GLM-5\.3-Flash/);
 });

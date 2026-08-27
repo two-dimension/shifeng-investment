@@ -6,6 +6,7 @@ import { normalizeCdsDataset } from './aiCdsData.js';
 import { parseIceSettlementText, selectTrackedFiveYearContracts } from './iceCdsImport.js';
 import { ICE_CDS_CONTRACT_REGISTRY } from './iceCdsRegistry.js';
 import { buildIceCdsWorkbook, readIceCdsWorkbook } from './iceCdsWorkbook.js';
+import { enqueueIceCdsSnapshotWrite } from './iceCdsSnapshotWriteQueue.js';
 import { cleanPriceToParSpread, validateDiscountCurve } from './isdaCdsSpread.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -450,7 +451,7 @@ export function createIceCdsPipeline({
   let importQueue = Promise.resolve();
 
   const preview = async (input) => previewInput(input);
-  const performImport = async (input) => {
+  const performImportUnlocked = async (input) => {
     if (!localWriteAllowed) throw new IceCdsPipelineError('Local ICE CDS writes are disabled', 'write-disabled');
     const importPreview = previewInput(input);
     if (importPreview.blocking) {
@@ -488,6 +489,7 @@ export function createIceCdsPipeline({
     await commitAtomically({ fsImpl, dataDir, snapshotFile, workbookFile, state, snapshot });
     return { snapshot, batchId: state.batchId, workbookPath: workbookFile };
   };
+  const performImport = (input) => enqueueIceCdsSnapshotWrite(() => performImportUnlocked(input));
 
   return {
     preview,

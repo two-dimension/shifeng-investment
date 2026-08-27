@@ -210,3 +210,25 @@ test('Fable and Mythos names remain eligible for winners', () => {
   });
   assert.deepEqual(Object.values(result.winners)[0].models, ['Claude Fable 5']);
 });
+
+test('normalization carries official parameter and context disclosures into matrix models', () => {
+  const result = normalizeOfficialBenchmarks({
+    vendorCards: [source('Qwen', 'Qwen3.8-2.4T-A95B', [], {
+      specs: {
+        totalParameters: '2.4T',
+        activeParameters: '95B',
+        contextWindowTokens: 1_010_000,
+        contextWindowLabel: '262,144 tokens, extensible to 1,010,000 tokens',
+        sourceUrl: 'https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B',
+      },
+    })],
+  });
+
+  assert.deepEqual(result.models[0].specs, {
+    totalParameters: '2.4T',
+    activeParameters: '95B',
+    contextWindowTokens: 1_010_000,
+    contextWindowLabel: '262,144 tokens, extensible to 1,010,000 tokens',
+    sourceUrl: 'https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B',
+  });
+});

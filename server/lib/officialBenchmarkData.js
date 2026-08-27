@@ -8,7 +8,7 @@ export const BENCHMARK_CATEGORY_ORDER = Object.freeze([
 ]);
 
 const CATEGORY_RULES = Object.freeze([
-  ['Agent', /terminal[- ]bench|tau.?bench|τ.?bench|gaia|osworld|mcp|toolbench|apex-agents|toolathlon|coworkbench|workspacebench|jobbench|skillsbench|automation-bench/i],
+  ['Agent', /terminal[- ]bench|frontierbench|tau.?bench|τ.?bench|gaia|osworld|mcp|toolbench|apex-agents|toolathlon|coworkbench|workspacebench|jobbench|skillsbench|automation-bench/i],
   ['Coding', /swe[- ]bench|swe-pro|deepswe|frontiercode|cursorbench|programbench|scicode|nl2repo|paperbench|androidbench|vibe-pro|livecodebench|aider.*polyglot|humaneval|mbpp/i],
   ['Search & Tool Use', /browsecomp|webarena|wide.?search|search/i],
   ['Reasoning & Knowledge', /gpqa|mmlu|aime|hle|arc[- ]/i],
@@ -294,6 +294,15 @@ export function normalizeOfficialBenchmarks({ vendorCards = [], asOf = new Date(
       sourceUrl: cleanText(card.sourceUrl),
       discoveryMode: cleanText(card.discoveryMode),
       error: cleanText(card.error),
+      specs: card.specs ? {
+        totalParameters: cleanText(card.specs.totalParameters),
+        activeParameters: cleanText(card.specs.activeParameters),
+        contextWindowTokens: Number.isFinite(Number(card.specs.contextWindowTokens))
+          ? Number(card.specs.contextWindowTokens)
+          : null,
+        contextWindowLabel: cleanText(card.specs.contextWindowLabel),
+        sourceUrl: cleanText(card.specs.sourceUrl || card.sourceUrl),
+      } : null,
       scores: {},
     };
     (card.scores || []).forEach((rawScore, sourceOrder) => {

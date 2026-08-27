@@ -47,7 +47,8 @@ import type {
 } from './types';
 import {
   benchmarkDisclosureKey,
-  benchmarkScoreRunLabel,
+  benchmarkMetricDisplayLabel,
+  benchmarkModelEffortLabel,
   formatBenchmarkValue,
   formatArrDelta,
   formatCurrencyPrice,
@@ -61,6 +62,8 @@ import {
   groupOfficialBenchmarkMetrics,
   methodologyTooltip,
   officialBenchmarkSummaryRows,
+  terminalBenchmarkRunLabel,
+  topBenchmarkScoreRows,
 } from './viewModel';
 
 const { Text, Title, Paragraph, Link } = Typography;
@@ -193,7 +196,7 @@ function CdsSummaryCard({ metric }: { metric: CdsCompanyMetric }) {
         <CdsQualityTag status={metric.qualityStatus} />
       </Flex>
       <Tooltip title={(
-        <Space direction="vertical" size={2}>
+        <Space orientation="vertical" size={2}>
           <Text style={{ color: 'inherit' }}>EOD Price：{metric.latestEodPrice?.toFixed(4) ?? '—'}</Text>
           <Text style={{ color: 'inherit' }}>合约：{metric.latestInstrumentName || '—'}</Text>
           <Text style={{ color: 'inherit' }}>状态：{cdsQualityLabel(metric.qualityStatus)}</Text>
@@ -844,7 +847,7 @@ function TokenPricing({ data }: DashboardProps) {
         <Table
           rowKey={(row) => `${row.vendor}-${row.model}-${row.contextTier}-${row.serviceTier}-${row.currency}-${row.asOf}`}
           size="small"
-          pagination={{ pageSize: 15, showSizeChanger: false }}
+          pagination={{ pageSize: 25, showSizeChanger: false }}
           scroll={{ x: 1480 }}
           locale={{ emptyText: <NoData description="暂无 API Token 价格" /> }}
           dataSource={data.modelPricing.token}
@@ -973,7 +976,7 @@ function BenchmarkScoreTooltip({ score, metric }: {
   metric: BenchmarkMetricDefinition;
 }) {
   return (
-    <Space direction="vertical" size={2}>
+    <Space orientation="vertical" size={2}>
       <Text>{metric.label} · {metric.direction === 'lower' ? 'lower-is-better' : 'higher-is-better'}</Text>
       <Text>来源：{score.source || metric.source}</Text>
       {score.asOf && <Text>数据日期：{dateLabel(score.asOf)}</Text>}
@@ -996,16 +999,14 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
   )).map((metric) => ({
     metric,
     winner: data.benchmarks.winners[metric.key],
-    scores: matrixRows.flatMap((model) => {
+    scores: topBenchmarkScoreRows(matrixRows.flatMap((model) => {
       const score = model.scores?.[metric.key];
       if (!score) return [];
       const disclosures = Array.isArray(score.disclosures) && score.disclosures.length > 0
         ? score.disclosures
         : [score];
       return disclosures.map((disclosure) => ({ vendor: model.vendor, model: model.model, score: disclosure }));
-    }).sort((left, right) => metric.direction === 'lower'
-      ? left.score.value - right.score.value
-      : right.score.value - left.score.value),
+    }), metric.direction),
   })).filter((row) => row.scores.length > 0);
   const otherWinnerGroups = metricGroups.map((group) => ({
     category: group.category,
@@ -1034,7 +1035,7 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
       />
       <ChartCard
         title="Terminal-Bench 系列 · 厂商官网披露"
-        extra={<Text type="secondary">版本、Agent / Harness、Effort 完全一致才参与排名</Text>}
+        extra={<Text type="secondary">配置一致标严格冠军；否则仅标官网披露最高</Text>}
       >
         {terminalDisclosures.length === 0 ? (
           <NoData description="当前最新模型的官网模型卡尚未披露 Terminal-Bench 成绩" />
@@ -1044,24 +1045,27 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
               <div className="ai-terminal-bench-card" key={metric.key}>
                 <Flex justify="space-between" align="start" gap={12}>
                   <div>
-                    <Text strong>{metric.label}</Text>
+                    <Text strong>{benchmarkMetricDisplayLabel(metric)}</Text>
                     <Text className="ai-benchmark-run-label" type="secondary">
-                      {[metric.agent, metric.harness, metric.effort].filter(Boolean).join(' · ') || '官网未完整披露运行配置'}
+                      {[metric.agent, metric.harness].filter(Boolean).join(' · ') || '官网未完整披露运行配置'}
                     </Text>
                   </div>
                   <Tag color={winner ? 'blue' : 'default'}>{winner ? '严格可比' : '合并披露 · 不排名'}</Tag>
                 </Flex>
                 {scores.map(({ vendor, model, score }) => {
                   const strictChampion = winner?.models.includes(model) === true;
+                  const disclosedHighest = !winner && score.value === scores[0]?.score.value;
+                  const runLabel = terminalBenchmarkRunLabel(score);
                   return (
                     <Flex className="ai-terminal-score-row" justify="space-between" align="start" gap={8} key={`${vendor}-${model}-${benchmarkDisclosureKey(score)}`}>
-                      <Space direction="vertical" size={0}>
-                        <Text>{model}</Text>
-                        <Text className="ai-benchmark-run-label" type="secondary">{benchmarkScoreRunLabel(score)}</Text>
+                      <Space orientation="vertical" size={0}>
+                        <Text>{benchmarkModelEffortLabel(model, score.effort)}</Text>
+                        {runLabel && <Text className="ai-benchmark-run-label" type="secondary">{runLabel}</Text>}
                       </Space>
                       <Flex align="center" justify="end" gap={6} wrap>
                         {strictChampion && <Tag color="blue">冠军</Tag>}
-                        <Text strong={strictChampion}>{formatBenchmarkValue(score, metric)}</Text>
+                        {disclosedHighest && <Tag color="cyan">披露最高</Tag>}
+                        <Text strong={strictChampion || disclosedHighest}>{formatBenchmarkValue(score, metric)}</Text>
                       </Flex>
                     </Flex>
                   );
@@ -1071,7 +1075,7 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
           </div>
         )}
         <Text className="ai-benchmark-source-policy" type="secondary">
-          每条成绩仅引用该模型厂商自己的官网或官方模型卡；Agent、Harness、Effort 不一致时只展示，不排名。
+          每条成绩仅引用该模型厂商自己的官网或官方模型卡；“披露最高”只比较厂商自报数值，Agent、Harness、Effort 不一致时不视为严格排名。
         </Text>
       </ChartCard>
       <Row gutter={[16, 16]}>
@@ -1104,7 +1108,7 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
               rowKey="key"
               size="small"
               pagination={false}
-              scroll={{ x: Math.max(960, 500 + metrics.length * 150) }}
+              scroll={{ x: Math.max(1320, 800 + metrics.length * 150) }}
               locale={{ emptyText: <NoData description="暂无 Benchmark 数据" /> }}
               dataSource={matrixRows}
               columns={[
@@ -1112,11 +1116,21 @@ export function BenchmarkSection({ data, refreshing = false }: DashboardProps & 
                 { title: '最新文本模型', dataIndex: 'model', fixed: 'left', width: 220, className: 'ai-model-name' },
                 { title: '发布日期', dataIndex: 'releasedAt', width: 112, render: dateLabel },
                 {
-                  title: '评测状态',
-                  width: 105,
-                  render: (_: unknown, row: BenchmarkModel) => Object.keys(row.scores || {}).length > 0
-                    ? <Tag color="success">已评测</Tag>
-                    : <Tag>尚未评测</Tag>,
+                  title: '总参数',
+                  width: 100,
+                  render: (_: unknown, row: BenchmarkModel) => row.specs?.totalParameters || <Text type="secondary">未披露</Text>,
+                },
+                {
+                  title: '激活参数',
+                  width: 100,
+                  render: (_: unknown, row: BenchmarkModel) => row.specs?.activeParameters || <Text type="secondary">未披露</Text>,
+                },
+                {
+                  title: '上下文长度',
+                  width: 170,
+                  render: (_: unknown, row: BenchmarkModel) => row.specs?.contextWindowLabel
+                    ? <Tooltip title={`标准化：${row.specs.contextWindowTokens?.toLocaleString('en-US') || '未披露'} Tokens · ${row.specs.sourceUrl || '官网模型卡'}`}><span>{row.specs.contextWindowLabel}</span></Tooltip>
+                    : <Text type="secondary">未披露</Text>,
                 },
                 ...metricGroups.map((group) => ({
                   title: group.category,

@@ -30,14 +30,14 @@ const ADAPTER_CONFIG = Object.freeze({
   },
   'zhipu-models': {
     vendor: '智谱', kinds: ['token'], currency: 'CNY', tokenUnit: 'per_million_tokens',
-    currentPattern: /GLM-5\.2/gi,
+    currentPattern: /GLM-5\.3-Flash/gi,
   },
   'minimax-pricing': {
     vendor: 'MiniMax', kinds: ['token', 'video'], currency: 'CNY', tokenUnit: 'per_million_tokens',
-    currentPattern: /MiniMax[- ]M2\.7(?:-highspeed)?/gi,
+    currentPattern: /MiniMax[- ]M3/gi,
   },
   'minimax-coding-plan': {
-    vendor: 'MiniMax', kinds: ['coding'], currency: 'CNY', currentPattern: /M2\.7/gi,
+    vendor: 'MiniMax', kinds: ['coding'], currency: 'CNY', currentPattern: /M3/gi,
   },
   'kimi-pricing': {
     vendor: 'Kimi', kinds: ['token'], currency: 'CNY', tokenUnit: 'per_million_tokens',
@@ -54,6 +54,10 @@ const ADAPTER_CONFIG = Object.freeze({
   'qwen-pricing': {
     vendor: 'Qwen', kinds: ['token'], currency: 'CNY', tokenUnit: 'per_million_tokens',
     currentPattern: /Qwen3\.8[- ](?:Max|Plus|Turbo)/gi,
+  },
+  'xai-pricing': {
+    vendor: 'xAI', kinds: ['token'], currency: 'USD', tokenUnit: 'per_million_tokens',
+    currentPattern: /Grok 4\.6/gi,
   },
   'seedance-pricing': {
     vendor: 'Seedance', kinds: ['video'], currency: 'CNY', currentPattern: /(?:Doubao[- ])?Seedance[- ]2\.0(?:[- ](?:fast|mini))?/gi,
@@ -233,6 +237,58 @@ function parseTokenTables(html, definition, document, config, generations) {
   return parsed;
 }
 
+function lastAmount(value) {
+  const matches = String(value || '').replaceAll(',', '').match(/-?\d+(?:\.\d+)?/g) || [];
+  const parsed = matches.map(Number).filter((number) => Number.isFinite(number) && number >= 0);
+  return parsed.length > 0 ? parsed[parsed.length - 1] : null;
+}
+
+function parseMinimaxM3Page(html, definition, document, config) {
+  const $ = load(String(html || ''));
+  const m3Tables = $('table').toArray().filter((table) => /MiniMax[- ]M3/i.test($(table).text())).slice(0, 2);
+  const parsed = [];
+  m3Tables.forEach((table, tableIndex) => {
+    const extracted = tableRows($, table);
+    if (!extracted) return;
+    const { headers, rawHeaders, rows } = extracted;
+    const modelIndex = findHeader(headers, [(header) => /^(?:model|模型)$/.test(header)]);
+    const inputIndex = findHeader(headers, [(header) => /输入价格|^输入$/.test(header) && !/缓存/.test(header)]);
+    const outputIndex = findHeader(headers, [(header) => /输出价格|^输出$/.test(header)]);
+    const cacheReadIndex = findHeader(headers, [(header) => /缓存读取|cachedinput/.test(header)]);
+    if (modelIndex < 0 || inputIndex < 0 || outputIndex < 0) return;
+    const tableText = `${rawHeaders.join(' ')} ${$(table).text()}`;
+    const currency = currencyFrom(tableText, config.currency);
+    const tokenUnit = tokenUnitFrom(tableText, config.tokenUnit);
+    if (!currency || !tokenUnit) throw new Error(`${definition.id} M3 token currency or unit is not established`);
+    rows.forEach((row) => {
+      const modelCell = String(row[modelIndex] || '').replace(/\s+/g, ' ').trim();
+      if (!/MiniMax[- ]M3/i.test(modelCell)) return;
+      const inputPrice = lastAmount(row[inputIndex]);
+      const outputPrice = lastAmount(row[outputIndex]);
+      if (inputPrice === null && outputPrice === null) return;
+      parsed.push(normalizeTokenPrice({
+        vendor: config.vendor,
+        model: 'MiniMax M3',
+        generation: 'M3',
+        currentGeneration: true,
+        contextTier: /^.*?>\s*512k/i.test(modelCell) ? '> 512K input tokens' : '≤ 512K input tokens',
+        serviceTier: tableIndex === 0 ? 'standard' : 'priority',
+        currency,
+        perTokens: tokenUnit === 'per_thousand_tokens' ? 1_000 : 1_000_000,
+        originalUnit: `${currency} / 1,000,000 Tokens`,
+        inputPrice,
+        cacheReadPrice: lastAmount(row[cacheReadIndex]),
+        cacheWritePrice: null,
+        outputPrice,
+        note: 'MiniMax 官网永久五折公开价',
+        ...sourceFields(definition, document, '从 MiniMax 官网 M3 定价表读取折后价、上下文档与服务档'),
+      }));
+    });
+  });
+  if (parsed.length === 0) throw new Error('minimax-pricing M3 official price rows not found');
+  return parsed;
+}
+
 function durationFrom(value) {
   const match = String(value || '').match(/(\d+(?:\.\d+)?)\s*(?:s|秒)/i);
   return match ? Number(match[1]) : null;
@@ -332,7 +388,7 @@ function parseMatrixCodingTables(html, definition, document, config) {
     if (!extracted || extracted.rawHeaders.length < 2) return;
     const priceRow = extracted.rows.find((row) => /^(?:价格|price)$/i.test(String(row[0] || '').trim()));
     if (!priceRow) return;
-    const allowanceRow = extracted.rows.find((row) => /M2\.7/i.test(String(row[0] || '')));
+    const allowanceRow = extracted.rows.find((row) => /M3|M2\.7/i.test(String(row[0] || '')));
     const heading = $(table).prevAll('h1,h2,h3,h4').first().text();
     const annual = /年|annual/i.test(heading);
     for (let index = 1; index < extracted.rawHeaders.length; index += 1) {
@@ -388,6 +444,28 @@ function parseKimiK3Markdown(markdown, definition, document, config) {
   })];
 }
 
+function parseXaiModelPage(html, definition, document, config) {
+  const pageText = load(String(html || ''))('body').text().replace(/\s+/g, ' ').trim();
+  const prices = [...pageText.matchAll(/\$\s*([\d.]+)\s*\/\s*1M\s*tokens/gi)].map((match) => Number(match[1]));
+  if (prices.length < 3) throw new Error('xai-pricing Grok 4.6 official price fields not found');
+  return [normalizeTokenPrice({
+    vendor: config.vendor,
+    model: 'Grok 4.6',
+    generation: 'Grok 4.6',
+    currentGeneration: true,
+    contextTier: 'standard (up to 200K)',
+    serviceTier: 'standard',
+    currency: 'USD',
+    perTokens: 1_000_000,
+    originalUnit: 'USD / 1,000,000 Tokens',
+    inputPrice: prices[0],
+    cacheReadPrice: prices[1],
+    cacheWritePrice: null,
+    outputPrice: prices[2],
+    ...sourceFields(definition, document, '从 xAI 官方 Grok 4.6 模型页读取输入、缓存输入与输出价格'),
+  })];
+}
+
 function validateOfficialDefinition(definition) {
   const registered = OFFICIAL_DEFINITIONS.get(definition?.id);
   if (!registered || !ADAPTER_CONFIG[definition.id]) {
@@ -415,6 +493,10 @@ export function createOfficialPricingAdapter(definition) {
         token: config.kinds.includes('token')
           ? (registered.id === 'kimi-pricing'
             ? parseKimiK3Markdown(document.text, registered, document, config)
+            : registered.id === 'xai-pricing'
+              ? parseXaiModelPage(document.text, registered, document, config)
+            : registered.id === 'minimax-pricing'
+              ? parseMinimaxM3Page(document.text, registered, document, config)
             : parseTokenTables(document.text, registered, document, config, generations))
           : [],
         video: config.kinds.includes('video')

@@ -158,6 +158,11 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: 720px;
+  padding-inline-end: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .ai-winner-row {
@@ -264,6 +269,24 @@
 }
 
 @media (max-width: 575px) {
+  .ai-section-card .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .ai-section-card .ant-card-head-title {
+    flex: 1 1 100%;
+    width: 100%;
+    overflow: visible;
+    white-space: normal;
+  }
+
+  .ai-section-card .ant-card-extra {
+    width: 100%;
+    margin-inline-start: 0;
+    white-space: normal;
+  }
+
   .ai-terminal-bench-grid,
   .ai-vendor-source-grid {
     grid-template-columns: 1fr;

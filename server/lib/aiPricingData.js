@@ -18,8 +18,8 @@ export const CURRENT_GENERATION_RULES = Object.freeze({
   OpenAI: /\bGPT[ -]?5\.6\b/i,
   Anthropic: /\bClaude (?:Fable 5|Mythos 5|Opus 5|Sonnet 5|Haiku 4\.5)\b/i,
   Gemini: /\bGemini (?:3\.7 Flash|3\.6 Flash|3\.5 Flash(?:-Lite)?|3\.1 Pro)\b/i,
-  智谱: /\bGLM-5\.2\b/i,
-  MiniMax: /\bMiniMax M2\.7\b/i,
+  智谱: /\bGLM-5\.3-Flash\b/i,
+  MiniMax: /\bMiniMax M3\b/i,
   Kimi: /\bKimi K3\b/i,
   DeepSeek: /\bDeepSeek V4(?:\s|$)/i,
   MiMo: /\bMiMo V2\.5(?:\s|$)/i,
@@ -142,10 +142,9 @@ export function normalizeTokenPrice(record) {
 }
 
 function generationMatches(record, rules) {
-  if (record.currentGeneration === true) return true;
   if (record.currentGeneration === false) return false;
   const rule = rules?.[record.vendor];
-  if (!rule) return false;
+  if (!rule) return record.currentGeneration === true;
   const candidate = `${record.model} ${record.generation || ''}`;
   if (rule instanceof RegExp) {
     rule.lastIndex = 0;

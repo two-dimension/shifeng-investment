@@ -12,19 +12,39 @@ export const TRACKED_OFFICIAL_VENDORS = Object.freeze([
   'Mimo', 'DeepSeek', 'Kimi', 'Meta', 'Tencent', 'xAI',
 ]);
 
-const BANNED_SCORE_PATTERN = /Artificial Analysis|AA Intelligence Index|^AA[- ]|Design Arena|OpenRouter|Arena Elo|(?:input|output) price|pricing|价格|上下文|最大输出|^特点$|^date$|release(?:d)? date|system card|context length|parameters?|architecture|training stage|vocabulary|number of|hidden size/i;
+const BANNED_SCORE_PATTERN = /Artificial Analysis|AA Intelligence Index|^AA[- ]|Design Arena|OpenRouter|Arena Elo|(?:input|output) price|pricing|价格|上下文|最大输出|^特点$|^date$|release(?:d)? date|system card|context length|params?|parameters?|architecture|training stage|vocabulary|number of|hidden size/i;
 
 const TEXT_SCORE_PATTERNS = Object.freeze({
+  Anthropic: Object.freeze([
+    ['SWE-bench', 'Verified', 'Pass@1', /SWE-bench Veri\s*fi\s*ed[\s\S]{0,220}?Claude Opus 5 achieved\s*([\d.]+)%/i, 'percent-point', { effort: 'max' }],
+    ['SWE-bench', 'Pro', 'Pass@1', /SWE-bench Pro[\s\S]{0,260}?Claude Opus 5 achieved\s*([\d.]+)%/i, 'percent-point', { effort: 'max' }],
+    ['SWE-bench', 'Multilingual', 'Pass@1', /SWE-bench Multilingual[\s\S]{0,260}?Claude Opus 5 achieved\s*([\d.]+)%/i, 'percent-point', { effort: 'max' }],
+    ['SWE-bench', 'Multimodal', 'Pass@1', /SWE-bench Multimodal[\s\S]{0,300}?Claude Opus 5 achieved\s*([\d.]+)%/i, 'percent-point', { effort: 'max' }],
+    ['DeepSWE', '1.1', 'Accuracy', /DeepSWE v?1\.1[\s\S]{0,320}?Claude Opus 5 scored an average of\s*([\d.]+)%/i, 'percent-point', { effort: 'max' }],
+    ['FrontierCode', '1.1 Main', 'Score', /Opus 5 ranks 2nd on FrontierCode \(Main\) with a\s*([\d.]+)%/i, 'percent-point', { effort: 'medium' }],
+    ['FrontierCode', '1.1 Extended', 'Score', /Opus 5 also ranks 2nd on FrontierCode \(Extended\) with a\s*([\d.]+)%/i, 'percent-point', { effort: 'medium' }],
+    ['FrontierBench', '0.1', 'Mean reward', /On FrontierBench v0\.1, Claude Opus 5 achieved a\s*([\d.]+)%\s*mean reward/i, 'percent-point', { agent: 'mini-SWE-agent', effort: 'xhigh' }],
+    ['BrowseComp', null, 'Accuracy', /BrowseComp\s+([\d.]+)\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+Humanity/i, 'percent-point', { effort: 'max', tools: 'web search' }],
+    ['Humanity’s Last Exam', null, 'Accuracy', /Humanity’s Last Exam No tools\s+([\d.]+)/i, 'percent-point', { effort: 'max', tools: 'no tools' }],
+    ['Humanity’s Last Exam', null, 'Accuracy', /Humanity’s Last Exam No tools\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+-\s+With tools\s+([\d.]+)/i, 'percent-point', { effort: 'max', tools: 'tools' }],
+    ['OSWorld', '2.0', 'First-attempt success', /Opus 5 achieved an OSWorld 2\.0 score of\s*([\d.]+)%/i, 'percent-point', { effort: 'max' }],
+    ['MCP Atlas', null, 'Pass rate', /Claude Opus 5 achieved an\s*([\d.]+)%\s*pass rate/i, 'percent-point', { effort: 'max' }],
+    ['Toolathlon Verified', '2026-06', 'Pass@1', /Claude Opus 5 achieved\s*([\d.]+)%\s*Pass@1/i, 'percent-point', { effort: 'max', passK: 1 }],
+    ['AutomationBench', null, 'Accuracy', /AutomationBench\s+([\d.]+)\s+[\d.]+\s+[\d.]+\s+[\d.]+/i, 'percent-point', { effort: 'max' }],
+    ['ARC-AGI', '1', 'Accuracy', /ARC-AGI-1\s+([\d.]+)\s+[\d.]+\s+-\s+[\d.]+\s*\(xhigh\)/i, 'percent-point', { effort: 'max' }],
+    ['ARC-AGI', '2', 'Accuracy', /ARC-AGI-2\s+([\d.]+)\s+[\d.]+\s+-\s+[\d.]+/i, 'percent-point', { effort: 'max' }],
+    ['ARC-AGI', '3', 'Accuracy', /ARC-AGI-3\s+([\d.]+)\s*\(high\)\s+[\d.]+\s+-\s+[\d.]+/i, 'percent-point', { effort: 'high' }],
+  ]),
   MiniMax: Object.freeze([
-    ['MLE Bench Lite', null, 'Medal rate', /MLE Bench Lite[^.\n]*?([\d.]+)%[*_\s]+medal rate/i, 'percent-point'],
-    ['SWE-Pro', null, 'Accuracy', /SWE-Pro[^.\n]*?([\d.]+)%/i, 'percent-point'],
+    ['MLE Bench Lite', null, 'Medal rate', /MLE Bench Lite[\s\S]{0,220}?([\d.]+)%[*_\s]+medal rate/i, 'percent-point'],
+    ['SWE-Pro', null, 'Accuracy', /SWE-Pro[\s\S]{0,220}?([\d.]+)%/i, 'percent-point'],
     ['SWE Multilingual', null, 'Accuracy', /SWE Multilingual\s*\(([\d.]+)\)/i, 'percent-point'],
     ['Multi SWE Bench', null, 'Accuracy', /Multi SWE Bench\s*\(([\d.]+)\)/i, 'percent-point'],
     ['VIBE-Pro', null, 'Accuracy', /VIBE-Pro\s*\(([\d.]+)%\)/i, 'percent-point'],
     ['Terminal-Bench', '2.0', 'Accuracy', /Terminal Bench\s*2\s*\(([\d.]+)%\)/i, 'percent-point'],
     ['NL2Repo', null, 'Accuracy', /NL2Repo\s*\(([\d.]+)%\)/i, 'percent-point'],
-    ['Toolathon', null, 'Accuracy', /Toolathon[^.\n]*?([\d.]+)%/i, 'percent-point'],
-    ['MM Claw', null, 'Accuracy', /MM Claw[^.\n]*?([\d.]+)%/i, 'percent-point'],
+    ['Toolathon', null, 'Accuracy', /Toolathon[\s\S]{0,220}?([\d.]+)%/i, 'percent-point'],
+    ['MM Claw', null, 'Accuracy', /MM Claw end-to-end benchmark[\s\S]{0,180}?([\d.]+)%/i, 'percent-point'],
   ]),
   Tencent: Object.freeze([
     ['Expert blind evaluation', '2026-07', 'Mean score', /blind evaluation[^.\n]*?scored\s*([\d.]+)\s*\/\s*4/i, 'number'],
@@ -95,6 +115,12 @@ function validateDefinition(definition) {
     if (!allowedHosts.includes(fetchUrl.hostname.toLowerCase())) throw new Error(`${definition.vendor} fetch host is not allowlisted`);
     assertOfficialOwner(definition, fetchUrl, 'fetch URL');
   }
+  const officialScores = (definition.officialScores || []).map((score, index) => {
+    const scoreSourceUrl = parseUrl(score.sourceUrl || definition.cardUrl, `${definition.vendor} officialScores[${index}] sourceUrl`);
+    if (!allowedHosts.includes(scoreSourceUrl.hostname.toLowerCase())) throw new Error(`${definition.vendor} configured score host is not allowlisted`);
+    assertOfficialOwner(definition, scoreSourceUrl, 'configured score URL');
+    return Object.freeze({ ...score, sourceUrl: scoreSourceUrl.toString() });
+  });
   return Object.freeze({
     ...definition,
     indexUrl: indexUrl.toString(),
@@ -102,6 +128,8 @@ function validateDefinition(definition) {
     fetchUrl: fetchUrl?.toString() || null,
     allowedHosts: Object.freeze(allowedHosts),
     modelAliases: Object.freeze([definition.model, ...(definition.modelAliases || [])].filter(Boolean)),
+    preferConfiguredScores: definition.preferConfiguredScores === true,
+    officialScores: Object.freeze(officialScores),
   });
 }
 
@@ -188,13 +216,87 @@ function nullableBoolean(value) {
   return undefined;
 }
 
+function tokenCount(value) {
+  const matches = [...String(value || '').matchAll(/(\d[\d,]*(?:\.\d+)?)(?:\s*([kmbt])\b)?(?:\s*(?:tokens?|令牌))?/gi)];
+  const multipliers = { k: 1_000, m: 1_000_000, b: 1_000_000_000, t: 1_000_000_000_000 };
+  const values = matches.flatMap((match) => {
+    const base = Number(match[1].replaceAll(',', ''));
+    const multiplier = multipliers[String(match[2] || '').toLowerCase()] || 1;
+    const parsed = base * multiplier;
+    return Number.isFinite(parsed) ? [parsed] : [];
+  });
+  return values.length > 0 ? Math.max(...values) : null;
+}
+
+function modelRow(matrix, definition) {
+  const aliases = definition.modelAliases.map(compact);
+  return matrix.slice(1).find((row) => row.some((cell) => {
+    const candidate = compact(cell);
+    return candidate && aliases.some((alias) => candidate.includes(alias) || alias.includes(candidate));
+  })) || null;
+}
+
+function tableSpecs(matrices, definition) {
+  for (const matrix of matrices) {
+    const headers = matrix[0];
+    const totalIndex = columnIndex(headers, ['total params', 'total parameters', 'parameters', '总参数', '参数量']);
+    const activeIndex = columnIndex(headers, ['active params', 'activated params', 'active parameters', '激活参数']);
+    const contextIndex = columnIndex(headers, ['context length', 'context window', 'context', '上下文长度', '上下文']);
+    if (totalIndex < 0 && activeIndex < 0 && contextIndex < 0) continue;
+    const row = modelRow(matrix, definition);
+    if (!row) continue;
+    const contextWindowLabel = text(row[contextIndex]);
+    return {
+      totalParameters: text(row[totalIndex]),
+      activeParameters: text(row[activeIndex]),
+      contextWindowTokens: tokenCount(contextWindowLabel),
+      contextWindowLabel,
+    };
+  }
+  return null;
+}
+
+function narrativeSpecs(rawText) {
+  const normalized = String(rawText || '').replace(/\s+/g, ' ');
+  const totalParameters = text(normalized.match(/([\d,.]+\s*[KMBT])\s+(?:total\s+)?parameters?/i)?.[1]);
+  const activeParameters = text(normalized.match(/([\d,.]+\s*[KMBT])\s+(?:active|activated)\s+parameters?/i)?.[1]);
+  const contextWindowLabel = text(
+    normalized.match(/((?:up to\s+)?[\d,.]+\s*[KMBT]?\s*-?tokens?\s+context(?:\s+(?:length|window))?)/i)?.[1]
+      || normalized.match(/context(?:\s+(?:length|window))?\s+(?:of\s+|supports?\s+up\s+to\s+)?([\d,.]+\s*[KMBT]?\s*tokens?)/i)?.[1],
+  );
+  if (!totalParameters && !activeParameters && !contextWindowLabel) return null;
+  return {
+    totalParameters,
+    activeParameters,
+    contextWindowTokens: tokenCount(contextWindowLabel),
+    contextWindowLabel,
+  };
+}
+
+function normalizeSpecs(definition, matrices, rawText, sourceUrl) {
+  const parsed = tableSpecs(matrices, definition) || narrativeSpecs(rawText) || {};
+  const configured = definition.specs || {};
+  const contextWindowLabel = text(parsed.contextWindowLabel) || text(configured.contextWindowLabel);
+  const contextWindowTokens = nullableNumber(configured.contextWindowTokens)
+    || parsed.contextWindowTokens
+    || tokenCount(contextWindowLabel);
+  const result = {
+    totalParameters: text(configured.totalParameters) || text(parsed.totalParameters),
+    activeParameters: text(configured.activeParameters) || text(parsed.activeParameters),
+    contextWindowTokens,
+    contextWindowLabel: text(configured.contextWindowLabel) || contextWindowLabel,
+    sourceUrl: text(configured.sourceUrl) || sourceUrl,
+  };
+  return Object.values(result).some(Boolean) ? result : null;
+}
+
 function inferBenchmarkName(rawName) {
   const label = text(rawName) || 'Unnamed official evaluation';
   if (/terminal[- ]bench/i.test(label)) {
     const version = label.match(/(?:terminal[- ]bench)\s*(?:v(?:ersion)?\s*)?(\d+(?:\.\d+)?)/i)?.[1] || null;
     return { testName: 'Terminal-Bench', testVersion: version, scoreName: 'Accuracy' };
   }
-  if (/swe[- ]bench/i.test(label)) {
+  if (/^swe[- ]bench/i.test(label)) {
     const suffix = label.replace(/^.*?swe[- ]bench\s*/i, '').trim() || null;
     return { testName: 'SWE-bench', testVersion: suffix, scoreName: /pass@/i.test(label) ? text(label.match(/pass@\d+/i)?.[0]) : 'Pass@1' };
   }
@@ -280,8 +382,18 @@ function modelColumnScores(matrix, definition, context) {
     return candidate && aliases.some((alias) => candidate.includes(alias) || alias.includes(candidate));
   });
   if (modelColumn <= 0) return null;
+  const benchmarkColumn = columnIndex(headers, ['benchmark', 'test', 'evaluation', '评测', '基准']);
+  const settingColumn = columnIndex(headers, ['setting', 'settings', 'configuration', '配置']);
   return matrix.slice(1).flatMap((row, rowIndex) => {
-    const score = scoreRecord({ testName: row[0], value: row[modelColumn] }, { ...context, sourceOrder: context.sourceOrder + rowIndex });
+    const setting = text(row[settingColumn]);
+    const score = scoreRecord({
+      testName: row[benchmarkColumn >= 0 ? benchmarkColumn : 0],
+      value: row[modelColumn],
+      shots: setting?.match(/(\d+)\s*-?shot/i)?.[1],
+      passK: setting?.match(/pass\s*@\s*(\d+)/i)?.[1],
+      effort: setting?.match(/\b(xhigh|max|high|medium|low)\b/i)?.[1],
+      tools: /\btools?\b/i.test(setting || '') ? setting : null,
+    }, { ...context, sourceOrder: context.sourceOrder + rowIndex });
     return score ? [score] : [];
   });
 }
@@ -316,12 +428,29 @@ function parseScores(matrices, definition, context) {
 
 function parseTextScores(rawText, definition, context) {
   return (TEXT_SCORE_PATTERNS[definition.vendor] || []).flatMap(([
-    testName, testVersion, scoreName, pattern, unit,
+    testName, testVersion, scoreName, pattern, unit, configuration = {},
   ], sourceOrder) => {
     const value = String(rawText || '').replace(/\s+/g, ' ').match(pattern)?.[1];
     const score = scoreRecord({
       testName, testVersion, scoreName, value, unit, direction: 'higher', configurationComplete: false,
+      ...configuration,
     }, { ...context, sourceOrder });
+    return score ? [score] : [];
+  });
+}
+
+function configuredOfficialScores(definition, context) {
+  return (definition.officialScores || []).flatMap((fields, sourceOrder) => {
+    const score = scoreRecord({
+      direction: 'higher',
+      unit: 'percent-point',
+      configurationComplete: false,
+      ...fields,
+    }, {
+      ...context,
+      sourceUrl: fields.sourceUrl || context.sourceUrl,
+      sourceOrder: context.sourceOrder + sourceOrder,
+    });
     return score ? [score] : [];
   });
 }
@@ -377,7 +506,6 @@ export function createOfficialModelCardRegistry({
       });
       validateFinalDocumentUrl(definition, document.finalUrl || entryUrl);
       const format = formatFromDocument(document, definition.format);
-      if (format === 'pdf') await decodeOfficialDocument(document, 'pdf');
       const metadata = documentMetadata(document, format, definition);
       const retrievedAt = document.retrievedAt || now().toISOString();
       if (!definition.cardUrl) {
@@ -391,26 +519,42 @@ export function createOfficialModelCardRegistry({
       const scoreContext = {
         sourceUrl, releasedAt: metadata.releasedAt || null, retrievedAt, sourceOrder: 0,
       };
-      const scores = parseScores(metadata.matrices, definition, scoreContext);
       const rawText = format === 'html'
         ? await decodeOfficialDocument(document, 'html')
-        : String(document.text || '');
-      const narrativeScores = parseTextScores(rawText, definition, { ...scoreContext, sourceOrder: scores.length });
-      scores.push(...narrativeScores.filter((score) => !scores.some((existing) => (
+        : format === 'pdf' ? await decodeOfficialDocument(document, 'pdf') : String(document.text || '');
+      const scores = definition.preferConfiguredScores
+        ? []
+        : parseScores(metadata.matrices, definition, scoreContext);
+      if (!definition.preferConfiguredScores) {
+        const narrativeScores = parseTextScores(rawText, definition, { ...scoreContext, sourceOrder: scores.length });
+        scores.push(...narrativeScores.filter((score) => !scores.some((existing) => (
+          existing.testName === score.testName && existing.testVersion === score.testVersion
+        ))));
+      }
+      const pinnedScores = configuredOfficialScores(definition, { ...scoreContext, sourceOrder: scores.length });
+      scores.push(...pinnedScores.filter((score) => !scores.some((existing) => (
         existing.testName === score.testName && existing.testVersion === score.testVersion
+          && existing.scoreName === score.scoreName && existing.value === score.value
       ))));
+      const specs = normalizeSpecs(definition, metadata.matrices, rawText, sourceUrl);
       return {
         vendor: definition.vendor, status: 'ready', stale: definition.discoveryMode === 'manual-registry',
         model: metadata.model, releasedAt: metadata.releasedAt || null, sourceUrl,
         sourceLabel: `${definition.vendor} 官网模型卡`, discoveryMode: definition.discoveryMode,
-        retrievedAt, scores,
+        retrievedAt, scores, specs,
       };
     } catch (error) {
+      const retrievedAt = now().toISOString();
+      const pinnedScores = configuredOfficialScores(definition, {
+        sourceUrl, releasedAt: definition.releasedAt || null, retrievedAt, sourceOrder: 0,
+      });
       return {
         vendor: definition.vendor, status: 'error', stale: true,
         model: definition.model || null, releasedAt: definition.releasedAt || null,
         sourceUrl, sourceLabel: `${definition.vendor} 官网模型卡`, discoveryMode: definition.discoveryMode,
-        retrievedAt: now().toISOString(), scores: [], error: error instanceof Error ? error.message : String(error),
+        retrievedAt, scores: pinnedScores,
+        specs: normalizeSpecs(definition, [], '', sourceUrl),
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }

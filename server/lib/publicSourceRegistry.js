@@ -116,7 +116,7 @@ export const PUBLIC_SOURCE_REGISTRY = validatePublicSourceRegistry([
   },
   {
     id: 'zhipu-models', slice: 'pricing', entity: '智谱',
-    entryUrl: 'https://docs.bigmodel.cn/cn/guide/start/model-overview', allowedHosts: ['docs.bigmodel.cn'],
+    entryUrl: 'https://docs.z.ai/guides/overview/pricing', allowedHosts: ['docs.z.ai'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
   },
   {
@@ -147,6 +147,11 @@ export const PUBLIC_SOURCE_REGISTRY = validatePublicSourceRegistry([
   {
     id: 'qwen-pricing', slice: 'pricing', entity: 'Qwen',
     entryUrl: 'https://help.aliyun.com/zh/model-studio/model-pricing', allowedHosts: ['help.aliyun.com'],
+    format: 'html', freshMs: DAY_MS, sourceKind: 'official',
+  },
+  {
+    id: 'xai-pricing', slice: 'pricing', entity: 'xAI',
+    entryUrl: 'https://docs.x.ai/developers/models/grok-4.6', allowedHosts: ['docs.x.ai'],
     format: 'html', freshMs: DAY_MS, sourceKind: 'official',
   },
   {

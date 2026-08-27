@@ -48,6 +48,20 @@ test('registers exactly the 12 tracked vendors on vendor-controlled entry points
   const kimi = OFFICIAL_MODEL_CARD_SOURCES.find((row) => row.vendor === 'Kimi');
   assert.equal(kimi.cardUrl, 'https://www.kimi.com/en/blog/kimi-k3');
   assert.equal(new URL(kimi.fetchUrl).hostname, 'raw.githubusercontent.com');
+  const minimax = OFFICIAL_MODEL_CARD_SOURCES.find((row) => row.vendor === 'MiniMax');
+  assert.equal(minimax.model, 'MiniMax M3');
+  assert.equal(minimax.cardUrl, 'https://github.com/MiniMax-AI/MiniMax-M3');
+  assert.equal(minimax.fetchUrl, 'https://raw.githubusercontent.com/MiniMax-AI/MiniMax-M3/main/README.md');
+  assert.equal(minimax.officialScores.length, 32);
+  assert.deepEqual(
+    Object.fromEntries(OFFICIAL_MODEL_CARD_SOURCES.map((row) => [row.vendor, row.model])),
+    {
+      Anthropic: 'Claude Opus 5', OpenAI: 'GPT-5.6 Sol', Gemini: 'Gemini 3.7 Flash',
+      智谱: 'GLM-5.3-Flash', MiniMax: 'MiniMax M3', Qwen: 'Qwen3.8-Flash-Next',
+      Mimo: 'MiMo-V2.5-Pro', DeepSeek: 'DeepSeek-V4-Pro-0813', Kimi: 'Kimi K3',
+      Meta: 'Muse Spark 1.2', Tencent: 'Hy3', xAI: 'Grok 4.6',
+    },
+  );
 });
 
 test('reads compact official excerpts and preserves exact score configurations', async () => {
@@ -64,19 +78,43 @@ test('reads compact official excerpts and preserves exact score configurations',
     testName: 'Terminal-Bench', testVersion: '2.1', split: null, scoreName: 'Accuracy',
     value: 83.8, unit: 'percent-point', direction: 'higher', agent: 'Claude Code', harness: null,
     effort: 'xhigh', shots: null, passK: null, tools: null, configurationComplete: true,
-    comparisonNote: null, sourceUrl: 'https://anthropic.com/claude-opus-5-system-card',
+    comparisonNote: null, sourceUrl: OFFICIAL_MODEL_CARD_SOURCES.find((row) => row.vendor === 'Anthropic').cardUrl,
     publishedAt: '2026-07-01', retrievedAt: '2026-08-23T00:00:00.000Z', sourceOrder: 0,
   });
   assert.equal(byVendor.get('OpenAI').model, 'GPT-5.6 Sol');
   assert.equal(byVendor.get('Gemini').model, 'Gemini 3.7 Flash');
-  assert.equal(byVendor.get('MiniMax').model, 'MiniMax M2.7');
-  assert.equal(byVendor.get('Qwen').model, 'Qwen3.8-2.4T-A95B');
+  assert.equal(byVendor.get('MiniMax').model, 'MiniMax M3');
+  assert.equal(byVendor.get('MiniMax').scores.some((row) => (
+    row.testName === 'Terminal-Bench' && row.testVersion === '2.1' && row.value === 66
+  )), true);
+  assert.deepEqual(byVendor.get('MiniMax').specs, {
+    totalParameters: '428B', activeParameters: '23B', contextWindowTokens: 1_000_000,
+    contextWindowLabel: '1M tokens', sourceUrl: 'https://github.com/MiniMax-AI/MiniMax-M3',
+  });
+  assert.equal(byVendor.get('智谱').model, 'GLM-5.3-Flash');
+  assert.equal(byVendor.get('智谱').scores.some((row) => (
+    row.testName === 'Terminal-Bench' && row.testVersion === '2.1' && row.value === 84.3
+  )), true);
+  assert.equal(byVendor.get('智谱').scores.length, 13);
+  assert.equal(byVendor.get('Qwen').model, 'Qwen3.8-Flash-Next');
   assert.equal(byVendor.get('Qwen').scores.some((row) => row.testName === 'SWE-bench'), true);
+  assert.equal(byVendor.get('Qwen').scores.length, 27);
+  assert.equal(byVendor.get('Qwen').scores.some((row) => /Agentic coding/i.test(row.testName)), false);
+  assert.equal(byVendor.get('DeepSeek').model, 'DeepSeek-V4-Pro-0813');
+  assert.equal(byVendor.get('DeepSeek').scores.some((row) => (
+    row.testName === 'Terminal-Bench' && row.testVersion === '2.1' && row.value === 87.9
+  )), true);
+  assert.equal(byVendor.get('DeepSeek').scores.length, 11);
   assert.equal(byVendor.get('Kimi').model, 'Kimi K3');
   assert.equal(byVendor.get('Tencent').model, 'Hy3');
+  assert.equal(byVendor.get('Tencent').scores.some((row) => row.testName === 'Terminal-Bench' && row.testVersion === '2.1'), true);
   assert.equal(byVendor.get('xAI').model, 'Grok 4.6');
-  assert.equal(byVendor.get('Mimo').status, 'unavailable');
-  assert.equal(byVendor.get('Meta').model, null);
+  assert.equal(byVendor.get('Mimo').status, 'ready');
+  assert.equal(byVendor.get('Meta').model, 'Muse Spark 1.2');
+  assert.equal(byVendor.get('Meta').scores.some((row) => (
+    row.testName === 'Terminal-Bench' && row.testVersion === '2.1' && row.value === 82.9
+  )), true);
+  assert.equal(byVendor.get('Meta').scores.length, 4);
   assert.equal(cards.flatMap((card) => card.scores).some((score) => /Artificial Analysis|Design Arena|OpenRouter/i.test(score.testName)), false);
 });
 
@@ -128,6 +166,54 @@ test('rejects narrative prose accidentally captured as a benchmark row', async (
 
   const [card] = await registry.readAll();
   assert.deepEqual(card.scores.map((score) => score.testName), ['GPQA']);
+});
+
+test('reads official model specs and benchmark names from multi-column model-card tables', async () => {
+  const definition = {
+    ...OFFICIAL_MODEL_CARD_SOURCES.find((row) => row.vendor === 'Qwen'),
+    specs: undefined,
+    preferConfiguredScores: false,
+    officialScores: [],
+    model: 'Qwen3.8-Flash-Next',
+    modelAliases: ['Qwen3.8-Flash-Next'],
+  };
+  const registry = createOfficialModelCardRegistry({
+    registry: [definition],
+    documentClient: {
+      async fetchDocument({ entryUrl }) {
+        return {
+          finalUrl: entryUrl,
+          text: `
+# Qwen3.8-Flash-Next
+
+| Model | Total Params | Active Params | Context Length |
+| --- | --- | --- | --- |
+| Qwen3.8-Flash-Next | 125B | 6B | 262,144 tokens, extensible to 1,000,000 tokens |
+
+| Category | Benchmark | Setting | Qwen3.8-Flash-Next | Other Model |
+| --- | --- | --- | --- | --- |
+| Agent | Terminal-Bench 2.1 | Qwen Code, high | 86.6% | 80.0% |
+| Coding | SWE-bench Verified | pass@1 | 79.2% | 70.0% |
+| Reasoning | GPQA Diamond | 5-shot | 91.4% | 80.0% |
+          `,
+          bytes: new Uint8Array(),
+          contentType: 'text/markdown',
+          retrievedAt: '2026-08-23T00:00:00.000Z',
+        };
+      },
+    },
+  });
+
+  const [card] = await registry.readAll();
+  assert.deepEqual(card.specs, {
+    totalParameters: '125B',
+    activeParameters: '6B',
+    contextWindowTokens: 1_000_000,
+    contextWindowLabel: '262,144 tokens, extensible to 1,000,000 tokens',
+    sourceUrl: definition.cardUrl,
+  });
+  assert.deepEqual(card.scores.map((score) => score.testName), ['Terminal-Bench', 'SWE-bench', 'GPQA']);
+  assert.equal(card.scores.find((score) => score.testName === 'GPQA').shots, 5);
 });
 
 test('rejects GitHub and Hugging Face paths outside the registered official owner', () => {

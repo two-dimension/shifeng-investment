@@ -77,7 +77,7 @@
     "vendor": "智谱",
     "model": "GLM-5.2",
     "generation": "GLM-5.2",
-    "currentGeneration": true,
+    "currentGeneration": false,
     "currency": "CNY",
     "perTokens": 1000000,
     "inputPrice": 1,
@@ -85,14 +85,13 @@
   },
   {
     "vendor": "MiniMax",
-    "model": "MiniMax M2.7",
-    "generation": "M2.7",
+    "model": "MiniMax M3",
+    "generation": "M3",
     "currentGeneration": true,
     "currency": "CNY",
     "perTokens": 1000000,
     "inputPrice": 2.1,
     "cacheReadPrice": 0.42,
-    "cacheWritePrice": 2.625,
     "outputPrice": 8.4
   },
   {

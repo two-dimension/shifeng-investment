@@ -175,6 +175,49 @@ export function formatBenchmarkValue(
   return Number.isInteger(score.value) ? score.value.toLocaleString('en-US') : score.value.toFixed(1);
 }
 
+function isTerminalBenchmark(metric: Pick<BenchmarkMetricDefinition, 'testFamily' | 'testName'>): boolean {
+  return metric.testFamily === 'Terminal-Bench' || /terminal[- ]bench/i.test(metric.testName || '');
+}
+
+export function benchmarkMetricDisplayLabel(metric: Pick<BenchmarkMetricDefinition,
+  'label' | 'testFamily' | 'testName' | 'testVersion'>): string {
+  if (!isTerminalBenchmark(metric)) return metric.label;
+  return [metric.testName || metric.testFamily || 'Terminal-Bench', metric.testVersion]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function benchmarkEffortDisplayLabel(effort: string): string {
+  const normalized = effort.trim().toLowerCase();
+  const knownLabels: Record<string, string> = {
+    ultra: 'Ultra',
+    max: 'Max',
+    xhigh: 'XHigh',
+    'x-high': 'XHigh',
+    highest: 'Highest',
+    high: 'High',
+    medium: 'Medium',
+    low: 'Low',
+  };
+  return knownLabels[normalized] || effort.trim();
+}
+
+export function benchmarkModelEffortLabel(model: string, effort: string | null | undefined): string {
+  return effort?.trim() ? `${model}（${benchmarkEffortDisplayLabel(effort)}）` : model;
+}
+
+export function topBenchmarkScoreRows<T extends { score: Pick<BenchmarkScore, 'value'> }>(
+  rows: ReadonlyArray<T>,
+  direction: BenchmarkMetricDefinition['direction'],
+  limit = 3,
+): T[] {
+  const factor = direction === 'lower' ? 1 : -1;
+  return [...rows]
+    .filter((row) => Number.isFinite(row.score.value))
+    .sort((left, right) => factor * (left.score.value - right.score.value))
+    .slice(0, Math.max(0, Math.floor(limit)));
+}
+
 const OFFICIAL_BENCHMARK_CATEGORY_ORDER = [
   'Agent', 'Coding', 'Search & Tool Use', 'Reasoning & Knowledge', 'Multimodal', '其他',
 ] as const;
@@ -211,6 +254,12 @@ export function benchmarkScoreRunLabel(score: Pick<BenchmarkScore,
   if (score.passK !== null && score.passK !== undefined) run.push(`Pass@k: ${score.passK}`);
   if (score.tools) run.push(`Tools: ${score.tools}`);
   return run.join(' · ') || '配置未完整披露';
+}
+
+export function terminalBenchmarkRunLabel(score: Pick<BenchmarkScore,
+  'agent' | 'harness' | 'effort' | 'shots' | 'passK' | 'tools'>): string | null {
+  const label = benchmarkScoreRunLabel({ ...score, agent: null, effort: null });
+  return label === '配置未完整披露' ? null : label;
 }
 
 export function benchmarkDisclosureKey(score: Pick<BenchmarkScore,
@@ -260,9 +309,43 @@ export function officialWinnerRows(benchmarks: AiDashboardSnapshot['benchmarks']
 }
 
 export function officialBenchmarkSummaryRows(benchmarks: AiDashboardSnapshot['benchmarks']) {
-  // Vendor model cards often use different harnesses, agents and effort levels.
-  // Only the normalized, configuration-identical winners belong in a cross-vendor summary.
-  return officialWinnerRows(benchmarks);
+  const strictRows = officialWinnerRows(benchmarks);
+  const strictKeys = new Set(strictRows.map((row) => row.metricKey));
+  const disclosedRows = [...benchmarks.metrics].sort(benchmarkMetricSort).flatMap((metric) => {
+    if (strictKeys.has(metric.key)) return [];
+    const scored = benchmarks.models.flatMap((model) => {
+      const cell = model.scores?.[metric.key];
+      if (!cell) return [];
+      const disclosures = Array.isArray(cell.disclosures) && cell.disclosures.length > 0
+        ? cell.disclosures
+        : [cell];
+      return disclosures.flatMap((score) => Number.isFinite(score.value)
+        ? [{ model: model.model, value: score.value }]
+        : []);
+    });
+    if (scored.length === 0) return [];
+    const best = metric.direction === 'lower'
+      ? Math.min(...scored.map((row) => row.value))
+      : Math.max(...scored.map((row) => row.value));
+    return [{
+      category: metric.category || metric.group || '其他',
+      metricKey: metric.key,
+      label: metric.label,
+      testName: metric.testName || metric.testFamily || metric.label,
+      testVersion: metric.testVersion || null,
+      models: [...new Set(scored.filter((row) => row.value === best).map((row) => row.model))].sort((left, right) => left.localeCompare(right, 'en')),
+      formattedValue: formatBenchmarkValue({ value: best }, metric),
+      runLabel: '官网披露最高 · 运行配置不同，不作严格排名',
+      terminalBench: metric.testFamily === 'Terminal-Bench' || /terminal[- ]bench/i.test(metric.testName || ''),
+      direction: metric.direction,
+      comparable: false,
+    }];
+  });
+  return [...strictRows, ...disclosedRows].sort((left, right) => {
+    const leftMetric = benchmarks.metrics.find((metric) => metric.key === left.metricKey);
+    const rightMetric = benchmarks.metrics.find((metric) => metric.key === right.metricKey);
+    return leftMetric && rightMetric ? benchmarkMetricSort(leftMetric, rightMetric) : 0;
+  });
 }
 
 export function formatTaskTokenBreakdown(row: Pick<ArtificialAnalysisTaskCost, 'answerTokens' | 'reasoningTokens' | 'outputTokens'>): string {

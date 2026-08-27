@@ -12,6 +12,7 @@ import { normalizeOfficialBenchmarks } from './officialBenchmarkData.js';
 import { createOfficialDocumentClient } from './officialDocumentClient.js';
 import { createOfficialModelCardRegistry } from './officialModelCardRegistry.js';
 import { DASHBOARD_SOURCE_KEYS, PUBLIC_SOURCE_REGISTRY } from './publicSourceRegistry.js';
+import { enqueueIceCdsSnapshotWrite } from './iceCdsSnapshotWriteQueue.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -224,6 +225,7 @@ function priorOfficialVendorCards(benchmarks, { conservativeUnknown = false } = 
       sourceLabel: model.sourceLabel || `${model.vendor} 官网模型卡`,
       discoveryMode: model.discoveryMode || source.discoveryMode || null,
       retrievedAt: source.retrievedAt || null,
+      specs: model.specs || null,
       scores,
     }];
   }));
@@ -238,7 +240,7 @@ export function createOfficialBenchmarkCollector({ officialBenchmarkClient } = {
     if (!Array.isArray(incoming) || incoming.length === 0) throw new Error('官网模型卡读取未返回厂商记录');
     const prior = priorOfficialVendorCards(previous.benchmarks);
     const cards = incoming.map((card) => {
-      if (card.status === 'ready') return card;
+      if (card.status === 'ready' || (card.scores || []).length > 0) return card;
       const lastGood = prior.get(card.vendor);
       if (!lastGood || lastGood.scores.length === 0) return card;
       return {
@@ -247,6 +249,7 @@ export function createOfficialBenchmarkCollector({ officialBenchmarkClient } = {
         stale: true,
         discoveryMode: card.discoveryMode || lastGood.discoveryMode,
         retrievedAt: card.retrievedAt || generatedAt,
+        specs: card.specs || lastGood.specs || null,
         error: card.error || '本次官网读取失败，保留该厂商上次官网模型卡结果',
       };
     });
@@ -436,7 +439,7 @@ export function createAiDashboardService({
 
   const getSnapshot = async () => readSnapshotFile(dataFile, now);
 
-  const performRefresh = async ({ sources, force = false }) => {
+  const performRefreshUnlocked = async ({ sources, force = false }) => {
     const previous = await getSnapshot();
     const generatedAt = isoNow(now);
     const nowDate = now();
@@ -522,6 +525,7 @@ export function createAiDashboardService({
     await writeSnapshotFile(dataFile, next);
     return next;
   };
+  const performRefresh = (options) => enqueueIceCdsSnapshotWrite(() => performRefreshUnlocked(options));
 
   return {
     getSnapshot,
@@ -627,7 +631,7 @@ export function createAiDashboardServiceFromEnv({
   }
   if (typeof mergedCollectors.benchmarks !== 'function') {
     const benchmarkDocumentClient = createOfficialDocumentClient({
-      fetchImpl, now, maxBytes: 24 * 1024 * 1024, timeoutMs: 45_000,
+      fetchImpl, now, maxBytes: 48 * 1024 * 1024, timeoutMs: 45_000,
     });
     const benchmarkClient = officialBenchmarkClient || createOfficialModelCardRegistry({
       documentClient: benchmarkDocumentClient,

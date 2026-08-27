@@ -3,7 +3,11 @@ import test from 'node:test';
 import * as dashboardViewModel from '../src/pages/AIDashboard/viewModel.ts';
 import {
   benchmarkRefreshRequest,
+  benchmarkMetricDisplayLabel,
+  benchmarkModelEffortLabel,
   benchmarkScoreRunLabel,
+  terminalBenchmarkRunLabel,
+  topBenchmarkScoreRows,
   benchmarkDisclosureKey,
   dashboardSourceSummary,
   formatBenchmarkValue,
@@ -80,6 +84,40 @@ test('formats per-model benchmark run configurations without pretending missing 
   assert.equal(benchmarkScoreRunLabel({}), '配置未完整披露');
 });
 
+test('Terminal-Bench cards omit the redundant Accuracy suffix', () => {
+  assert.equal(benchmarkMetricDisplayLabel(metricFixture[1]), 'Terminal-Bench 2.1');
+  assert.equal(benchmarkMetricDisplayLabel(metricFixture[2]), 'GPQA Diamond · Accuracy');
+});
+
+test('Terminal-Bench model labels put a normalized effort immediately after the model name', () => {
+  assert.equal(benchmarkModelEffortLabel('GPT-5.6 Sol', 'ultra'), 'GPT-5.6 Sol（Ultra）');
+  assert.equal(benchmarkModelEffortLabel('GPT-5.6 Sol', 'max'), 'GPT-5.6 Sol（Max）');
+  assert.equal(benchmarkModelEffortLabel('Kimi K3', null), 'Kimi K3');
+  assert.equal(
+    terminalBenchmarkRunLabel({ agent: '4-agent', effort: 'ultra', tools: 'terminal' }),
+    'Tools: terminal',
+  );
+  assert.equal(terminalBenchmarkRunLabel({ agent: '4-agent', effort: 'ultra' }), null);
+  assert.equal(terminalBenchmarkRunLabel({ effort: 'ultra' }), null);
+});
+
+test('Terminal-Bench cards keep only the three best score rows', () => {
+  const rows = [
+    { model: 'Fourth', score: { value: 71 } },
+    { model: 'Second', score: { value: 91 } },
+    { model: 'First', score: { value: 93 } },
+    { model: 'Third', score: { value: 88 } },
+  ];
+  assert.deepEqual(
+    topBenchmarkScoreRows(rows, 'higher').map((row) => row.model),
+    ['First', 'Second', 'Third'],
+  );
+  assert.deepEqual(
+    topBenchmarkScoreRows(rows, 'lower').map((row) => row.model),
+    ['Fourth', 'Third', 'Second'],
+  );
+});
+
 test('Agent and Harness roles stay distinct in labels and disclosure row keys', () => {
   const agent = { value: 83, agent: 'Codex', configurationComplete: false };
   const harness = { value: 83, harness: 'Codex', configurationComplete: false };
@@ -121,7 +159,7 @@ test('winner rows ignore legacy aggregate winner arrays instead of crashing the 
   assert.deepEqual(rows, []);
 });
 
-test('non-comparable vendor disclosures never produce a cross-vendor leader', () => {
+test('non-comparable vendor disclosures produce an explicitly non-strict disclosed-highest summary', () => {
   const metrics = [{ ...metricFixture[2], comparable: false, comparisonNote: '旧快照配置未知' }];
   const rows = officialBenchmarkSummaryRows({
     models: [
@@ -133,7 +171,19 @@ test('non-comparable vendor disclosures never produce a cross-vendor leader', ()
     coverage: { vendors: 2, disclosedVendors: 2, metrics: 1, comparableMetrics: 0 }, attributions: [],
   });
 
-  assert.deepEqual(rows, []);
+  assert.deepEqual(rows, [{
+    category: 'Reasoning & Knowledge',
+    metricKey: 'gpqa',
+    label: 'GPQA Diamond · Accuracy',
+    testName: 'GPQA',
+    testVersion: 'Diamond',
+    models: ['Gemini Latest'],
+    formattedValue: '92.0%',
+    runLabel: '官网披露最高 · 运行配置不同，不作严格排名',
+    terminalBench: false,
+    direction: 'higher',
+    comparable: false,
+  }]);
 });
 
 test('single-task formatters expose token and cost formulas without inventing missing values', () => {

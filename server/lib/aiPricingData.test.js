@@ -37,18 +37,30 @@ test('token normalization keeps currency and price dimensions while converting t
   assert.equal(gemini.provenance.sourceUrl, source.sourceUrl);
 });
 
-test('latest-generation selection covers all required vendors and does not exclude Fable or Mythos', () => {
-  const history = fixture.map((row) => normalizeTokenPrice({ ...row, ...source }));
+test('latest-generation selection excludes stale generations and keeps unavailable current prices absent', () => {
+  const history = [
+    ...fixture.map((row) => normalizeTokenPrice({ ...row, ...source })),
+    normalizeTokenPrice({
+      ...fixture.find((row) => row.vendor === 'MiniMax'),
+      model: 'MiniMax M2.7', generation: 'M2.7', currentGeneration: true,
+      ...source, asOf: '2026-03-18',
+    }),
+  ];
   const latest = selectLatestGeneration(history, CURRENT_GENERATION_RULES);
   const vendors = new Set(latest.map((row) => row.vendor));
 
-  for (const vendor of ['OpenAI', 'Anthropic', 'Gemini', '智谱', 'MiniMax', 'Kimi', 'DeepSeek', 'MiMo', 'Qwen']) {
+  for (const vendor of ['OpenAI', 'Anthropic', 'Gemini', 'MiniMax', 'Kimi', 'DeepSeek', 'MiMo', 'Qwen']) {
     assert.equal(vendors.has(vendor), true, `${vendor} should be represented`);
   }
+  assert.equal(vendors.has('智谱'), false, 'GLM-5.2 history must not stand in for undisclosed GLM-5.3-Flash pricing');
   assert.equal(latest.some((row) => row.model === 'Claude Fable 5'), true);
   assert.equal(latest.some((row) => row.model === 'Claude Mythos 5'), true);
   assert.equal(latest.some((row) => row.model === 'GPT 5.5'), false);
+  assert.equal(latest.some((row) => row.model === 'MiniMax M2.7'), false, 'a stale historical true flag must not override the M3 rule');
+  assert.equal(latest.some((row) => row.model === 'GLM-5.2'), false, 'the prior GLM generation must stay historical');
   assert.equal(latest.filter((row) => row.model === 'GPT 5.6 Sol').length, 2, 'short and long context remain distinct');
+  assert.equal(CURRENT_GENERATION_RULES.智谱.test('GLM-5.3-Flash'), true);
+  assert.equal(CURRENT_GENERATION_RULES.智谱.test('GLM-5.2'), false);
 });
 
 test('price events compare only the exact same SKU, context, currency, and price field', () => {

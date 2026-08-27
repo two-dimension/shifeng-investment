@@ -93,8 +93,8 @@ export async function decodeOfficialDocument(document, format) {
       }
       return pages.join('\n').replace(/[ \t]+/g, ' ').trim();
     } finally {
-      if (pdf) await pdf.destroy();
-      else await loadingTask.destroy();
+      if (pdf && typeof pdf.cleanup === 'function') await pdf.cleanup();
+      await loadingTask.destroy();
     }
   }
   throw new Error(`unsupported official document format: ${format}`);

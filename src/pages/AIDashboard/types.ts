@@ -272,6 +272,13 @@ export interface BenchmarkModel {
   sourceUrl?: string | null;
   discoveryMode?: string | null;
   error?: string | null;
+  specs?: {
+    totalParameters: string | null;
+    activeParameters: string | null;
+    contextWindowTokens: number | null;
+    contextWindowLabel: string | null;
+    sourceUrl: string | null;
+  } | null;
 }
 
 export interface BenchmarkWinner {

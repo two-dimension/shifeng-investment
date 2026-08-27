@@ -246,19 +246,27 @@
       "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
     },
     {
-      "id": "zhipu-glm-5-2-price-unavailable-2026-08-24", "entity": "智谱", "metric": "token_api_price", "value": null, "unit": "not disclosed", "asOf": "2026-08-24",
-      "sourceId": "zhipu-models", "sourceUrl": "https://docs.bigmodel.cn/cn/guide/start/model-overview", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
-      "methodology": "The official model overview was checked for the latest GLM-5.2 generation, but no reproducible public token price table was available on the checked page.",
-      "dimensions": { "vendor": "智谱", "model": "GLM-5.2", "generation": "GLM-5.2", "currentGeneration": true },
-      "verification": { "status": "unavailable", "checkedAt": "2026-08-23T16:00:00.000Z", "note": "GLM-5.2 最新代已确认；官网检查页未公开可复核的 Token 单价，页面不得用旧代价格替代。" }
+      "id": "zhipu-glm-5-3-flash-price-unavailable-2026-08-27", "entity": "智谱", "metric": "token_api_price", "value": null, "unit": "not disclosed", "asOf": "2026-08-27",
+      "sourceId": "zhipu-models", "sourceUrl": "https://docs.z.ai/guides/overview/pricing", "sourceKind": "official", "retrievedAt": "2026-08-27T02:16:00.000Z",
+      "methodology": "The official Z.ai pricing page was checked for GLM-5.3-Flash, but it did not publish a reproducible token price row for that model.",
+      "dimensions": { "vendor": "智谱", "model": "GLM-5.3-Flash", "generation": "GLM-5.3-Flash", "currentGeneration": true },
+      "verification": { "status": "unavailable", "checkedAt": "2026-08-27T02:16:00.000Z", "note": "GLM-5.3-Flash 最新代已确认；官网价格页未公开可复核的 Token 单价，页面不得用旧代价格替代。" }
     },
     {
-      "id": "minimax-m2-7-price-2026-08-24", "entity": "MiniMax", "metric": "token_api_price",
-      "value": "CNY 2.1 input / 0.42 cache read / 2.625 cache write / 8.4 output", "unit": "CNY per 1M tokens", "asOf": "2026-08-24",
-      "sourceId": "minimax-pricing", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-paygo", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
-      "methodology": "MiniMax official pay-as-you-go price table for MiniMax M2.7; original CNY per-million-token units retained.",
-      "dimensions": { "vendor": "MiniMax", "model": "MiniMax-M2.7", "generation": "MiniMax M2.7", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "CNY", "region": "China", "priceUnit": "per_million_tokens", "inputPrice": 2.1, "cacheReadPrice": 0.42, "cacheWritePrice": 2.625, "outputPrice": 8.4 },
-      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+      "id": "minimax-m3-standard-512k-price-2026-06-01", "entity": "MiniMax", "metric": "token_api_price",
+      "value": "CNY 2.1 input / 0.42 cache read / 8.4 output", "unit": "CNY per 1M tokens", "asOf": "2026-06-01",
+      "sourceId": "minimax-pricing", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-paygo", "sourceKind": "official", "retrievedAt": "2026-06-01T00:00:00.000Z",
+      "methodology": "MiniMax official M3 pay-as-you-go discounted price for inputs at or below 512K tokens; original CNY per-million-token units retained.",
+      "dimensions": { "vendor": "MiniMax", "model": "MiniMax M3", "generation": "M3", "currentGeneration": true, "contextTier": "≤ 512K input tokens", "serviceTier": "standard", "currency": "CNY", "region": "China", "priceUnit": "per_million_tokens", "inputPrice": 2.1, "cacheReadPrice": 0.42, "cacheWritePrice": null, "outputPrice": 8.4 },
+      "verification": { "status": "verified", "checkedAt": "2026-06-01T00:00:00.000Z" }
+    },
+    {
+      "id": "minimax-m3-standard-long-price-2026-06-01", "entity": "MiniMax", "metric": "token_api_price",
+      "value": "CNY 4.2 input / 0.84 cache read / 16.8 output", "unit": "CNY per 1M tokens", "asOf": "2026-06-01",
+      "sourceId": "minimax-pricing", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-paygo", "sourceKind": "official", "retrievedAt": "2026-06-01T00:00:00.000Z",
+      "methodology": "MiniMax official M3 pay-as-you-go discounted price for inputs above 512K tokens; original CNY per-million-token units retained.",
+      "dimensions": { "vendor": "MiniMax", "model": "MiniMax M3", "generation": "M3", "currentGeneration": true, "contextTier": "> 512K input tokens", "serviceTier": "standard", "currency": "CNY", "region": "China", "priceUnit": "per_million_tokens", "inputPrice": 4.2, "cacheReadPrice": 0.84, "cacheWritePrice": null, "outputPrice": 16.8 },
+      "verification": { "status": "verified", "checkedAt": "2026-06-01T00:00:00.000Z" }
     },
     {
       "id": "kimi-k3-price-2026-08-24", "entity": "Kimi", "metric": "token_api_price",
