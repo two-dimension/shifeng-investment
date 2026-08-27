@@ -36,7 +36,9 @@ The merged code passed automated tests, but the live Vite page at `http://localh
 - Merged the current 11-entry news archive with the legacy 50-entry archive into 61 entries; all source entry ids were retained.
 - Removed copied or stale lock files before restarting services.
 - Added `SHIFENG_TASKS_DIR` support and current-machine fallback discovery for all four research task roots.
-- The research task path test and research API tests pass.
+- Added a project-local Python runtime resolver and installed the legacy platform requirements in the ignored `server/data/python-venv` directory.
+- The research task path, Python runtime, research API, and startup tests pass.
+- Live API after the first recovery restart returned 1,168 CNINFO announcements, 269 MACD rows, a compatible 40-day standard-TMT history, and 404 flattened news items.
 
 ## Remaining external dependency
 
