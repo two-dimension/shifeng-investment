@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import { configureProjectPythonRuntime } from './server/lib/pythonRuntime.js';
 
 const localEnvFile = process.env.SHIFENG_LOCAL_ENV_FILE
   || fileURLToPath(new URL('./.env.local', import.meta.url));
@@ -8,5 +9,7 @@ try {
 } catch (error) {
   if (error?.code !== 'ENOENT') throw error;
 }
+
+configureProjectPythonRuntime();
 
 await import('./server/index.js');

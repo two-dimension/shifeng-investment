@@ -155,7 +155,61 @@ git add server/lib/researchSync.js server/lib/researchSync.paths.test.js docs/re
 git commit -m "fix: restore non-ai runtime data discovery"
 ```
 
-### Task 4: 重启服务并逐页验收
+### Task 4: 恢复平台 Python 运行环境
+
+**Files:**
+
+- Create: `server/lib/pythonRuntime.js`
+- Create: `server/lib/pythonRuntime.test.js`
+- Modify: `index.js`
+- Populate (Git ignored): `server/data/python-venv/**`
+
+**Interfaces:**
+
+- Consumes: `SHIFENG_PYTHON_BIN` 或项目本地 `server/data/python-venv/bin/python3`。
+- Produces: 所有使用 `python3`、`PRICE_TRACKING_PYTHON`、`NEWS_INTELLIGENCE_PYTHON` 和 `QUANT_PYTHON_BIN` 的平台任务共享同一可用 Python。
+
+- [ ] **Step 1: 写失败测试**
+
+测试在临时项目根目录创建 `server/data/python-venv/bin/python3`，调用 `configureProjectPythonRuntime()`，断言项目 venv 的 `bin` 被放到 `PATH` 最前，三个显式 Python 环境变量被设置，已有用户覆盖值保持不变。
+
+- [ ] **Step 2: 运行测试并确认正确失败**
+
+Run:
+
+```bash
+node --test server/lib/pythonRuntime.test.js
+```
+
+Expected: FAIL，因为 `pythonRuntime.js` 尚不存在。
+
+- [ ] **Step 3: 写最小运行时解析实现并接入根入口**
+
+创建 `configureProjectPythonRuntime({ env, projectRoot, existsSync })`；`index.js` 在加载 `.env.local` 后、导入 `server/index.js` 前调用它。
+
+- [ ] **Step 4: 运行测试并确认通过**
+
+Run:
+
+```bash
+node --test server/lib/pythonRuntime.test.js server/startup.test.js
+```
+
+Expected: 全部通过。
+
+- [ ] **Step 5: 创建 ignored venv 并安装旧平台依赖**
+
+Run:
+
+```bash
+python3 -m venv server/data/python-venv
+server/data/python-venv/bin/python -m pip install -r server/price_tracking/requirements.txt matplotlib
+server/data/python-venv/bin/python -c "import requests, pandas, openpyxl, bs4, lxml, akshare, matplotlib"
+```
+
+Expected: 所有导入成功；venv 保持在 Git ignored 的 `server/data` 下。
+
+### Task 5: 重启服务并逐页验收
 
 **Files:**
 
@@ -201,4 +255,3 @@ shasum -a 256 -c docs/recovery/current-ai-files.sha256
 ```
 
 Expected: 自动化测试、构建和 AI 哈希检查全部通过；已知 donor lint 问题仍按原报告记录。
-
