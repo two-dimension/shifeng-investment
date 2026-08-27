@@ -6,89 +6,188 @@ import test from 'node:test';
 import {
   createAiDashboardService,
   createAiDashboardServiceFromEnv,
+  createEmptyAiDashboardSnapshot,
   createOpenRouterClient,
+  startAiDashboardAutoRefresh,
 } from './aiDashboardService.js';
+import { createIceCdsPipeline } from './iceCdsPipeline.js';
 
-test('refresh writes a normalized snapshot and preserves last-good OpenRouter data when that source fails', async (t) => {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-service-'));
+const ALL_PUBLIC_SLICES = [
+  'growth',
+  'openRouter',
+  'pricing',
+  'capital',
+  'benchmarks',
+  'artificialAnalysis',
+  'compute',
+  'creditRisk',
+];
+
+async function tempDashboard(t, prefix = 'ai-dashboard-') {
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), prefix));
   t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
-  const dataFile = path.join(dir, 'snapshot.json');
+  return { dir, dataFile: path.join(dir, 'snapshot.json') };
+}
+
+function readySource(asOf, message = '公开来源同步成功') {
+  return {
+    status: 'ready',
+    stale: false,
+    asOf,
+    url: 'https://example.test/source',
+    message,
+  };
+}
+
+test('empty dashboard snapshot uses the eight public-source schema-v2 slices', () => {
+  const snapshot = createEmptyAiDashboardSnapshot('2026-08-23T00:00:00.000Z');
+
+  assert.equal(snapshot.schemaVersion, 2);
+  assert.equal('feishu' in snapshot.sources, false);
+  assert.deepEqual(Object.keys(snapshot.sources).sort(), ALL_PUBLIC_SLICES.toSorted());
+});
+
+test('public-slice refresh replaces successful growth and preserves last-good pricing on failure', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-slices-');
   await fs.promises.writeFile(dataFile, JSON.stringify({
     schemaVersion: 1,
     generatedAt: '2026-08-19T00:00:00.000Z',
-    sources: { openRouter: { status: 'ready', asOf: '2026-08-19T00:00:00.000Z' } },
+    sources: {
+      feishu: { status: 'ready', stale: false, asOf: '2026-08-19' },
+      pricing: { status: 'ready', stale: false, asOf: '2026-08-19' },
+    },
     arrAndValuation: { companies: [], valuations: [] },
-    openRouter: { weekTotalTokens: '123', topModels: [], history: [] },
-    modelPricing: { token: [{ vendor: 'OpenAI', model: 'last-good', inputPrice: 1 }], video: [], codingPlans: [] },
-    benchmarks: { models: [{ vendor: 'OpenAI', model: 'last-good-benchmark', releasedAt: '2026-08-01', scores: {} }], winners: {} },
-    computeRental: [],
-    debtFinancing: [],
+    modelPricing: { token: [{ vendor: 'OpenAI', model: 'last-good' }], video: [], codingPlans: [] },
   }), 'utf8');
-  const feishuClient = {
-    async readWorkbook() {
+  const collectors = {
+    async growth() {
       return {
-        'ARR&估值': [
-          ['title'],
-          ['月份', 'Anthropic', null, '估值日期', 'Anthropic'],
-          ['2026年7月', 730, null, '2026年7月', 9650],
-        ],
-        '债务融资': [
-          ['公司', '日期', '手段', '规模', '币种'],
-          ['CoreWeave', '2026-08-01', '可转债', 2000, 'USD mn'],
-        ],
-        '模型基准测试': [
-          ['测试分类', '评测维度', '核心指标', 'GPT incomplete'],
-          ['Coding', 'SWE-bench', '修复率', 99],
-        ],
-        'API模型token价格&发布日期&优化方向': [
-          ['价格表暂时维护中'],
-        ],
+        payload: {
+          arrAndValuation: {
+            companies: [{ company: 'Anthropic', latestActual: { value: 650 } }],
+            valuations: [],
+          },
+        },
+        source: readySource('2026-08-22', '增长数据同步成功'),
       };
     },
+    async pricing() {
+      throw new Error('official pricing page unavailable');
+    },
   };
-  const openRouterClient = { async fetchRankings() { throw new Error('upstream unavailable'); } };
   const service = createAiDashboardService({
     dataFile,
-    feishuClient,
-    openRouterClient,
-    now: () => new Date('2026-08-20T00:00:00.000Z'),
+    collectors,
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
   });
 
-  const snapshot = await service.refresh();
+  const snapshot = await service.refresh({ sources: ['growth', 'pricing'], force: true });
 
-  assert.equal(snapshot.sources.feishu.status, 'ready');
-  assert.equal(snapshot.sources.openRouter.status, 'error');
-  assert.equal(snapshot.sources.openRouter.stale, true);
-  assert.equal(snapshot.openRouter.weekTotalTokens, '123');
-  assert.equal(snapshot.arrAndValuation.companies[0].latestActual.value, 730);
-  assert.equal(snapshot.arrAndValuation.valuations[0].parrLow, 9650 / 730);
-  assert.equal(snapshot.debtFinancing[0].method, '可转债');
+  assert.equal('feishu' in snapshot.sources, false);
+  assert.equal(snapshot.schemaVersion, 2);
+  assert.equal(snapshot.sources.growth.status, 'ready');
+  assert.equal(snapshot.arrAndValuation.companies[0].latestActual.value, 650);
+  assert.equal(snapshot.sources.pricing.status, 'error');
+  assert.equal(snapshot.sources.pricing.stale, true);
+  assert.match(snapshot.sources.pricing.message, /official pricing page unavailable/);
   assert.equal(snapshot.modelPricing.token[0].model, 'last-good');
-  assert.equal(snapshot.benchmarks.models[0].model, 'last-good-benchmark');
-  assert.equal(snapshot.sources.feishu.stale, true);
-  assert.equal(JSON.parse(await fs.promises.readFile(dataFile, 'utf8')).generatedAt, '2026-08-20T00:00:00.000Z');
+  assert.equal(JSON.parse(await fs.promises.readFile(dataFile, 'utf8')).schemaVersion, 2);
 });
 
-test('missing credentials return an empty authorization-required snapshot instead of fabricated values', async (t) => {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-empty-'));
-  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
+test('collector cannot overwrite fields outside its public slice', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-slice-boundary-');
   const service = createAiDashboardService({
-    dataFile: path.join(dir, 'snapshot.json'),
+    dataFile,
+    collectors: {
+      async growth() {
+        return {
+          payload: { modelPricing: { token: [{ model: 'injected' }], video: [], codingPlans: [] } },
+          source: readySource('2026-08-22'),
+        };
+      },
+    },
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['growth'], force: true });
+
+  assert.equal(snapshot.sources.growth.status, 'error');
+  assert.equal(snapshot.sources.growth.stale, true);
+  assert.match(snapshot.sources.growth.message, /unsupported payload field/i);
+  assert.deepEqual(snapshot.modelPricing.token, []);
+});
+
+test('missing collectors return an empty public-source snapshot instead of fabricated values', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-empty-');
+  const service = createAiDashboardService({
+    dataFile,
     now: () => new Date('2026-08-20T00:00:00.000Z'),
   });
 
   const snapshot = await service.getSnapshot();
 
-  assert.equal(snapshot.sources.feishu.status, 'authorization_required');
+  assert.equal('feishu' in snapshot.sources, false);
+  assert.equal(snapshot.sources.growth.status, 'error');
   assert.equal(snapshot.sources.openRouter.status, 'authorization_required');
   assert.deepEqual(snapshot.arrAndValuation.companies, []);
   assert.deepEqual(snapshot.openRouter.topModels, []);
 });
 
-test('platform CDS dataset overlays old snapshots without depending on Feishu refresh', async (t) => {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-cds-'));
-  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
-  const dataFile = path.join(dir, 'snapshot.json');
+test('reading a legacy official Benchmark snapshot collapses display metrics without promoting old false flags', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-migration-');
+  const empty = createEmptyAiDashboardSnapshot('2026-08-23T00:00:00.000Z');
+  const metric = (key, testName, version, sourceOrder) => ({
+    key, category: testName === 'Terminal-Bench' ? 'Agent' : 'Reasoning & Knowledge',
+    group: testName === 'Terminal-Bench' ? 'Agent' : 'Reasoning & Knowledge',
+    testName, testFamily: testName, testVersion: version, split: null, scoreName: 'Accuracy',
+    label: `${testName} ${version} · Accuracy`, unit: 'percent-point', direction: 'higher',
+    comparable: false, sourceOrder, priority: testName === 'Terminal-Bench' ? 0 : 1,
+    source: 'official-model-card',
+  });
+  const score = (value, configurationComplete) => ({
+    value, unit: 'percent-point', direction: 'higher',
+    ...(configurationComplete === undefined ? {} : { configurationComplete }),
+    source: 'official-model-card', sourceUrl: 'https://official.example/card',
+  });
+  empty.benchmarks = {
+    sourceMode: 'official-model-cards', asOf: '2026-08-23', winners: {}, attributions: [],
+    coverage: { vendors: 2, disclosedVendors: 2, metrics: 4, comparableMetrics: 0 },
+    vendorSources: [
+      { vendor: 'OpenAI', model: 'GPT Latest', status: 'ready', stale: false, sourceUrl: 'https://official.example/openai' },
+      { vendor: 'Gemini', model: 'Gemini Latest', status: 'ready', stale: false, sourceUrl: 'https://official.example/gemini' },
+    ],
+    metrics: [
+      metric('incomplete:openai:gpt:0', 'Terminal-Bench', '2.1', 0),
+      metric('incomplete:gemini:gemini:0', 'Terminal-Bench', '2.1', 0),
+      metric('incomplete:openai:gpt:1', 'GPQA', 'Diamond', 1),
+      metric('incomplete:gemini:gemini:1', 'GPQA', 'Diamond', 1),
+    ],
+    models: [
+      { vendor: 'OpenAI', model: 'GPT Latest', releasedAt: '2026-08-20', scores: {
+        'incomplete:openai:gpt:0': score(82, false), 'incomplete:openai:gpt:1': score(91),
+      } },
+      { vendor: 'Gemini', model: 'Gemini Latest', releasedAt: '2026-08-21', scores: {
+        'incomplete:gemini:gemini:0': score(84, false), 'incomplete:gemini:gemini:1': score(92, false),
+      } },
+    ],
+  };
+  assert.equal('configurationComplete' in empty.benchmarks.models[0].scores['incomplete:openai:gpt:1'], false);
+  await fs.promises.writeFile(dataFile, JSON.stringify(empty), 'utf8');
+
+  const service = createAiDashboardService({ dataFile, now: () => new Date('2026-08-23T00:00:00.000Z') });
+  const snapshot = await service.getSnapshot();
+  const terminal = snapshot.benchmarks.metrics.filter((row) => row.label === 'Terminal-Bench 2.1 · Accuracy');
+  const gpqa = snapshot.benchmarks.metrics.find((row) => row.label === 'GPQA Diamond · Accuracy');
+
+  assert.equal(terminal.length, 1);
+  assert.equal(snapshot.benchmarks.models.every((model) => model.scores[terminal[0].key]), true);
+  assert.equal(snapshot.benchmarks.winners[terminal[0].key], undefined);
+  assert.equal(gpqa.comparable, false);
+  assert.equal(snapshot.benchmarks.winners[gpqa.key], undefined);
+});
+
+test('legacy screenshot CDS file cannot overlay the production snapshot', async (t) => {
+  const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-cds-');
   const cdsFile = path.join(dir, 'cds-5y.json');
   await fs.promises.writeFile(dataFile, JSON.stringify({
     schemaVersion: 1,
@@ -114,45 +213,234 @@ test('platform CDS dataset overlays old snapshots without depending on Feishu re
 
   const snapshot = await service.getSnapshot();
 
-  assert.equal(snapshot.creditRisk.cds5y.asOf, '2026-08-19');
-  assert.equal(snapshot.creditRisk.cds5y.companies[0].company, 'Oracle');
-  assert.equal(snapshot.creditRisk.cds5y.companies[0].latestBp, 207);
-  assert.equal(snapshot.creditRisk.cds5y.historyEstimated, true);
+  assert.equal(snapshot.creditRisk.cds5y.asOf, null);
+  assert.deepEqual(snapshot.creditRisk.cds5y.companies, []);
+  assert.match(snapshot.sources.creditRisk.message, /ICE EOD Price/);
 });
 
-test('local Feishu export seeds a real snapshot when API credentials are unavailable', async (t) => {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-local-export-'));
-  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
-  const feishuExportFile = path.join(dir, 'feishu-export.json');
-  const dataFile = path.join(dir, 'snapshot.json');
-  await fs.promises.writeFile(feishuExportFile, JSON.stringify({
-    exportedAt: '2026-08-23T00:00:00.000Z',
-    workbook: {
-      'ARR&估值': [
-        [null, 'Yipit'],
-        [null, 'Anthropic', 'OpenAI'],
-        [46215, 73, 45],
-      ],
+test('legacy DTCC CDS embedded in an old snapshot is quarantined during migration', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-cds-legacy-snapshot-');
+  await fs.promises.writeFile(dataFile, JSON.stringify({
+    schemaVersion: 2,
+    generatedAt: '2026-08-24T00:00:00.000Z',
+    sources: {
+      creditRisk: { status: 'ready', stale: false, asOf: '2026-08-24', message: 'DTCC sync ready' },
+    },
+    creditRisk: {
+      cds5y: {
+        sourceKind: 'dtcc_public_trade_estimate',
+        asOf: '2026-08-24',
+        sourceLabel: 'DTCC SEC PPD',
+        historyEstimated: true,
+        companies: [{ company: 'Oracle', latestBp: 221, changes: {}, history: [{ date: '2026-08-24', valueBp: 221 }] }],
+      },
     },
   }), 'utf8');
+  const service = createAiDashboardService({ dataFile, now: () => new Date('2026-08-25T00:00:00.000Z') });
 
+  const snapshot = await service.getSnapshot();
+
+  assert.equal(snapshot.creditRisk.cds5y.sourceKind, 'ice_eod_isda');
+  assert.equal(snapshot.creditRisk.cds5y.asOf, null);
+  assert.deepEqual(snapshot.creditRisk.cds5y.companies, []);
+  assert.match(snapshot.sources.creditRisk.message, /等待导入 ICE EOD Price/);
+});
+
+test('explicit ICE collector failure preserves the last-good ICE batch and marks it stale', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-cds-public-failure-');
+  await fs.promises.writeFile(dataFile, JSON.stringify({
+    schemaVersion: 2,
+    generatedAt: '2026-08-24T01:00:00.000Z',
+    sources: {
+      creditRisk: { status: 'ready', stale: false, asOf: '2026-08-24', url: 'https://www.ice.com/cds-settlement-prices/icc/single-name-instruments' },
+    },
+    creditRisk: {
+      cds5y: {
+        sourceKind: 'ice_eod_isda',
+        asOf: '2026-08-24',
+        sourceLabel: 'ICE EOD Price · ISDA 换算值',
+        historyEstimated: true,
+        companies: [{ company: 'Oracle', latestBp: 221, changes: { oneDayBp: 7, sevenDayBp: 11, oneMonthBp: 11 }, history: [{ date: '2026-08-24', valueBp: 221 }] }],
+      },
+    },
+  }), 'utf8');
+  const service = createAiDashboardService({
+    dataFile,
+    collectors: { async creditRisk() { throw new Error('ICE batch unavailable'); } },
+    now: () => new Date('2026-08-25T01:00:00.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['creditRisk'], force: true });
+
+  assert.equal(snapshot.sources.creditRisk.status, 'error');
+  assert.equal(snapshot.sources.creditRisk.stale, true);
+  assert.match(snapshot.sources.creditRisk.message, /ICE batch unavailable/);
+  assert.equal(snapshot.creditRisk.cds5y.companies[0].latestBp, 221);
+});
+
+test('a delayed dashboard refresh cannot erase a complete ICE batch imported while it is running', async (t) => {
+  const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-cds-refresh-race-');
+  const dataDir = path.join(dir, 'ice-cds');
+  await fs.promises.writeFile(dataFile, JSON.stringify({
+    schemaVersion: 2,
+    generatedAt: '2026-08-24T00:00:00.000Z',
+    sources: {},
+  }), 'utf8');
+
+  let releaseGrowth;
+  const growthGate = new Promise((resolve) => { releaseGrowth = resolve; });
+  let collectorStarted;
+  const collectorStartedGate = new Promise((resolve) => { collectorStarted = resolve; });
+  const service = createAiDashboardService({
+    dataFile,
+    collectors: {
+      async growth() {
+        collectorStarted();
+        await growthGate;
+        return {
+          payload: { arrAndValuation: { companies: [{ company: 'Anthropic' }], valuations: [] } },
+          source: readySource('2026-08-25'),
+        };
+      },
+    },
+    now: () => new Date('2026-08-26T00:00:00.000Z'),
+  });
+  const pipeline = createIceCdsPipeline({
+    dataDir,
+    snapshotFile: dataFile,
+    now: () => new Date('2026-08-26T00:01:00.000Z'),
+  });
+  const rows = [
+    ['ORACLE CORP', 'ORCL', 100, 95.24],
+    ['COREWEAVE INC', 'CRWV', 500, 88.125],
+    ['NVIDIA CORP', 'NVDA', 100, 100.42],
+    ['AMAZON.COM INC', 'AMZN', 100, 100.2],
+    ['ALPHABET INC', 'GOOGL', 100, 100.25],
+    ['MICROSOFT CORP', 'MSFT', 100, 100.3],
+    ['META PLATFORMS INC', 'META', 100, 99.7],
+  ];
+  const iceText = [
+    'Clearing Date\tName\tInstrument Name\tEOD Price',
+    ...rows.map(([name, symbol, couponBp, price]) => (
+      `2026-08-25\t${name}\t${symbol}.SNRFOR.USD.XR14.${couponBp}.2031-06-20\t${price}`
+    )),
+  ].join('\n');
+  const discountCurve = {
+    curveId: 'usd-sofr-2026-08-25-test',
+    asOf: '2026-08-25',
+    currency: 'USD',
+    sourceLabel: 'USD SOFR zero curve',
+    sourceUrl: 'https://example.test/curve',
+    nodes: [
+      { years: 0.25, zeroRate: 0.041 },
+      { years: 1, zeroRate: 0.039 },
+      { years: 3, zeroRate: 0.037 },
+      { years: 5, zeroRate: 0.036 },
+      { years: 10, zeroRate: 0.038 },
+    ],
+  };
+
+  const delayedRefresh = service.refresh({ sources: ['growth'], force: true });
+  await collectorStartedGate;
+  const cdsImport = pipeline.import({ iceText, discountCurve });
+  await Promise.race([
+    cdsImport,
+    new Promise((resolve) => setTimeout(resolve, 200)),
+  ]);
+  releaseGrowth();
+  await Promise.all([delayedRefresh, cdsImport]);
+
+  const snapshot = await service.getSnapshot();
+  assert.equal(snapshot.creditRisk.cds5y.asOf, '2026-08-25');
+  assert.equal(snapshot.creditRisk.cds5y.companies.length, 7);
+  assert.equal(snapshot.arrAndValuation.companies[0].company, 'Anthropic');
+});
+
+test('environment service ignores legacy Feishu exports and accepts public collectors', async (t) => {
+  const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-no-feishu-');
+  const feishuExportFile = path.join(dir, 'feishu-export.json');
+  await fs.promises.writeFile(feishuExportFile, JSON.stringify({
+    workbook: { 'ARR&估值': [[null, 'Yipit'], [null, 'Anthropic'], [46215, 730]] },
+  }), 'utf8');
   const service = createAiDashboardServiceFromEnv({
     dataFile,
     feishuExportFile,
+    collectors: {
+      async growth() {
+        return {
+          payload: { arrAndValuation: { companies: [{ company: 'OpenAI' }], valuations: [] } },
+          source: readySource('2026-08-22'),
+        };
+      },
+    },
     now: () => new Date('2026-08-23T00:00:00.000Z'),
   });
-  const snapshot = await service.refresh({ sources: ['feishu'] });
 
-  assert.equal(snapshot.sources.feishu.status, 'ready');
-  assert.equal(snapshot.arrAndValuation.companies[0].company, 'Anthropic');
-  assert.equal(snapshot.arrAndValuation.companies[0].latestActual.value, 730);
+  const snapshot = await service.refresh({ sources: ['growth'], force: true });
+
+  assert.equal('feishu' in snapshot.sources, false);
+  assert.equal(snapshot.arrAndValuation.companies[0].company, 'OpenAI');
+});
+
+test('environment service wires the registered official pricing collector by default', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-official-pricing-');
+  const html = await fs.promises.readFile(new URL('./fixtures/ai-pricing/openai-pricing.html', import.meta.url), 'utf8');
+  const service = createAiDashboardServiceFromEnv({
+    dataFile,
+    pricingSourceIds: ['openai-pricing'],
+    fetchImpl: async () => new Response(html, { headers: { 'content-type': 'text/html' } }),
+    now: () => new Date('2026-08-23T01:02:03.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['pricing'], force: true });
+
+  assert.equal(snapshot.sources.pricing.status, 'ready');
+  assert.equal(snapshot.modelPricing.token.some((row) => row.model === 'GPT 5.6 Sol'), true);
+  assert.equal(snapshot.modelPricing.token.some((row) => row.model === 'GPT 5.5'), false);
+  assert.equal(snapshot.modelPricing.tokenHistory.some((row) => row.model === 'GPT 5.5'), true);
+});
+
+test('environment service wires official capital and exact-SKU compute collectors by default', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-capital-compute-');
+  const capitalHtml = await fs.promises.readFile(new URL('./fixtures/ai-capital/openai-round.html', import.meta.url), 'utf8');
+  const computeHtml = await fs.promises.readFile(new URL('./fixtures/ai-compute/aws-pricing.html', import.meta.url), 'utf8');
+  const service = createAiDashboardServiceFromEnv({
+    dataFile,
+    capitalSourceIds: ['openai-capital'],
+    computeSourceIds: ['aws-ec2-pricing'],
+    fetchImpl: async (url) => new Response(String(url).includes('openai.com') ? capitalHtml : computeHtml, { headers: { 'content-type': 'text/html' } }),
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['capital', 'compute'], force: true });
+
+  assert.equal(snapshot.capitalEvents[0].entity, 'OpenAI');
+  assert.equal(snapshot.capitalMetrics.industry.trailing12MonthCount, 1);
+  assert.equal(snapshot.computeRental.length, 2);
+  assert.equal(snapshot.computeRental[0].quoteKey.includes('on_demand') || snapshot.computeRental[1].quoteKey.includes('on_demand'), true);
+});
+
+test('environment service keeps Artificial Analysis in its independent named-third-party slice', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-aa-');
+  const html = await fs.promises.readFile(new URL('./fixtures/artificial-analysis/index.html', import.meta.url), 'utf8');
+  const service = createAiDashboardServiceFromEnv({
+    dataFile,
+    fetchImpl: async () => new Response(html, { headers: { 'content-type': 'text/html' } }),
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['artificialAnalysis'], force: true });
+
+  assert.equal(snapshot.sources.artificialAnalysis.status, 'ready');
+  assert.equal(snapshot.artificialAnalysis.intelligenceIndex[0].sourceKind, 'named-third-party');
+  assert.equal(snapshot.artificialAnalysis.taskCosts[0].totalCost, 0.26);
+  assert.deepEqual(snapshot.benchmarks.metrics, []);
+  assert.deepEqual(snapshot.benchmarks.winners, {});
 });
 
 test('public OpenRouter export seeds the visible weekly Top 10 without fabricating a platform total', async (t) => {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-openrouter-public-'));
-  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
+  const { dir, dataFile } = await tempDashboard(t, 'ai-dashboard-openrouter-public-');
   const openRouterPublicFile = path.join(dir, 'openrouter-public.json');
-  const dataFile = path.join(dir, 'snapshot.json');
   await fs.promises.writeFile(openRouterPublicFile, JSON.stringify({
     asOf: '2026-08-22',
     startDate: '2026-08-16',
@@ -164,7 +452,6 @@ test('public OpenRouter export seeds the visible weekly Top 10 without fabricati
 
   const service = createAiDashboardServiceFromEnv({
     dataFile,
-    feishuExportFile: path.join(dir, 'missing-feishu.json'),
     openRouterPublicFile,
     now: () => new Date('2026-08-23T00:00:00.000Z'),
   });
@@ -178,7 +465,7 @@ test('public OpenRouter export seeds the visible weekly Top 10 without fabricati
   assert.deepEqual(snapshot.openRouter.history, []);
 });
 
-test('OpenRouter client sends the configured API key and preserves response metadata', async () => {
+test('OpenRouter client exposes only rankings and sends the configured server-side API key', async () => {
   const calls = [];
   const client = createOpenRouterClient({
     apiKey: 'openrouter-key',
@@ -196,29 +483,254 @@ test('OpenRouter client sends the configured API key and preserves response meta
   assert.equal(payload.meta.as_of, '2026-08-20T01:00:00.000Z');
   assert.match(calls[0].url, /start_date=2026-05-28/);
   assert.equal(calls[0].options.headers.Authorization, 'Bearer openrouter-key');
+  assert.deepEqual(Object.keys(client), ['fetchRankings']);
 });
 
-test('overlapping source refreshes are serialized without dropping the daily OpenRouter run', async (t) => {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-refresh-queue-'));
-  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
-  let releaseFeishu;
-  const feishuGate = new Promise((resolve) => { releaseFeishu = resolve; });
+test('OpenRouter rankings client reports source-specific HTTP and timeout failures', async () => {
+  const failedClient = createOpenRouterClient({
+    apiKey: 'key',
+    fetchImpl: async () => new Response('', { status: 401 }),
+  });
+  await assert.rejects(
+    failedClient.fetchRankings({ startDate: '2026-08-01', endDate: '2026-08-07' }),
+    /OpenRouter Data API failed with HTTP 401/,
+  );
+
+  const timeoutClient = createOpenRouterClient({
+    apiKey: 'key',
+    timeoutMs: 5,
+    fetchImpl: async (_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener('abort', () => reject(options.signal.reason));
+    }),
+  });
+  await assert.rejects(
+    timeoutClient.fetchRankings({ startDate: '2026-08-01', endDate: '2026-08-07' }),
+    /timed out/,
+  );
+});
+
+test('official Benchmark collector refresh is fresh for 15 minutes and force bypasses freshness', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-fresh-');
+  let calls = 0;
+  const service = createAiDashboardService({
+    dataFile,
+    collectors: {
+      async benchmarks() {
+        calls += 1;
+        return {
+          payload: {
+            benchmarks: {
+              models: [{ vendor: 'OpenAI', model: 'GPT Latest', releasedAt: '2026-08-22', scores: {} }],
+              metrics: [], winners: {}, asOf: '2026-08-22', sourceMode: 'official-model-cards',
+              coverage: { vendors: 1, evaluatedVendors: 0, metrics: 0 }, attributions: [],
+            },
+          },
+          source: readySource('2026-08-22'),
+        };
+      },
+    },
+    now: () => new Date('2026-08-24T00:05:00.000Z'),
+  });
+
+  const first = await service.refresh({ sources: ['benchmarks'], force: true });
+  assert.equal(first.sources.benchmarks.syncedAt, '2026-08-24T00:05:00.000Z');
+  assert.equal(first.benchmarks.sourceMode, 'official-model-cards');
+  await service.refresh({ sources: ['benchmarks'] });
+  assert.equal(calls, 1);
+  await service.refresh({ sources: ['benchmarks'], force: true });
+  assert.equal(calls, 2);
+});
+
+test('official Benchmark client publishes only first-party model-card records', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-official-benchmark-');
+  let rankingCalls = 0;
+  const service = createAiDashboardService({
+    dataFile,
+    openRouterClient: { async fetchRankings() { rankingCalls += 1; throw new Error('rankings must not be called'); } },
+    officialBenchmarkClient: {
+      async readAll() {
+        return [{
+          vendor: 'OpenAI', model: 'GPT-5.6 Sol', releasedAt: '2026-07-09', status: 'ready', stale: false,
+          sourceUrl: 'https://deploymentsafety.openai.com/gpt-5-6', discoveryMode: 'html-index',
+          retrievedAt: '2026-08-23T00:00:00.000Z',
+          scores: [{
+            testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', value: 88.8,
+            unit: 'percent-point', direction: 'higher', harness: 'Codex', effort: 'xhigh', configurationComplete: true,
+          }],
+        }];
+      },
+    },
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  const snapshot = await service.refresh({ sources: ['benchmarks'], force: true });
+
+  assert.equal(rankingCalls, 0);
+  assert.equal(snapshot.sources.benchmarks.status, 'ready');
+  assert.equal(snapshot.benchmarks.sourceMode, 'official-model-cards');
+  assert.equal(snapshot.benchmarks.models[0].model, 'GPT-5.6 Sol');
+  assert.equal(snapshot.benchmarks.attributions.every((row) => row.source === 'official-model-card'), true);
+  assert.deepEqual(snapshot.benchmarks.winners, {});
+  assert.equal(snapshot.benchmarks.coverage.comparableMetrics, 0);
+});
+
+test('a failed official vendor retains only that vendor last-good card and becomes stale', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-last-good-');
+  let round = 0;
+  const terminal = (value) => ({
+    testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', value,
+    unit: 'percent-point', direction: 'higher', harness: 'official', effort: 'xhigh', configurationComplete: true,
+  });
+  const service = createAiDashboardService({
+    dataFile,
+    officialBenchmarkClient: {
+      async readAll() {
+        round += 1;
+        return round === 1 ? [
+          { vendor: 'OpenAI', model: 'GPT-5.6 Sol', status: 'ready', stale: false, sourceUrl: 'https://openai.com/card', scores: [terminal(88)], specs: { contextWindowTokens: 1000000, contextWindowLabel: '1M tokens', sourceUrl: 'https://openai.com/specs' } },
+          { vendor: 'Gemini', model: 'Gemini 3.7 Flash', status: 'ready', stale: false, sourceUrl: 'https://deepmind.google/card', scores: [terminal(80)] },
+        ] : [
+          { vendor: 'OpenAI', model: 'GPT-5.6 Sol', status: 'error', stale: true, sourceUrl: 'https://openai.com/card', scores: [], specs: { contextWindowTokens: 1050000, contextWindowLabel: '1,050,000 tokens', sourceUrl: 'https://openai.com/latest-specs' }, error: 'temporary failure' },
+          { vendor: 'Gemini', model: 'Gemini 3.7 Flash', status: 'ready', stale: false, sourceUrl: 'https://deepmind.google/card', scores: [terminal(89)] },
+        ];
+      },
+    },
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  await service.refresh({ sources: ['benchmarks'], force: true });
+  const snapshot = await service.refresh({ sources: ['benchmarks'], force: true });
+  const openai = snapshot.benchmarks.models.find((model) => model.vendor === 'OpenAI');
+  const gemini = snapshot.benchmarks.models.find((model) => model.vendor === 'Gemini');
+
+  assert.equal(openai.status, 'error');
+  assert.equal(openai.stale, true);
+  assert.equal(Object.values(openai.scores)[0].value, 88);
+  assert.equal(openai.specs.contextWindowTokens, 1050000);
+  assert.equal(openai.specs.sourceUrl, 'https://openai.com/latest-specs');
+  assert.equal(Object.values(gemini.scores)[0].value, 89);
+  assert.deepEqual(Object.values(snapshot.benchmarks.winners)[0], { models: ['Gemini 3.7 Flash'], value: 89 });
+  assert.equal(snapshot.sources.benchmarks.stale, true);
+});
+
+test('failed-vendor last-good fallback preserves every nested disclosure', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-disclosure-fallback-');
+  let round = 0;
+  const terminal = (value, fields) => ({
+    testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', value,
+    unit: 'percent-point', direction: 'higher', effort: 'high', configurationComplete: true, ...fields,
+  });
+  const service = createAiDashboardService({
+    dataFile,
+    officialBenchmarkClient: {
+      async readAll() {
+        round += 1;
+        return round === 1 ? [
+          { vendor: 'OpenAI', model: 'GPT Latest', status: 'ready', stale: false, sourceUrl: 'https://openai.com/card', scores: [
+            terminal(82, { agent: 'Codex' }), terminal(84, { harness: 'Codex' }),
+          ] },
+          { vendor: 'Gemini', model: 'Gemini Latest', status: 'ready', stale: false, sourceUrl: 'https://deepmind.google/card', scores: [terminal(83, { agent: 'Codex' })] },
+        ] : [
+          { vendor: 'OpenAI', model: 'GPT Latest', status: 'error', stale: true, sourceUrl: 'https://openai.com/card', scores: [], error: 'temporary failure' },
+          { vendor: 'Gemini', model: 'Gemini Latest', status: 'ready', stale: false, sourceUrl: 'https://deepmind.google/card', scores: [terminal(83, { agent: 'Codex' })] },
+        ];
+      },
+    },
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  await service.refresh({ sources: ['benchmarks'], force: true });
+  const snapshot = await service.refresh({ sources: ['benchmarks'], force: true });
+  const openAi = snapshot.benchmarks.models.find((model) => model.vendor === 'OpenAI');
+  const score = Object.values(openAi.scores)[0];
+
+  assert.deepEqual(score.disclosures.map((row) => row.value).sort(), [82, 84]);
+  assert.equal(score.ambiguous, true);
+  assert.deepEqual(snapshot.benchmarks.winners, {});
+});
+
+test('a blocked live page still publishes configured first-party score rows instead of older fallback scores', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-pinned-fallback-');
+  let round = 0;
+  const terminal = (value) => ({
+    testName: 'Terminal-Bench', testVersion: '2.1', scoreName: 'Accuracy', value,
+    unit: 'percent-point', direction: 'higher', effort: 'max', configurationComplete: false,
+  });
+  const service = createAiDashboardService({
+    dataFile,
+    officialBenchmarkClient: {
+      async readAll() {
+        round += 1;
+        return [{
+          vendor: 'OpenAI', model: 'GPT Latest', status: round === 1 ? 'ready' : 'error', stale: round > 1,
+          sourceUrl: 'https://openai.com/card', scores: [terminal(round === 1 ? 88 : 91.9)],
+          error: round > 1 ? 'HTTP 403; using pinned official table rows' : null,
+        }];
+      },
+    },
+    now: () => new Date('2026-08-23T00:00:00.000Z'),
+  });
+
+  await service.refresh({ sources: ['benchmarks'], force: true });
+  const snapshot = await service.refresh({ sources: ['benchmarks'], force: true });
+  const score = Object.values(snapshot.benchmarks.models[0].scores)[0];
+  assert.equal(snapshot.benchmarks.models[0].status, 'error');
+  assert.equal(score.value, 91.9);
+});
+
+test('overlapping forced Benchmark refreshes share a single official collector request', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-benchmark-dedupe-');
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  let calls = 0;
+  const service = createAiDashboardService({
+    dataFile,
+    collectors: {
+      async benchmarks() {
+        calls += 1;
+        await gate;
+        return {
+          payload: { benchmarks: { ...createEmptyAiDashboardSnapshot().benchmarks, sourceMode: 'official-model-cards' } },
+          source: readySource('2026-08-22'),
+        };
+      },
+    },
+    now: () => new Date('2026-08-23T00:05:00.000Z'),
+  });
+
+  const first = service.refresh({ sources: ['benchmarks'], force: true });
+  const second = service.refresh({ sources: ['benchmarks'], force: true });
+  await new Promise((resolve) => setImmediate(resolve));
+  release();
+  const [firstSnapshot, secondSnapshot] = await Promise.all([first, second]);
+
+  assert.equal(calls, 1);
+  assert.equal(firstSnapshot.generatedAt, secondSnapshot.generatedAt);
+});
+
+test('overlapping public-slice refreshes are serialized without dropping OpenRouter traffic', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-refresh-queue-');
+  let releaseGrowth;
+  const growthGate = new Promise((resolve) => { releaseGrowth = resolve; });
   let openRouterCalls = 0;
   const service = createAiDashboardService({
-    dataFile: path.join(dir, 'snapshot.json'),
+    dataFile,
     now: () => new Date('2026-08-20T00:00:00.000Z'),
-    feishuClient: {
-      async readWorkbook() {
-        await feishuGate;
-        return { 'ARR&估值': [['月份', 'Anthropic'], ['2026年7月', 730]] };
+    collectors: {
+      async growth() {
+        await growthGate;
+        return {
+          payload: { arrAndValuation: { companies: [{ company: 'Anthropic' }], valuations: [] } },
+          source: readySource('2026-08-19'),
+        };
       },
     },
     openRouterClient: {
       async fetchRankings() {
         openRouterCalls += 1;
         return {
-          data: Array.from({ length: 7 }, (_, index) => ({
-            date: `2026-08-${String(13 + index).padStart(2, '0')}`,
+          data: Array.from({ length: 14 }, (_, index) => ({
+            date: `2026-08-${String(6 + index).padStart(2, '0')}`,
             model_permaslug: 'vendor/model',
             total_tokens: '6',
           })),
@@ -228,33 +740,27 @@ test('overlapping source refreshes are serialized without dropping the daily Ope
     },
   });
 
-  const feishuRefresh = service.refresh({ sources: ['feishu'] });
+  const growthRefresh = service.refresh({ sources: ['growth'] });
   await new Promise((resolve) => setImmediate(resolve));
   const openRouterRefresh = service.refresh({ sources: ['openRouter'] });
-  releaseFeishu();
-  await feishuRefresh;
+  releaseGrowth();
+  await growthRefresh;
   const snapshot = await openRouterRefresh;
 
   assert.equal(openRouterCalls, 1);
-  assert.equal(snapshot.sources.feishu.status, 'ready');
+  assert.equal(snapshot.sources.growth.status, 'ready');
   assert.equal(snapshot.sources.openRouter.status, 'ready');
   assert.equal(snapshot.openRouter.weekTotalTokens, '42');
+  assert.equal(snapshot.openRouter.weekOverWeekAbsolute, '0');
 });
 
-test('sparse OpenRouter responses preserve the last-good week instead of publishing incomplete days as zero', async (t) => {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-openrouter-sparse-'));
-  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
-  const dataFile = path.join(dir, 'snapshot.json');
+test('incomplete OpenRouter responses preserve the last-good week', async (t) => {
+  const { dataFile } = await tempDashboard(t, 'ai-dashboard-openrouter-sparse-');
   await fs.promises.writeFile(dataFile, JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: '2026-08-19T00:00:00.000Z',
     sources: { openRouter: { status: 'ready', stale: false, asOf: '2026-08-19T01:00:00.000Z' } },
-    arrAndValuation: { companies: [], valuations: [] },
     openRouter: { weekTotalTokens: '123', topModels: [], history: [] },
-    modelPricing: { token: [], video: [], codingPlans: [] },
-    benchmarks: { models: [], winners: {} },
-    computeRental: [],
-    debtFinancing: [],
   }), 'utf8');
   const service = createAiDashboardService({
     dataFile,
@@ -276,68 +782,43 @@ test('sparse OpenRouter responses preserve the last-good week instead of publish
   assert.equal(snapshot.openRouter.weekTotalTokens, '123');
 });
 
-test('malformed OpenRouter rows do not count as complete UTC-day coverage', async (t) => {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-openrouter-malformed-'));
-  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
-  const dataFile = path.join(dir, 'snapshot.json');
-  await fs.promises.writeFile(dataFile, JSON.stringify({
-    schemaVersion: 1,
-    generatedAt: '2026-08-19T00:00:00.000Z',
-    sources: { openRouter: { status: 'ready', stale: false, asOf: '2026-08-19T01:00:00.000Z' } },
-    openRouter: { weekTotalTokens: '123', topModels: [], history: [] },
-  }), 'utf8');
-  const service = createAiDashboardService({
-    dataFile,
-    now: () => new Date('2026-08-20T00:00:00.000Z'),
-    openRouterClient: {
-      async fetchRankings() {
-        return {
-          data: Array.from({ length: 7 }, (_, index) => ({
-            date: `2026-08-${String(13 + index).padStart(2, '0')}`,
-            model_permaslug: '',
-            total_tokens: 'not-a-number',
-          })),
-          meta: { as_of: '2026-08-20T01:00:00.000Z', end_date: '2026-08-19' },
-        };
-      },
+test('auto refresh excludes import-driven ICE CDS and clears every timer', async () => {
+  const timeouts = [];
+  const intervals = [];
+  const clearedTimeouts = [];
+  const clearedIntervals = [];
+  const calls = [];
+  const service = {
+    async refresh(options) { calls.push(options); return {}; },
+  };
+  const stop = startAiDashboardAutoRefresh(service, {
+    setTimeoutImpl(callback, ms) {
+      const id = { type: 'timeout', index: timeouts.length };
+      timeouts.push({ callback, ms, id });
+      return id;
     },
+    setIntervalImpl(callback, ms) {
+      const id = { type: 'interval', index: intervals.length };
+      intervals.push({ callback, ms, id });
+      return id;
+    },
+    clearTimeoutImpl(id) { clearedTimeouts.push(id); },
+    clearIntervalImpl(id) { clearedIntervals.push(id); },
   });
 
-  const snapshot = await service.refresh({ sources: ['openRouter'] });
+  assert.equal(timeouts.length, 1);
+  assert.equal(timeouts[0].ms, 5_000);
+  assert.deepEqual(intervals.map((timer) => timer.ms), [86_400_000, 86_400_000, 86_400_000]);
+  await timeouts[0].callback();
+  for (const timer of intervals) await timer.callback();
+  assert.deepEqual(calls, [
+    { sources: ALL_PUBLIC_SLICES.filter((source) => source !== 'creditRisk') },
+    { sources: ['growth', 'pricing', 'capital', 'artificialAnalysis', 'compute'] },
+    { sources: ['openRouter'] },
+    { sources: ['benchmarks'] },
+  ]);
 
-  assert.equal(snapshot.sources.openRouter.status, 'error');
-  assert.equal(snapshot.openRouter.weekTotalTokens, '123');
-});
-
-test('OpenRouter metadata must end on the requested latest complete UTC day', async (t) => {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ai-dashboard-openrouter-stale-meta-'));
-  t.after(() => fs.promises.rm(dir, { recursive: true, force: true }));
-  const dataFile = path.join(dir, 'snapshot.json');
-  await fs.promises.writeFile(dataFile, JSON.stringify({
-    schemaVersion: 1,
-    generatedAt: '2026-08-19T00:00:00.000Z',
-    sources: { openRouter: { status: 'ready', stale: false, asOf: '2026-08-19T01:00:00.000Z' } },
-    openRouter: { weekTotalTokens: '123', topModels: [], history: [] },
-  }), 'utf8');
-  const service = createAiDashboardService({
-    dataFile,
-    now: () => new Date('2026-08-20T00:00:00.000Z'),
-    openRouterClient: {
-      async fetchRankings() {
-        return {
-          data: Array.from({ length: 7 }, (_, index) => ({
-            date: `2026-08-${String(6 + index).padStart(2, '0')}`,
-            model_permaslug: 'vendor/model',
-            total_tokens: '6',
-          })),
-          meta: { as_of: '2026-08-13T01:00:00.000Z', end_date: '2026-08-12' },
-        };
-      },
-    },
-  });
-
-  const snapshot = await service.refresh({ sources: ['openRouter'] });
-
-  assert.equal(snapshot.sources.openRouter.status, 'error');
-  assert.equal(snapshot.openRouter.weekTotalTokens, '123');
+  stop();
+  assert.deepEqual(clearedTimeouts, [timeouts[0].id]);
+  assert.deepEqual(clearedIntervals, intervals.map((timer) => timer.id));
 });

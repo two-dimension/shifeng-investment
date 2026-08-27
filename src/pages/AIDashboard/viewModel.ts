@@ -1,4 +1,23 @@
-import type { SourceStatus } from './types';
+import type {
+  BenchmarkMetricDefinition,
+  BenchmarkScore,
+  AiDashboardSnapshot,
+  ArtificialAnalysisTaskCost,
+  DashboardSourceKey,
+  MetricProvenance,
+  SourceStatus,
+} from './types';
+
+const DASHBOARD_SOURCE_DEFINITIONS: ReadonlyArray<{ key: DashboardSourceKey; label: string }> = [
+  { key: 'growth', label: '增长与估值' },
+  { key: 'openRouter', label: 'OpenRouter 流量' },
+  { key: 'pricing', label: '模型与套餐价格' },
+  { key: 'capital', label: '融资与债务' },
+  { key: 'benchmarks', label: '厂商官网模型卡' },
+  { key: 'artificialAnalysis', label: 'AA Index' },
+  { key: 'compute', label: '算力租赁' },
+  { key: 'creditRisk', label: '5Y CDS' },
+];
 
 const TOKEN_UNITS: Array<{ divisor: bigint; suffix: string }> = [
   { divisor: 1_000_000_000_000_000_000n, suffix: 'E' },
@@ -18,18 +37,68 @@ export function formatTokenCount(value: string | null | undefined): string {
     return '—';
   }
   if (tokens === 0n) return '0';
-  const unit = TOKEN_UNITS.find(({ divisor }) => tokens >= divisor);
+  const sign = tokens < 0n ? '-' : '';
+  const absolute = tokens < 0n ? -tokens : tokens;
+  const unit = TOKEN_UNITS.find(({ divisor }) => absolute >= divisor);
   if (!unit) return tokens.toString();
-  const roundedHundredths = (tokens * 100n + unit.divisor / 2n) / unit.divisor;
+  const roundedHundredths = (absolute * 100n + unit.divisor / 2n) / unit.divisor;
   const whole = roundedHundredths / 100n;
   const fraction = String(roundedHundredths % 100n).padStart(2, '0').replace(/0+$/, '');
-  return `${whole}${fraction ? `.${fraction}` : ''}${unit.suffix}`;
+  return `${sign}${whole}${fraction ? `.${fraction}` : ''}${unit.suffix}`;
+}
+
+function signedPercent(value: number | null | undefined): string | null {
+  if (value === null || value === undefined || !Number.isFinite(value)) return null;
+  const percent = value * 100;
+  return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}%`;
+}
+
+export function formatArrDelta(value: number | null | undefined, percent: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+  const formatted = Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '');
+  const change = `${value > 0 ? '+' : ''}${formatted} 亿美元`;
+  const percentage = signedPercent(percent);
+  return percentage ? `${change}（${percentage}）` : change;
+}
+
+export function formatTokenDelta(value: string | null | undefined, percent: number | null | undefined): string {
+  if (value === null || value === undefined || value === '') return '—';
+  let parsed: bigint;
+  try {
+    parsed = BigInt(value);
+  } catch {
+    return '—';
+  }
+  const change = `${parsed > 0n ? '+' : ''}${formatTokenCount(value)} Tokens`;
+  const percentage = signedPercent(percent);
+  return percentage ? `${change}（${percentage}）` : change;
 }
 
 export function formatUsd(value: number | null | undefined, digits = 2): string {
   return value === null || value === undefined || !Number.isFinite(value)
     ? '—'
     : `$${value.toFixed(digits)}`;
+}
+
+export function formatCurrencyPrice(
+  value: number | null | undefined,
+  currency: string | null | undefined,
+  digits = 2,
+): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+  const code = String(currency || '').toUpperCase();
+  const prefix = code === 'USD' ? '$' : code === 'CNY' ? '¥' : code ? `${code} ` : '';
+  return `${prefix}${value.toFixed(digits)}`;
+}
+
+export function formatPriceChange(event: {
+  oldPrice: number;
+  newPrice: number;
+  percentDelta: number | null;
+  currency: string;
+}): string {
+  const percent = signedPercent(event.percentDelta);
+  return `${formatCurrencyPrice(event.oldPrice, event.currency)} → ${formatCurrencyPrice(event.newPrice, event.currency)}${percent ? `（${percent}）` : ''}`;
 }
 
 export function formatMultiple(low: number | null, high: number | null): string {
@@ -46,8 +115,9 @@ export function formatCacheHitRange(low: number | null, high: number | null, val
 export function sourceStatusLabel(source: Pick<SourceStatus, 'status' | 'stale'>): string {
   if (source.status === 'authorization_required') return '待授权';
   if (source.status === 'error' && source.stale) return '使用上一版';
-  if (source.status === 'ready' && !source.stale) return '已同步';
-  return '数据过期';
+  if (source.status === 'error') return '同步失败';
+  if (source.stale) return '部分沿用旧值';
+  return '已同步';
 }
 
 export function sourceStatusColor(source: Pick<SourceStatus, 'status' | 'stale'>): 'success' | 'warning' | 'error' | 'default' {
@@ -57,6 +127,243 @@ export function sourceStatusColor(source: Pick<SourceStatus, 'status' | 'stale'>
   return 'error';
 }
 
+export function dashboardSourceSummary(
+  sources: ReadonlyArray<Pick<SourceStatus, 'status' | 'stale'>>,
+): { attentionCount: number; label: string; color: 'success' | 'warning' } {
+  const attentionCount = sources.filter((source) => source.status !== 'ready' || source.stale).length;
+  return attentionCount > 0
+    ? { attentionCount, label: `${attentionCount}项需关注`, color: 'warning' }
+    : { attentionCount, label: '状态正常', color: 'success' };
+}
+
+export function dashboardSourceEntries(sources: Record<DashboardSourceKey, SourceStatus>) {
+  return DASHBOARD_SOURCE_DEFINITIONS.flatMap(({ key, label }) => (
+    sources[key] ? [{ key, label, source: sources[key] }] : []
+  ));
+}
+
+export function methodologyTooltip(
+  provenance: Pick<MetricProvenance, 'methodology' | 'sourceLabel' | 'asOf' | 'commentary'>,
+): string[] {
+  return [
+    `数据口径：${provenance.methodology}`,
+    `数据来源：${provenance.sourceLabel}`,
+    `数据日期：${provenance.asOf}`,
+    provenance.commentary ? `点评：${provenance.commentary}` : null,
+  ].filter((line): line is string => line !== null);
+}
+
 export function showDashboardSessionControls(publicAccess: boolean | undefined): boolean {
   return publicAccess !== true;
+}
+
+export function benchmarkRefreshRequest(activeTab: string): { sources: ['benchmarks']; force: true } | null {
+  return activeTab === 'benchmark' ? { sources: ['benchmarks'], force: true } : null;
+}
+
+export function formatBenchmarkValue(
+  score: Pick<BenchmarkScore, 'value'> | null | undefined,
+  metric: Pick<BenchmarkMetricDefinition, 'unit'>,
+): string {
+  if (!score || !Number.isFinite(score.value)) return '—';
+  if (metric.unit === 'percent') return `${(score.value * 100).toFixed(1)}%`;
+  if (metric.unit === 'percent-point') return `${score.value.toFixed(1)}%`;
+  if (metric.unit === 'elo') return Math.round(score.value).toLocaleString('en-US');
+  if (metric.unit === 'rank') return `#${Math.round(score.value)}`;
+  if (metric.unit === 'usd') return formatUsd(score.value, score.value < 0.01 ? 4 : 2);
+  if (metric.unit === 'index') return `${score.value.toFixed(1)}%`;
+  return Number.isInteger(score.value) ? score.value.toLocaleString('en-US') : score.value.toFixed(1);
+}
+
+function isTerminalBenchmark(metric: Pick<BenchmarkMetricDefinition, 'testFamily' | 'testName'>): boolean {
+  return metric.testFamily === 'Terminal-Bench' || /terminal[- ]bench/i.test(metric.testName || '');
+}
+
+export function benchmarkMetricDisplayLabel(metric: Pick<BenchmarkMetricDefinition,
+  'label' | 'testFamily' | 'testName' | 'testVersion'>): string {
+  if (!isTerminalBenchmark(metric)) return metric.label;
+  return [metric.testName || metric.testFamily || 'Terminal-Bench', metric.testVersion]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function benchmarkEffortDisplayLabel(effort: string): string {
+  const normalized = effort.trim().toLowerCase();
+  const knownLabels: Record<string, string> = {
+    ultra: 'Ultra',
+    max: 'Max',
+    xhigh: 'XHigh',
+    'x-high': 'XHigh',
+    highest: 'Highest',
+    high: 'High',
+    medium: 'Medium',
+    low: 'Low',
+  };
+  return knownLabels[normalized] || effort.trim();
+}
+
+export function benchmarkModelEffortLabel(model: string, effort: string | null | undefined): string {
+  return effort?.trim() ? `${model}（${benchmarkEffortDisplayLabel(effort)}）` : model;
+}
+
+export function topBenchmarkScoreRows<T extends { score: Pick<BenchmarkScore, 'value'> }>(
+  rows: ReadonlyArray<T>,
+  direction: BenchmarkMetricDefinition['direction'],
+  limit = 3,
+): T[] {
+  const factor = direction === 'lower' ? 1 : -1;
+  return [...rows]
+    .filter((row) => Number.isFinite(row.score.value))
+    .sort((left, right) => factor * (left.score.value - right.score.value))
+    .slice(0, Math.max(0, Math.floor(limit)));
+}
+
+const OFFICIAL_BENCHMARK_CATEGORY_ORDER = [
+  'Agent', 'Coding', 'Search & Tool Use', 'Reasoning & Knowledge', 'Multimodal', '其他',
+] as const;
+
+function benchmarkMetricSort(left: BenchmarkMetricDefinition, right: BenchmarkMetricDefinition): number {
+  const leftCategory = left.category || left.group || '其他';
+  const rightCategory = right.category || right.group || '其他';
+  const leftIndex = OFFICIAL_BENCHMARK_CATEGORY_ORDER.indexOf(leftCategory as typeof OFFICIAL_BENCHMARK_CATEGORY_ORDER[number]);
+  const rightIndex = OFFICIAL_BENCHMARK_CATEGORY_ORDER.indexOf(rightCategory as typeof OFFICIAL_BENCHMARK_CATEGORY_ORDER[number]);
+  return (leftIndex < 0 ? OFFICIAL_BENCHMARK_CATEGORY_ORDER.length : leftIndex)
+    - (rightIndex < 0 ? OFFICIAL_BENCHMARK_CATEGORY_ORDER.length : rightIndex)
+    || (left.priority ?? 1) - (right.priority ?? 1)
+    || (right.scoreCount ?? 0) - (left.scoreCount ?? 0)
+    || (left.sourceOrder ?? 0) - (right.sourceOrder ?? 0)
+    || left.label.localeCompare(right.label, 'en');
+}
+
+export function groupOfficialBenchmarkMetrics(metrics: BenchmarkMetricDefinition[]) {
+  const groups = new Map<string, BenchmarkMetricDefinition[]>();
+  for (const metric of [...metrics].sort(benchmarkMetricSort)) {
+    const category = metric.category || metric.group || '其他';
+    groups.set(category, [...(groups.get(category) || []), metric]);
+  }
+  return [...groups].map(([category, groupedMetrics]) => ({ category, metrics: groupedMetrics }));
+}
+
+export function benchmarkScoreRunLabel(score: Pick<BenchmarkScore,
+  'agent' | 'harness' | 'effort' | 'shots' | 'passK' | 'tools'>): string {
+  const run: string[] = [];
+  if (score.agent) run.push(`Agent: ${score.agent}`);
+  if (score.harness) run.push(`Harness: ${score.harness}`);
+  if (score.effort) run.push(`Effort: ${score.effort}`);
+  if (score.shots !== null && score.shots !== undefined) run.push(`Shots: ${score.shots}`);
+  if (score.passK !== null && score.passK !== undefined) run.push(`Pass@k: ${score.passK}`);
+  if (score.tools) run.push(`Tools: ${score.tools}`);
+  return run.join(' · ') || '配置未完整披露';
+}
+
+export function terminalBenchmarkRunLabel(score: Pick<BenchmarkScore,
+  'agent' | 'harness' | 'effort' | 'shots' | 'passK' | 'tools'>): string | null {
+  const label = benchmarkScoreRunLabel({ ...score, agent: null, effort: null });
+  return label === '配置未完整披露' ? null : label;
+}
+
+export function benchmarkDisclosureKey(score: Pick<BenchmarkScore,
+  'value' | 'agent' | 'harness' | 'effort' | 'shots' | 'passK' | 'tools'
+  | 'configurationComplete' | 'sourceOrder' | 'sourceUrl'>): string {
+  const configuration = score.configurationComplete === true
+    ? 'true'
+    : score.configurationComplete === false ? 'false' : 'unknown';
+  return [
+    ['value', score.value],
+    ['agent', score.agent],
+    ['harness', score.harness],
+    ['effort', score.effort],
+    ['shots', score.shots],
+    ['passK', score.passK],
+    ['tools', score.tools],
+    ['configuration', configuration],
+    ['sourceOrder', score.sourceOrder],
+    ['sourceUrl', score.sourceUrl],
+  ].map(([name, value]) => `${name}=${encodeURIComponent(String(value ?? 'none'))}`).join('&');
+}
+
+function benchmarkRunLabel(metric: BenchmarkMetricDefinition): string {
+  const label = benchmarkScoreRunLabel(metric);
+  return label === '配置未完整披露' && metric.comparable ? '官网同测试口径' : label;
+}
+
+export function officialWinnerRows(benchmarks: AiDashboardSnapshot['benchmarks']) {
+  const metrics = [...benchmarks.metrics].sort(benchmarkMetricSort);
+  return metrics.flatMap((metric) => {
+    const winner = benchmarks.winners[metric.key];
+    if (!winner || !Array.isArray(winner.models) || winner.models.length === 0 || !Number.isFinite(winner.value)) return [];
+    return [{
+      category: metric.category || metric.group || '其他',
+      metricKey: metric.key,
+      label: metric.label,
+      testName: metric.testName || metric.testFamily || metric.label,
+      testVersion: metric.testVersion || null,
+      models: winner.models,
+      formattedValue: formatBenchmarkValue({ value: winner.value }, metric),
+      runLabel: benchmarkRunLabel(metric),
+      terminalBench: metric.testFamily === 'Terminal-Bench' || /terminal[- ]bench/i.test(metric.testName || ''),
+      direction: metric.direction,
+      comparable: metric.comparable !== false,
+    }];
+  });
+}
+
+export function officialBenchmarkSummaryRows(benchmarks: AiDashboardSnapshot['benchmarks']) {
+  const strictRows = officialWinnerRows(benchmarks);
+  const strictKeys = new Set(strictRows.map((row) => row.metricKey));
+  const disclosedRows = [...benchmarks.metrics].sort(benchmarkMetricSort).flatMap((metric) => {
+    if (strictKeys.has(metric.key)) return [];
+    const scored = benchmarks.models.flatMap((model) => {
+      const cell = model.scores?.[metric.key];
+      if (!cell) return [];
+      const disclosures = Array.isArray(cell.disclosures) && cell.disclosures.length > 0
+        ? cell.disclosures
+        : [cell];
+      return disclosures.flatMap((score) => Number.isFinite(score.value)
+        ? [{ model: model.model, value: score.value }]
+        : []);
+    });
+    if (scored.length === 0) return [];
+    const best = metric.direction === 'lower'
+      ? Math.min(...scored.map((row) => row.value))
+      : Math.max(...scored.map((row) => row.value));
+    return [{
+      category: metric.category || metric.group || '其他',
+      metricKey: metric.key,
+      label: metric.label,
+      testName: metric.testName || metric.testFamily || metric.label,
+      testVersion: metric.testVersion || null,
+      models: [...new Set(scored.filter((row) => row.value === best).map((row) => row.model))].sort((left, right) => left.localeCompare(right, 'en')),
+      formattedValue: formatBenchmarkValue({ value: best }, metric),
+      runLabel: '官网披露最高 · 运行配置不同，不作严格排名',
+      terminalBench: metric.testFamily === 'Terminal-Bench' || /terminal[- ]bench/i.test(metric.testName || ''),
+      direction: metric.direction,
+      comparable: false,
+    }];
+  });
+  return [...strictRows, ...disclosedRows].sort((left, right) => {
+    const leftMetric = benchmarks.metrics.find((metric) => metric.key === left.metricKey);
+    const rightMetric = benchmarks.metrics.find((metric) => metric.key === right.metricKey);
+    return leftMetric && rightMetric ? benchmarkMetricSort(leftMetric, rightMetric) : 0;
+  });
+}
+
+export function formatTaskTokenBreakdown(row: Pick<ArtificialAnalysisTaskCost, 'answerTokens' | 'reasoningTokens' | 'outputTokens'>): string {
+  if (row.outputTokens === null) return 'Token 明细未公开';
+  const answer = row.answerTokens === null ? '—' : Math.round(row.answerTokens).toLocaleString('en-US');
+  const reasoning = row.reasoningTokens === null ? '—' : Math.round(row.reasoningTokens).toLocaleString('en-US');
+  return `Answer ${answer} + Reasoning ${reasoning} = ${Math.round(row.outputTokens).toLocaleString('en-US')} Tokens`;
+}
+
+export function formatTaskCostComponents(row: Pick<ArtificialAnalysisTaskCost,
+  'inputCost' | 'cacheHitCost' | 'cacheWriteCost' | 'reasoningCost' | 'answerCost' | 'totalCost' | 'currency'>): string {
+  if (row.totalCost === null) return '成本未公开';
+  const components = [
+    ['Input', row.inputCost],
+    ['Cache hit', row.cacheHitCost],
+    ['Cache write', row.cacheWriteCost],
+    ['Reasoning', row.reasoningCost],
+    ['Answer', row.answerCost],
+  ].filter((entry): entry is [string, number] => entry[1] !== null);
+  return `${components.map(([label, value]) => `${label} ${formatCurrencyPrice(value, row.currency, 4)}`).join(' + ')} = ${formatCurrencyPrice(row.totalCost, row.currency, 4)}`;
 }

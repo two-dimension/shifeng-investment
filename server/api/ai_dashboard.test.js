@@ -19,18 +19,129 @@ function testApp(options = {}) {
     async getSnapshot() { return { schemaVersion: 1, generatedAt: '2026-08-20T00:00:00.000Z' }; },
     async refresh() { return { schemaVersion: 1, refreshed: true }; },
   };
+  const cdsPipeline = options.cdsPipeline || {
+    async preview() { return { batchId: 'preview-batch', rows: [], errors: [], blocking: false }; },
+    async import() { return { batchId: 'import-batch', snapshot: {}, workbookPath: '/tmp/ice-cds-history.xlsx' }; },
+    async status() { return { available: false, localWriteAllowed: true, workbookAvailable: false }; },
+    async exportWorkbook() { return Buffer.from('xlsx'); },
+  };
   const app = express();
   app.set('trust proxy', 'loopback');
-  app.use(express.json());
+  app.use(express.json({ limit: '2mb' }));
   app.use('/api/ai-dashboard', createAiDashboardRouter({
     service,
+    cdsPipeline,
     accessCode: 'correct horse',
     sessionSecret: 'session-secret-with-enough-entropy',
     now: () => new Date('2026-08-20T00:00:00.000Z'),
     ...options,
   }));
-  return { app, service };
+  return { app, service, cdsPipeline };
 }
+
+test('local ICE CDS preview, import, status, and Excel export use the pipeline', async (t) => {
+  const calls = [];
+  const cdsPipeline = {
+    async preview(input) { calls.push(['preview', input]); return { batchId: 'preview-batch', rows: [{ company: 'Oracle' }], blocking: false }; },
+    async import(input) { calls.push(['import', input]); return { batchId: 'committed-batch', snapshot: { schemaVersion: 2 } }; },
+    async status() { return { available: true, localWriteAllowed: true, workbookAvailable: true, batchId: 'committed-batch' }; },
+    async exportWorkbook() { return Buffer.from('fake-xlsx'); },
+  };
+  const { app } = testApp({ cdsPipeline });
+  const server = await listen(app);
+  t.after(server.close);
+  const input = {
+    iceText: 'Clearing Date\tName\tInstrument Name\tEOD Price',
+    discountCurve: { curveId: 'curve', nodes: [{ years: 1, zeroRate: 0.04 }] },
+  };
+
+  const preview = await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import/preview`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Origin: server.baseUrl }, body: JSON.stringify(input),
+  });
+  assert.equal(preview.status, 200);
+  assert.equal((await preview.json()).data.batchId, 'preview-batch');
+
+  const imported = await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+  });
+  assert.equal(imported.status, 200);
+  assert.equal((await imported.json()).data.batchId, 'committed-batch');
+  assert.deepEqual(calls, [['preview', input], ['import', input]]);
+
+  const status = await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import-status`);
+  assert.equal(status.status, 200);
+  assert.equal((await status.json()).data.localWriteAllowed, true);
+
+  const exported = await fetch(`${server.baseUrl}/api/ai-dashboard/cds/export.xlsx`);
+  assert.equal(exported.status, 200);
+  assert.equal(exported.headers.get('content-type'), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  assert.equal(exported.headers.get('content-disposition'), 'attachment; filename="ice-cds-history.xlsx"');
+  assert.equal(await exported.text(), 'fake-xlsx');
+});
+
+test('ICE CDS import APIs reject remote writers while status masks write access and export remains readable', async (t) => {
+  let writeCalls = 0;
+  const cdsPipeline = {
+    async preview() { writeCalls += 1; return {}; },
+    async import() { writeCalls += 1; return {}; },
+    async status() { return { available: true, localWriteAllowed: true, workbookAvailable: true }; },
+    async exportWorkbook() { return Buffer.from('xlsx'); },
+  };
+  const { app } = testApp({ cdsPipeline });
+  const server = await listen(app);
+  t.after(server.close);
+  const remoteHeaders = { 'Content-Type': 'application/json', 'X-Forwarded-For': '198.51.100.20' };
+  const body = JSON.stringify({ iceText: 'x', discountCurve: { nodes: [] } });
+
+  assert.equal((await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import/preview`, { method: 'POST', headers: remoteHeaders, body })).status, 403);
+  assert.equal((await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import`, { method: 'POST', headers: remoteHeaders, body })).status, 403);
+  const status = await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import-status`, { headers: { 'X-Forwarded-For': '198.51.100.20' } });
+  assert.equal((await status.json()).data.localWriteAllowed, false);
+  assert.equal((await fetch(`${server.baseUrl}/api/ai-dashboard/cds/export.xlsx`, { headers: { 'X-Forwarded-For': '198.51.100.20' } })).status, 200);
+  assert.equal(writeCalls, 0);
+});
+
+test('ICE CDS import APIs reject cross-origin browser writes even from loopback', async (t) => {
+  let writeCalls = 0;
+  const cdsPipeline = {
+    async preview() { writeCalls += 1; return {}; },
+    async import() { writeCalls += 1; return {}; },
+    async status() { return { available: true, localWriteAllowed: true, workbookAvailable: true }; },
+    async exportWorkbook() { return Buffer.from('xlsx'); },
+  };
+  const { app } = testApp({ cdsPipeline });
+  const server = await listen(app);
+  t.after(server.close);
+  const headers = { 'Content-Type': 'application/json', Origin: 'https://malicious.example' };
+  const body = JSON.stringify({ iceText: 'x', discountCurve: { nodes: [] } });
+
+  assert.equal((await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import/preview`, { method: 'POST', headers, body })).status, 403);
+  assert.equal((await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import`, { method: 'POST', headers, body })).status, 403);
+  const status = await fetch(`${server.baseUrl}/api/ai-dashboard/cds/import-status`, { headers: { Origin: 'https://malicious.example' } });
+  assert.equal((await status.json()).data.localWriteAllowed, false);
+  assert.equal(writeCalls, 0);
+});
+
+test('ICE CDS import validation rejects oversized text, excessive curve nodes, and unknown fields', async (t) => {
+  let calls = 0;
+  const cdsPipeline = {
+    async preview() { calls += 1; return {}; },
+    async import() { calls += 1; return {}; },
+    async status() { return {}; },
+    async exportWorkbook() { return Buffer.from('xlsx'); },
+  };
+  const { app } = testApp({ cdsPipeline });
+  const server = await listen(app);
+  t.after(server.close);
+  const post = (body) => fetch(`${server.baseUrl}/api/ai-dashboard/cds/import/preview`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+
+  assert.equal((await post({ iceText: 'x', discountCurve: { nodes: [] }, derivedRows: [{ spreadBp: 1 }] })).status, 400);
+  assert.equal((await post({ iceText: 'x', discountCurve: { nodes: Array.from({ length: 10_001 }, () => ({ years: 1, zeroRate: 0.04 })) } })).status, 400);
+  assert.equal((await post({ iceText: 'x'.repeat(1024 * 1024 + 1), discountCurve: { nodes: [] } })).status, 413);
+  assert.equal(calls, 0);
+});
 
 test('dashboard data and refresh are available without a separate AI session', async (t) => {
   let refreshCount = 0;
@@ -49,6 +160,57 @@ test('dashboard data and refresh are available without a separate AI session', a
   const refresh = await fetch(`${server.baseUrl}/api/ai-dashboard/refresh`, { method: 'POST' });
   assert.equal(refresh.status, 200);
   assert.equal(refreshCount, 1);
+});
+
+test('refresh forwards validated scoped sources and force to the dashboard service', async (t) => {
+  const calls = [];
+  const service = {
+    async getSnapshot() { return { schemaVersion: 1 }; },
+    async refresh(options) { calls.push(options); return { schemaVersion: 1, refreshed: true }; },
+  };
+  const { app } = testApp({ service });
+  const server = await listen(app);
+  t.after(server.close);
+
+  const scoped = await fetch(`${server.baseUrl}/api/ai-dashboard/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sources: ['growth', 'pricing'], force: false }),
+  });
+  assert.equal(scoped.status, 200);
+  assert.deepEqual(calls[0], { sources: ['growth', 'pricing'], force: false });
+
+  const full = await fetch(`${server.baseUrl}/api/ai-dashboard/refresh`, { method: 'POST' });
+  assert.equal(full.status, 200);
+  assert.equal(calls[1], undefined);
+});
+
+test('refresh rejects unknown or malformed source scopes without calling the service', async (t) => {
+  let refreshCount = 0;
+  const service = {
+    async getSnapshot() { return { schemaVersion: 1 }; },
+    async refresh() { refreshCount += 1; return { schemaVersion: 1 }; },
+  };
+  const { app } = testApp({ service });
+  const server = await listen(app);
+  t.after(server.close);
+
+  for (const body of [
+    { sources: ['unknown'] },
+    { sources: ['feishu'] },
+    { sources: [] },
+    { sources: 'benchmarks' },
+    { sources: ['benchmarks'], force: 'yes' },
+  ]) {
+    const response = await fetch(`${server.baseUrl}/api/ai-dashboard/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).error.code, 'AI_DASHBOARD_INVALID_REFRESH_SOURCE');
+  }
+  assert.equal(refreshCount, 0);
 });
 
 test('optional password mode rejects unauthenticated and tampered sessions', async (t) => {

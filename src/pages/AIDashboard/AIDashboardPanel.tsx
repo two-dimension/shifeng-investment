@@ -6,6 +6,7 @@ import {
   Flex,
   Form,
   Input,
+  Popover,
   Result,
   Skeleton,
   Space,
@@ -17,16 +18,27 @@ import {
 } from 'antd';
 import {
   CloudSyncOutlined,
-  ExportOutlined,
   LockOutlined,
   LogoutOutlined,
   ReloadOutlined,
   RobotOutlined,
 } from '@ant-design/icons';
-import type { AiDashboardApiResponse, AiDashboardSnapshot, SourceStatus } from './types';
-import { showDashboardSessionControls, sourceStatusColor, sourceStatusLabel } from './viewModel';
+import type {
+  AiDashboardApiResponse,
+  AiDashboardSnapshot,
+  IceCdsImportStatus,
+} from './types';
+import {
+  benchmarkRefreshRequest,
+  dashboardSourceEntries,
+  dashboardSourceSummary,
+  showDashboardSessionControls,
+  sourceStatusColor,
+  sourceStatusLabel,
+} from './viewModel';
 import {
   ArrValuationSection,
+  ArtificialAnalysisSection,
   BenchmarkSection,
   ComputeRentalSection,
   DebtFinancingSection,
@@ -34,13 +46,14 @@ import {
   OpenRouterSection,
   OverviewSection,
 } from './AIDashboardSections';
+import { IceCdsImportModal } from './IceCdsImportModal';
 import './AIDashboardPanel.css';
 
-const { Title, Text, Paragraph, Link } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
 type AuthState = 'checking' | 'required' | 'authenticated' | 'error';
 
-async function requestDashboard(path = '', init?: RequestInit): Promise<AiDashboardApiResponse> {
+async function requestDashboard<T = AiDashboardSnapshot>(path = '', init?: RequestInit): Promise<AiDashboardApiResponse<T>> {
   const response = await fetch(`/api/ai-dashboard${path}`, {
     credentials: 'same-origin',
     headers: init?.body ? { 'Content-Type': 'application/json', ...(init.headers || {}) } : init?.headers,
@@ -51,16 +64,34 @@ async function requestDashboard(path = '', init?: RequestInit): Promise<AiDashbo
   return payload;
 }
 
-function SourceBadge({ label, source }: { label: string; source: SourceStatus }) {
-  const content = (
-    <Space size={5}>
-      <CloudSyncOutlined />
-      <Text>{label}</Text>
-      <Tag color={sourceStatusColor(source)}>{sourceStatusLabel(source)}</Tag>
-      <Text type="secondary">{source.asOf ? source.asOf.slice(0, 16).replace('T', ' ') : '暂无日期'}</Text>
-    </Space>
+type DashboardSourceEntry = ReturnType<typeof dashboardSourceEntries>[number];
+
+function SourceStatusDetails({ entries }: { entries: DashboardSourceEntry[] }) {
+  return (
+    <div className="ai-source-popover">
+      <Flex align="center" justify="space-between" className="ai-source-popover-header">
+        <Text strong>数据源状态</Text>
+        <Text type="secondary">{entries.length} 项</Text>
+      </Flex>
+      <div className="ai-source-popover-list">
+        {entries.map(({ key, label, source }) => (
+          <div className="ai-source-popover-item" key={key}>
+            <Flex align="center" justify="space-between" gap={12}>
+              <Space size={6}>
+                <CloudSyncOutlined />
+                <Text strong>{label}</Text>
+              </Space>
+              <Tag color={sourceStatusColor(source)}>{sourceStatusLabel(source)}</Tag>
+            </Flex>
+            <Text type="secondary" className="ai-source-popover-date">
+              {source.asOf ? source.asOf.slice(0, 16).replace('T', ' ') : '暂无日期'}
+            </Text>
+            {source.message ? <Text type="secondary" className="ai-source-popover-message">{source.message}</Text> : null}
+          </div>
+        ))}
+      </div>
+    </div>
   );
-  return source.message ? <Tooltip title={source.message}>{content}</Tooltip> : content;
 }
 
 function AccessGate({ loading, onSubmit }: { loading: boolean; onSubmit: (accessCode: string) => Promise<void> }) {
@@ -92,17 +123,24 @@ export const AIDashboardPanel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [benchmarkRefreshing, setBenchmarkRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
   const [publicAccess, setPublicAccess] = useState(false);
   const [sessionExpiresAt, setSessionExpiresAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cdsImportStatus, setCdsImportStatus] = useState<IceCdsImportStatus | null>(null);
+  const [cdsImportOpen, setCdsImportOpen] = useState(false);
   const [messageApi, messageContext] = message.useMessage();
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const payload = await requestDashboard();
+      const statusPromise = requestDashboard<IceCdsImportStatus>('/cds/import-status').catch(() => null);
+      const payload = await requestDashboard<AiDashboardSnapshot>();
+      const statusPayload = await statusPromise;
       setData(payload.data || null);
+      setCdsImportStatus(statusPayload?.data || null);
       setPublicAccess(payload.publicAccess === true);
       setSessionExpiresAt(payload.sessionExpiresAt || null);
       setAuth('authenticated');
@@ -111,10 +149,12 @@ export const AIDashboardPanel: React.FC = () => {
       if (status === 401) {
         setAuth('required');
         setData(null);
+        setCdsImportStatus(null);
       } else {
         setError((requestError as Error).message);
         setAuth('error');
         setData(null);
+        setCdsImportStatus(null);
       }
     } finally {
       setLoading(false);
@@ -129,6 +169,7 @@ export const AIDashboardPanel: React.FC = () => {
     const expireSession = () => {
       setAuth('required');
       setData(null);
+      setCdsImportStatus(null);
       setSessionExpiresAt(null);
       messageApi.info('AI 看板会话已到期，请重新输入访问口令');
     };
@@ -156,7 +197,7 @@ export const AIDashboardPanel: React.FC = () => {
   const refresh = async () => {
     setRefreshing(true);
     try {
-      const payload = await requestDashboard('/refresh', { method: 'POST', body: JSON.stringify({}) });
+      const payload = await requestDashboard('/refresh', { method: 'POST', body: JSON.stringify({ force: true }) });
       setData(payload.data || null);
       setPublicAccess(payload.publicAccess === true);
       setSessionExpiresAt(payload.sessionExpiresAt || sessionExpiresAt);
@@ -174,30 +215,74 @@ export const AIDashboardPanel: React.FC = () => {
     }
   };
 
+  const changeTab = async (key: string) => {
+    setActiveTab(key);
+    const refreshRequest = benchmarkRefreshRequest(key);
+    if (!refreshRequest || benchmarkRefreshing) return;
+    setBenchmarkRefreshing(true);
+    try {
+      const payload = await requestDashboard('/refresh', {
+        method: 'POST',
+        body: JSON.stringify(refreshRequest),
+      });
+      setData(payload.data || null);
+      setPublicAccess(payload.publicAccess === true);
+      setSessionExpiresAt(payload.sessionExpiresAt || sessionExpiresAt);
+    } catch (requestError) {
+      if ((requestError as { status?: number }).status === 401) {
+        setAuth('required');
+        setData(null);
+        setSessionExpiresAt(null);
+      } else {
+        messageApi.warning(`Benchmark 刷新失败，继续展示上一版：${(requestError as Error).message}`);
+      }
+    } finally {
+      setBenchmarkRefreshing(false);
+    }
+  };
+
   const logout = async () => {
     try { await requestDashboard('/session', { method: 'DELETE' }); } catch { /* session is cleared locally either way */ }
     setAuth('required');
     setData(null);
+    setCdsImportStatus(null);
     setSessionExpiresAt(null);
   };
+
+  const completeCdsImport = useCallback(async (batchId: string) => {
+    await load();
+    setActiveTab('debt');
+    messageApi.success(`ICE CDS 已导入：${batchId}`);
+  }, [load, messageApi]);
 
   const tabs = useMemo(() => data ? [
     { key: 'overview', label: '总览', children: <OverviewSection data={data} /> },
     { key: 'arr', label: 'ARR & 估值', children: <ArrValuationSection data={data} /> },
     { key: 'openrouter', label: 'OpenRouter', children: <OpenRouterSection data={data} /> },
     { key: 'pricing', label: '模型价格', children: <ModelPricingSection data={data} /> },
-    { key: 'benchmark', label: 'Benchmark', children: <BenchmarkSection data={data} /> },
+    { key: 'benchmark', label: 'Benchmark', children: <BenchmarkSection data={data} refreshing={benchmarkRefreshing} /> },
+    { key: 'aa', label: 'AA 指数与成本', children: <ArtificialAnalysisSection data={data} /> },
     { key: 'compute', label: '算力租赁', children: <ComputeRentalSection data={data} /> },
-    { key: 'debt', label: '债务融资', children: <DebtFinancingSection data={data} /> },
-  ] : [], [data]);
+    {
+      key: 'debt',
+      label: '融资与债务',
+      children: (
+        <DebtFinancingSection
+          data={data}
+          cdsImportStatus={cdsImportStatus}
+          onImportIceCds={() => setCdsImportOpen(true)}
+        />
+      ),
+    },
+  ] : [], [benchmarkRefreshing, cdsImportStatus, data]);
 
   if (auth === 'checking' || (loading && !data)) return <><Skeleton active paragraph={{ rows: 8 }} />{messageContext}</>;
   if (auth === 'required') return <>{messageContext}<AccessGate loading={submitting} onSubmit={login} /></>;
   if (auth === 'error' || (error && !data)) return <><Result status="error" title="AI 看板暂时不可用" subTitle={error} extra={<Button type="primary" onClick={() => void load()}>重试</Button>} />{messageContext}</>;
   if (!data) return null;
 
-  const feishuUrl = data.sources.feishu.url || 'https://xcn0zaydz11m.feishu.cn/sheets/F9W3s5BBEhRRV8tdZvCchEAfnCf?sheet=0rbUAO&table=tblzvLEtWP2TaYtF&view=vew0i9u3MV';
-  const hasStaleSource = data.sources.feishu.stale || data.sources.openRouter.stale;
+  const sourceEntries = dashboardSourceEntries(data.sources);
+  const sourceSummary = dashboardSourceSummary(sourceEntries.map(({ source }) => source));
 
   return (
     <div className="ai-dashboard">
@@ -206,26 +291,36 @@ export const AIDashboardPanel: React.FC = () => {
         <div>
           <Flex align="center" gap={10} wrap>
             <Title level={2}>AI 投资看板</Title>
-            {hasStaleSource ? <Tag color="warning">部分数据过期</Tag> : <Tag color="success">数据最新</Tag>}
+            <Popover
+              content={<SourceStatusDetails entries={sourceEntries} />}
+              placement="bottom"
+              trigger={['hover', 'click']}
+            >
+              <Button
+                aria-label={`数据源状态：${sourceSummary.label}`}
+                className={`ai-source-summary-button is-${sourceSummary.color}`}
+                icon={<CloudSyncOutlined />}
+                size="small"
+                type="text"
+              >
+                数据源 · {sourceSummary.label}
+              </Button>
+            </Popover>
           </Flex>
-          <Paragraph type="secondary">聚焦 AI 公司的增长斜率、公开流量、定价、融资与基础设施成本。</Paragraph>
-          <Flex gap={14} wrap className="ai-source-row">
-            <SourceBadge label="飞书" source={data.sources.feishu} />
-            <SourceBadge label="OpenRouter" source={data.sources.openRouter} />
-          </Flex>
+          <Paragraph type="secondary">聚焦 AI 公司的增长变化、公开流量、定价、融资与基础设施成本。</Paragraph>
         </div>
         <Space wrap>
           <Button icon={<ReloadOutlined />} loading={refreshing} onClick={() => void refresh()}>刷新数据</Button>
-          <Link href={feishuUrl} target="_blank" rel="noreferrer"><Button type="primary" icon={<ExportOutlined />}>飞书源表</Button></Link>
           {showDashboardSessionControls(publicAccess) && (
             <Tooltip title="退出 AI 看板会话"><Button aria-label="退出 AI 看板会话" icon={<LogoutOutlined />} onClick={() => void logout()} /></Tooltip>
           )}
         </Space>
       </header>
       {error && <Alert className="ai-page-alert" type="warning" showIcon closable title="数据加载存在异常" description={error} />}
-      <Tabs className="ai-primary-tabs" defaultActiveKey="overview" items={tabs} destroyOnHidden={false} />
+      <Tabs className="ai-primary-tabs" activeKey={activeTab} onChange={(key) => void changeTab(key)} items={tabs} destroyOnHidden={false} />
+      <IceCdsImportModal open={cdsImportOpen} onClose={() => setCdsImportOpen(false)} onImported={completeCdsImport} />
       <footer className="ai-dashboard-footer">
-        数据仅供研究参考，不构成投资建议。OpenRouter 数据遵循 CC BY 4.0；公开 Token 流量不代表全行业使用量或模型质量。
+        数据仅供研究参考，不构成投资建议。各分片来自公开来源并独立标注状态；OpenRouter Token 流量不代表全行业使用量或模型质量。
       </footer>
     </div>
   );

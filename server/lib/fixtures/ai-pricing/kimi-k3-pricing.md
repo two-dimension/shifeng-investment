@@ -1,0 +1,14 @@
+# Flagship Model Kimi K3 Pricing
+
+<DocTable
+  columns={[
+    { title: "Model" },
+    { title: "Unit" },
+    { title: "Input Price (Cache Hit)" },
+    { title: "Input Price (Cache Miss)" },
+    { title: "Output Price" },
+  ]}
+  rows={[
+    ["kimi-k3", "1M tokens", <>{"$"}0.30</>, <>{"$"}3.00</>, <>{"$"}15.00</>],
+  ]}
+/>

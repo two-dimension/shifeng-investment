@@ -1,0 +1,674 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-23T16:00:00.000Z",
+  "records": [
+    {
+      "id": "anthropic-yipit-arr-2026-07-31",
+      "entity": "Anthropic",
+      "metric": "arr_estimate",
+      "value": 73,
+      "unit": "USD billion",
+      "asOf": "2026-07-31",
+      "sourceId": "yipit-ai-revenue",
+      "sourceUrl": "https://www.yipitdata.com/",
+      "sourceKind": "estimate",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Yipit estimated ARR supplied by the dashboard owner; the public landing page does not reproduce the datapoint, so it is never merged with company disclosures.",
+      "verification": {
+        "status": "user-confirmed-estimate",
+        "checkedAt": "2026-08-23T16:00:00.000Z"
+      }
+    },
+    {
+      "id": "anthropic-run-rate-2026-02-12",
+      "entity": "Anthropic",
+      "metric": "run_rate_revenue",
+      "value": 14,
+      "unit": "USD billion",
+      "asOf": "2026-02-12",
+      "sourceId": "anthropic-series-g",
+      "sourceUrl": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed run-rate revenue in the Series G financing announcement.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-valuation-2026-02-12",
+      "entity": "Anthropic",
+      "metric": "post_money_valuation",
+      "value": 380,
+      "unit": "USD billion",
+      "asOf": "2026-02-12",
+      "sourceId": "anthropic-series-g",
+      "sourceUrl": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed post-money valuation in the Series G financing announcement.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-financing-2026-02-12",
+      "entity": "Anthropic",
+      "metric": "equity_financing_amount",
+      "value": 30,
+      "unit": "USD billion",
+      "asOf": "2026-02-12",
+      "sourceId": "anthropic-series-g",
+      "sourceUrl": "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed Series G equity financing amount.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-run-rate-2026-05-28",
+      "entity": "Anthropic",
+      "metric": "run_rate_revenue",
+      "value": 47,
+      "unit": "USD billion",
+      "asOf": "2026-05-28",
+      "sourceId": "anthropic-run-rate",
+      "sourceUrl": "https://www.anthropic.com/news/series-h",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed run-rate revenue in the Series H financing announcement.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-valuation-2026-05-28",
+      "entity": "Anthropic",
+      "metric": "post_money_valuation",
+      "value": 965,
+      "unit": "USD billion",
+      "asOf": "2026-05-28",
+      "sourceId": "anthropic-run-rate",
+      "sourceUrl": "https://www.anthropic.com/news/series-h",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed post-money valuation in the Series H financing announcement.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-financing-2026-05-28",
+      "entity": "Anthropic",
+      "metric": "equity_financing_amount",
+      "value": 65,
+      "unit": "USD billion",
+      "asOf": "2026-05-28",
+      "sourceId": "anthropic-run-rate",
+      "sourceUrl": "https://www.anthropic.com/news/series-h",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed Series H equity financing amount.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-arr-2023",
+      "entity": "OpenAI",
+      "metric": "arr",
+      "value": 2,
+      "unit": "USD billion",
+      "asOf": "2023-12-31",
+      "sourceId": "openai-arr-history",
+      "sourceUrl": "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed annual recurring revenue for 2023.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-arr-2024",
+      "entity": "OpenAI",
+      "metric": "arr",
+      "value": 6,
+      "unit": "USD billion",
+      "asOf": "2024-12-31",
+      "sourceId": "openai-arr-history",
+      "sourceUrl": "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed annual recurring revenue for 2024.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-arr-2025",
+      "entity": "OpenAI",
+      "metric": "arr",
+      "value": 20,
+      "unit": "USD billion lower bound",
+      "asOf": "2025-12-31",
+      "sourceId": "openai-arr-history",
+      "sourceUrl": "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company disclosed ARR as greater than USD 20 billion; the dashboard stores the stated threshold and flags it as a lower bound.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-valuation-2026-03-31",
+      "entity": "OpenAI",
+      "metric": "post_money_valuation",
+      "value": 852,
+      "unit": "USD billion",
+      "asOf": "2026-03-31",
+      "sourceId": "openai-valuation",
+      "sourceUrl": "https://openai.com/index/accelerating-the-next-phase-ai/",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed post-money valuation for the financing round.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-financing-2026-03-31",
+      "entity": "OpenAI",
+      "metric": "committed_capital",
+      "value": 122,
+      "unit": "USD billion",
+      "asOf": "2026-03-31",
+      "sourceId": "openai-valuation",
+      "sourceUrl": "https://openai.com/index/accelerating-the-next-phase-ai/",
+      "sourceKind": "official",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Company-disclosed committed capital in the latest financing round.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-gpt-5-6-sol-short-price-2026-08-24", "entity": "OpenAI", "metric": "token_api_price",
+      "value": "USD 5 input / 0.5 cache read / 6.25 cache write / 30 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "openai-pricing", "sourceUrl": "https://platform.openai.com/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "OpenAI official Standard tier price for GPT-5.6 Sol at the short-context tier; each price is retained in the original USD per-million-token unit.",
+      "dimensions": { "vendor": "OpenAI", "model": "GPT 5.6 Sol", "generation": "GPT 5.6", "currentGeneration": true, "contextTier": "short", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 5, "cacheReadPrice": 0.5, "cacheWritePrice": 6.25, "outputPrice": 30 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-gpt-5-6-sol-long-price-2026-08-24", "entity": "OpenAI", "metric": "token_api_price",
+      "value": "USD 10 input / 1 cache read / 12.5 cache write / 45 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "openai-pricing", "sourceUrl": "https://platform.openai.com/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "OpenAI official Standard tier price for GPT-5.6 Sol at the long-context tier; each price is retained in the original USD per-million-token unit.",
+      "dimensions": { "vendor": "OpenAI", "model": "GPT 5.6 Sol", "generation": "GPT 5.6", "currentGeneration": true, "contextTier": "long", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 10, "cacheReadPrice": 1, "cacheWritePrice": 12.5, "outputPrice": 45 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-fable-5-price-2026-08-24", "entity": "Anthropic", "metric": "token_api_price",
+      "value": "USD 10 input / 1 cache read / 12.5 cache write / 50 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "anthropic-pricing", "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official public API price table; original USD per-million-token units retained.",
+      "dimensions": { "vendor": "Anthropic", "model": "Claude Fable 5", "generation": "Claude Fable 5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 10, "cacheReadPrice": 1, "cacheWritePrice": 12.5, "outputPrice": 50 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-mythos-5-price-2026-08-24", "entity": "Anthropic", "metric": "token_api_price",
+      "value": "USD 10 input / 1 cache read / 12.5 cache write / 50 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "anthropic-pricing", "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official public API price table; limited-availability label is preserved in the model name.",
+      "dimensions": { "vendor": "Anthropic", "model": "Claude Mythos 5 (limited availability)", "generation": "Claude Mythos 5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 10, "cacheReadPrice": 1, "cacheWritePrice": 12.5, "outputPrice": 50 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-opus-5-price-2026-08-24", "entity": "Anthropic", "metric": "token_api_price",
+      "value": "USD 5 input / 0.5 cache read / 6.25 cache write / 25 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "anthropic-pricing", "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official public API price table; original USD per-million-token units retained.",
+      "dimensions": { "vendor": "Anthropic", "model": "Claude Opus 5", "generation": "Claude Opus 5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 5, "cacheReadPrice": 0.5, "cacheWritePrice": 6.25, "outputPrice": 25 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-sonnet-5-price-2026-08-24", "entity": "Anthropic", "metric": "token_api_price",
+      "value": "USD 2 input / 0.2 cache read / 2.5 cache write / 10 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "anthropic-pricing", "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official public API price table; original USD per-million-token units retained.",
+      "dimensions": { "vendor": "Anthropic", "model": "Claude Sonnet 5", "generation": "Claude Sonnet 5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 2, "cacheReadPrice": 0.2, "cacheWritePrice": 2.5, "outputPrice": 10 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-haiku-4-5-price-2026-08-24", "entity": "Anthropic", "metric": "token_api_price",
+      "value": "USD 1 input / 0.1 cache read / 1.25 cache write / 5 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "anthropic-pricing", "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official public API price table; current small-model generation retained alongside the Claude 5 family.",
+      "dimensions": { "vendor": "Anthropic", "model": "Claude Haiku 4.5", "generation": "Claude Haiku 4.5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 1, "cacheReadPrice": 0.1, "cacheWritePrice": 1.25, "outputPrice": 5 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "gemini-3-1-pro-short-price-2026-08-24", "entity": "Gemini", "metric": "token_api_price",
+      "value": "USD 2 input / 0.2 cache / 12 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "gemini-pricing", "sourceUrl": "https://ai.google.dev/gemini-api/docs/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Google official paid-tier price for Gemini 3.1 Pro prompts up to 200K tokens; cache price is stored as cache-read price.",
+      "dimensions": { "vendor": "Gemini", "model": "Gemini 3.1 Pro", "generation": "Gemini 3.1", "currentGeneration": true, "contextTier": "≤200K", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 2, "cacheReadPrice": 0.2, "cacheWritePrice": null, "outputPrice": 12 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "gemini-3-1-pro-long-price-2026-08-24", "entity": "Gemini", "metric": "token_api_price",
+      "value": "USD 4 input / 0.4 cache / 18 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "gemini-pricing", "sourceUrl": "https://ai.google.dev/gemini-api/docs/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Google official paid-tier price for Gemini 3.1 Pro prompts above 200K tokens; cache price is stored as cache-read price.",
+      "dimensions": { "vendor": "Gemini", "model": "Gemini 3.1 Pro", "generation": "Gemini 3.1", "currentGeneration": true, "contextTier": ">200K", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 4, "cacheReadPrice": 0.4, "cacheWritePrice": null, "outputPrice": 18 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "zhipu-glm-5-3-flash-price-unavailable-2026-08-27", "entity": "智谱", "metric": "token_api_price", "value": null, "unit": "not disclosed", "asOf": "2026-08-27",
+      "sourceId": "zhipu-models", "sourceUrl": "https://docs.z.ai/guides/overview/pricing", "sourceKind": "official", "retrievedAt": "2026-08-27T02:16:00.000Z",
+      "methodology": "The official Z.ai pricing page was checked for GLM-5.3-Flash, but it did not publish a reproducible token price row for that model.",
+      "dimensions": { "vendor": "智谱", "model": "GLM-5.3-Flash", "generation": "GLM-5.3-Flash", "currentGeneration": true },
+      "verification": { "status": "unavailable", "checkedAt": "2026-08-27T02:16:00.000Z", "note": "GLM-5.3-Flash 最新代已确认；官网价格页未公开可复核的 Token 单价，页面不得用旧代价格替代。" }
+    },
+    {
+      "id": "minimax-m3-standard-512k-price-2026-06-01", "entity": "MiniMax", "metric": "token_api_price",
+      "value": "CNY 2.1 input / 0.42 cache read / 8.4 output", "unit": "CNY per 1M tokens", "asOf": "2026-06-01",
+      "sourceId": "minimax-pricing", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-paygo", "sourceKind": "official", "retrievedAt": "2026-06-01T00:00:00.000Z",
+      "methodology": "MiniMax official M3 pay-as-you-go discounted price for inputs at or below 512K tokens; original CNY per-million-token units retained.",
+      "dimensions": { "vendor": "MiniMax", "model": "MiniMax M3", "generation": "M3", "currentGeneration": true, "contextTier": "≤ 512K input tokens", "serviceTier": "standard", "currency": "CNY", "region": "China", "priceUnit": "per_million_tokens", "inputPrice": 2.1, "cacheReadPrice": 0.42, "cacheWritePrice": null, "outputPrice": 8.4 },
+      "verification": { "status": "verified", "checkedAt": "2026-06-01T00:00:00.000Z" }
+    },
+    {
+      "id": "minimax-m3-standard-long-price-2026-06-01", "entity": "MiniMax", "metric": "token_api_price",
+      "value": "CNY 4.2 input / 0.84 cache read / 16.8 output", "unit": "CNY per 1M tokens", "asOf": "2026-06-01",
+      "sourceId": "minimax-pricing", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-paygo", "sourceKind": "official", "retrievedAt": "2026-06-01T00:00:00.000Z",
+      "methodology": "MiniMax official M3 pay-as-you-go discounted price for inputs above 512K tokens; original CNY per-million-token units retained.",
+      "dimensions": { "vendor": "MiniMax", "model": "MiniMax M3", "generation": "M3", "currentGeneration": true, "contextTier": "> 512K input tokens", "serviceTier": "standard", "currency": "CNY", "region": "China", "priceUnit": "per_million_tokens", "inputPrice": 4.2, "cacheReadPrice": 0.84, "cacheWritePrice": null, "outputPrice": 16.8 },
+      "verification": { "status": "verified", "checkedAt": "2026-06-01T00:00:00.000Z" }
+    },
+    {
+      "id": "kimi-k3-price-2026-08-24", "entity": "Kimi", "metric": "token_api_price",
+      "value": "USD 3 cache miss/input / 0.3 cache hit / 15 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "kimi-pricing", "sourceUrl": "https://platform.kimi.ai/docs/pricing/chat-k3.md", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Kimi official K3 Markdown price table; cache miss is stored as input price and cache hit as cache-read price.",
+      "dimensions": { "vendor": "Kimi", "model": "Kimi K3", "generation": "K3", "currentGeneration": true, "contextTier": "1M context", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 3, "cacheReadPrice": 0.3, "cacheWritePrice": null, "outputPrice": 15 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "deepseek-v4-flash-peak-price-2026-08-24", "entity": "DeepSeek", "metric": "token_api_price",
+      "value": "USD 0.44 cache miss/input / 0.014 cache hit / 1.32 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "deepseek-pricing", "sourceUrl": "https://api-docs.deepseek.com/quick_start/pricing/", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "DeepSeek official peak-period V4 Flash price; off-peak discounts are described in the note rather than blended into the standard row.",
+      "dimensions": { "vendor": "DeepSeek", "model": "DeepSeek V4 Flash 0731", "generation": "DeepSeek V4", "currentGeneration": true, "contextTier": "1M context", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 0.44, "cacheReadPrice": 0.014, "cacheWritePrice": null, "outputPrice": 1.32, "note": "官网另列低峰价：cache hit 0.007、cache miss 0.22、output 0.66 USD / 1M Tokens。" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "deepseek-v4-pro-peak-price-2026-08-24", "entity": "DeepSeek", "metric": "token_api_price",
+      "value": "USD 1.32 cache miss/input / 0.044 cache hit / 3.96 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "deepseek-pricing", "sourceUrl": "https://api-docs.deepseek.com/quick_start/pricing/", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "DeepSeek official peak-period V4 Pro price; off-peak discounts are described in the note rather than blended into the standard row.",
+      "dimensions": { "vendor": "DeepSeek", "model": "DeepSeek V4 Pro 0813", "generation": "DeepSeek V4", "currentGeneration": true, "contextTier": "1M context", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 1.32, "cacheReadPrice": 0.044, "cacheWritePrice": null, "outputPrice": 3.96, "note": "官网另列低峰价：cache hit 0.022、cache miss 0.66、output 1.98 USD / 1M Tokens。" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-v2-5-pro-china-price-2026-08-24", "entity": "MiMo", "metric": "token_api_price",
+      "value": "CNY 3 cache miss/input / 0.025 cache hit / 6 output", "unit": "CNY per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "mimo-pricing", "sourceUrl": "https://mimo.mi.com/docs/zh-CN/price/pay-as-you-go", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official mainland-China pay-as-you-go price for mimo-v2.5-pro; cache miss is stored as input price.",
+      "dimensions": { "vendor": "MiMo", "model": "MiMo V2.5 Pro", "generation": "MiMo V2.5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "CNY", "region": "China", "priceUnit": "per_million_tokens", "inputPrice": 3, "cacheReadPrice": 0.025, "cacheWritePrice": null, "outputPrice": 6 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-v2-5-pro-global-price-2026-08-24", "entity": "MiMo", "metric": "token_api_price",
+      "value": "USD 0.435 cache miss/input / 0.0036 cache hit / 0.87 output", "unit": "USD per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "mimo-pricing", "sourceUrl": "https://mimo.mi.com/docs/zh-CN/price/pay-as-you-go", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official overseas pay-as-you-go price for mimo-v2.5-pro; cache miss is stored as input price.",
+      "dimensions": { "vendor": "MiMo", "model": "MiMo V2.5 Pro", "generation": "MiMo V2.5", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "USD", "region": "global", "priceUnit": "per_million_tokens", "inputPrice": 0.435, "cacheReadPrice": 0.0036, "cacheWritePrice": null, "outputPrice": 0.87 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "qwen3-8-max-beijing-price-2026-08-24", "entity": "Qwen", "metric": "token_api_price",
+      "value": "CNY 12 input / 1.5 cache hit / 15 cache create / 36 output", "unit": "CNY per 1M tokens", "asOf": "2026-08-24",
+      "sourceId": "qwen-pricing", "sourceUrl": "https://help.aliyun.com/zh/model-studio/qwen3-8-max", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Alibaba Cloud Model Studio official Beijing-region price for qwen3.8-max; original CNY per-million-token units retained.",
+      "dimensions": { "vendor": "Qwen", "model": "Qwen3.8-Max", "generation": "Qwen3.8", "currentGeneration": true, "contextTier": "standard", "serviceTier": "standard", "currency": "CNY", "region": "Beijing", "priceUnit": "per_million_tokens", "inputPrice": 12, "cacheReadPrice": 1.5, "cacheWritePrice": 15, "outputPrice": 36 },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "kling-3-video-720p-price-2026-08-24", "entity": "Kling", "metric": "video_api_price", "value": 0.084, "unit": "USD per second", "asOf": "2026-08-24",
+      "sourceId": "kling-pricing", "sourceUrl": "https://kling.ai/document-api/pricing/base/video", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Kling official API base-video price for Kling 3.0 without native audio at 720p; price is billed per generated second.",
+      "dimensions": { "vendor": "Kling", "model": "Kling 3.0", "mode": "无原生音频", "resolution": "720p", "durationTier": "按生成秒数", "pricingMode": "fixed", "price": 0.084, "currency": "USD", "priceUnit": "per_second", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "kling-3-video-1080p-price-2026-08-24", "entity": "Kling", "metric": "video_api_price", "value": 0.112, "unit": "USD per second", "asOf": "2026-08-24",
+      "sourceId": "kling-pricing", "sourceUrl": "https://kling.ai/document-api/pricing/base/video", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Kling official API base-video price for Kling 3.0 without native audio at 1080p; price is billed per generated second.",
+      "dimensions": { "vendor": "Kling", "model": "Kling 3.0", "mode": "无原生音频", "resolution": "1080p", "durationTier": "按生成秒数", "pricingMode": "fixed", "price": 0.112, "currency": "USD", "priceUnit": "per_second", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "kling-3-video-4k-price-2026-08-24", "entity": "Kling", "metric": "video_api_price", "value": 0.42, "unit": "USD per second", "asOf": "2026-08-24",
+      "sourceId": "kling-pricing", "sourceUrl": "https://kling.ai/document-api/pricing/base/video", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Kling official API base-video price for Kling 3.0 without native audio at 4K; price is billed per generated second.",
+      "dimensions": { "vendor": "Kling", "model": "Kling 3.0", "mode": "无原生音频", "resolution": "4K", "durationTier": "按生成秒数", "pricingMode": "fixed", "price": 0.42, "currency": "USD", "priceUnit": "per_second", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "seedance-2-resource-package-price-2026-08-24", "entity": "Seedance", "metric": "video_api_price", "value": 28, "unit": "CNY per 1M tokens effective resource-package price", "asOf": "2026-08-24",
+      "sourceId": "seedance-pricing", "sourceUrl": "https://www.volcengine.com/activity/seedance2", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Volcengine official Seedance 2.0 resource packages list CNY 196 for 7M tokens and CNY 280 for 10M tokens; both imply CNY 28 per 1M package tokens. This is not presented as a pay-as-you-go per-video API rate.",
+      "dimensions": { "vendor": "Seedance", "model": "Seedance 2.0", "mode": "资源包有效价", "resolution": "多档", "durationTier": "按 Token 资源包", "pricingMode": "fixed", "price": 28, "currency": "CNY", "priceUnit": "per_million_tokens", "region": "China", "note": "资源包有效 Token 价；不是按条视频的 PAYG 单价。" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "minimax-hailuo-2-3-768p-6s-price-2026-08-24", "entity": "MiniMax", "metric": "video_api_price", "value": 2, "unit": "CNY per video", "asOf": "2026-08-24",
+      "sourceId": "minimax-pricing", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-paygo", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiniMax official pay-as-you-go video table for Hailuo 2.3 text-to-video or image-to-video, 768p and 6 seconds.",
+      "dimensions": { "vendor": "MiniMax", "model": "MiniMax-Hailuo-2.3", "mode": "文生/图生视频", "resolution": "768p", "durationTier": "6 秒", "durationSeconds": 6, "pricingMode": "fixed", "price": 2, "currency": "CNY", "priceUnit": "per_video", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-codex-plus-plan-2026-08-24", "entity": "OpenAI Codex", "metric": "coding_plan_price", "value": 20, "unit": "USD per month", "asOf": "2026-08-24",
+      "sourceId": "openai-codex-plan", "sourceUrl": "https://openai.com/chatgpt/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "OpenAI official ChatGPT Plus subscription price; Codex access is included in the plan.",
+      "dimensions": { "vendor": "OpenAI", "plan": "ChatGPT Plus（含 Codex）", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 20, "annualPrice": null, "allowanceText": "Codex included; usage limits follow the official plan.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-codex-pro-plan-2026-08-24", "entity": "OpenAI Codex", "metric": "coding_plan_price", "value": 200, "unit": "USD per month", "asOf": "2026-08-24",
+      "sourceId": "openai-codex-plan", "sourceUrl": "https://openai.com/chatgpt/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "OpenAI official ChatGPT Pro subscription price; Codex access is included in the plan.",
+      "dimensions": { "vendor": "OpenAI", "plan": "ChatGPT Pro（含 Codex）", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 200, "annualPrice": null, "allowanceText": "Codex included; usage limits follow the official plan.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "openai-codex-business-plan-2026-08-24", "entity": "OpenAI Codex", "metric": "coding_plan_price", "value": "USD 30 monthly or USD 300 annually", "unit": "USD per seat", "asOf": "2026-08-24",
+      "sourceId": "openai-codex-plan", "sourceUrl": "https://openai.com/chatgpt/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "OpenAI official ChatGPT Business price: USD 30 per seat monthly or USD 25 per seat per month when billed annually; Codex included.",
+      "dimensions": { "vendor": "OpenAI", "plan": "ChatGPT Business（含 Codex）", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 30, "annualPrice": 300, "allowanceText": "Per seat; annual price is USD 25 × 12.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-claude-code-pro-plan-2026-08-24", "entity": "Claude Code", "metric": "coding_plan_price", "value": "USD 20 monthly or USD 204 annually", "unit": "USD per user", "asOf": "2026-08-24",
+      "sourceId": "anthropic-claude-code-plan", "sourceUrl": "https://claude.com/product/claude-code", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official Claude Pro price with Claude Code access: USD 20 monthly or USD 17 per month billed annually.",
+      "dimensions": { "vendor": "Anthropic", "plan": "Claude Pro（含 Claude Code）", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 20, "annualPrice": 204, "allowanceText": "Claude Code included.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-claude-code-max5-plan-2026-08-24", "entity": "Claude Code", "metric": "coding_plan_price", "value": 100, "unit": "USD per month", "asOf": "2026-08-24",
+      "sourceId": "anthropic-claude-code-plan", "sourceUrl": "https://claude.com/product/claude-code", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official Claude Max 5× price with Claude Code access.",
+      "dimensions": { "vendor": "Anthropic", "plan": "Claude Max 5×", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 100, "annualPrice": null, "allowanceText": "5× Pro usage; Claude Code included.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "anthropic-claude-code-max20-plan-2026-08-24", "entity": "Claude Code", "metric": "coding_plan_price", "value": 200, "unit": "USD per month", "asOf": "2026-08-24",
+      "sourceId": "anthropic-claude-code-plan", "sourceUrl": "https://claude.com/product/claude-code", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Anthropic official Claude Max 20× price with Claude Code access.",
+      "dimensions": { "vendor": "Anthropic", "plan": "Claude Max 20×", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 200, "annualPrice": null, "allowanceText": "20× Pro usage; Claude Code included.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "gemini-code-assist-standard-plan-2026-08-24", "entity": "Gemini Code Assist", "metric": "coding_plan_price", "value": "USD 22.80 monthly or USD 228 annually", "unit": "USD per user", "asOf": "2026-08-24",
+      "sourceId": "gemini-code-assist-plan", "sourceUrl": "https://cloud.google.com/products/gemini/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Google official hourly commitment rates converted using 730 hours per month: Standard monthly commitment USD 0.031232877/hour and annual commitment USD 0.026027397/hour.",
+      "dimensions": { "vendor": "Gemini", "plan": "Gemini Code Assist Standard", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 22.8, "annualPrice": 228, "allowanceText": "Derived from official commitment hourly rates using 730 h/month.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "gemini-code-assist-enterprise-plan-2026-08-24", "entity": "Gemini Code Assist", "metric": "coding_plan_price", "value": "USD 54 monthly or USD 540 annually", "unit": "USD per user", "asOf": "2026-08-24",
+      "sourceId": "gemini-code-assist-plan", "sourceUrl": "https://cloud.google.com/products/gemini/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Google official hourly commitment rates converted using 730 hours per month: Enterprise monthly commitment USD 0.073972603/hour and annual commitment USD 0.061643836/hour.",
+      "dimensions": { "vendor": "Gemini", "plan": "Gemini Code Assist Enterprise", "pricingMode": "fixed", "currency": "USD", "monthlyPrice": 54, "annualPrice": 540, "allowanceText": "Derived from official commitment hourly rates using 730 h/month.", "region": "global" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "zhipu-coding-lite-plan-2026-08-24", "entity": "GLM Coding Plan", "metric": "coding_plan_price", "value": 49, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "zhipu-coding-plan", "sourceUrl": "https://open.bigmodel.cn/glm-coding", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Zhipu official individual GLM Coding Plan monthly price; quarterly promotion is retained in the allowance note rather than treated as an annual plan.",
+      "dimensions": { "vendor": "智谱", "plan": "GLM Coding Lite", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 49, "annualPrice": null, "allowanceText": "季度价月均 44.1 元。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "zhipu-coding-pro-plan-2026-08-24", "entity": "GLM Coding Plan", "metric": "coding_plan_price", "value": 149, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "zhipu-coding-plan", "sourceUrl": "https://open.bigmodel.cn/glm-coding", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Zhipu official individual GLM Coding Plan monthly price; quarterly promotion is retained in the allowance note.",
+      "dimensions": { "vendor": "智谱", "plan": "GLM Coding Pro", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 149, "annualPrice": null, "allowanceText": "季度价月均 134.1 元。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "zhipu-coding-max-plan-2026-08-24", "entity": "GLM Coding Plan", "metric": "coding_plan_price", "value": 469, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "zhipu-coding-plan", "sourceUrl": "https://open.bigmodel.cn/glm-coding", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Zhipu official individual GLM Coding Plan monthly price; quarterly promotion is retained in the allowance note.",
+      "dimensions": { "vendor": "智谱", "plan": "GLM Coding Max", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 469, "annualPrice": null, "allowanceText": "季度价月均 422.1 元。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "minimax-coding-plus-plan-2026-08-24", "entity": "MiniMax Coding Plan", "metric": "coding_plan_price", "value": 49, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "minimax-coding-plan", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiniMax official Token Plan monthly price.",
+      "dimensions": { "vendor": "MiniMax", "plan": "Plus", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 49, "annualPrice": null, "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "minimax-coding-max-plan-2026-08-24", "entity": "MiniMax Coding Plan", "metric": "coding_plan_price", "value": 119, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "minimax-coding-plan", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiniMax official Token Plan monthly price.",
+      "dimensions": { "vendor": "MiniMax", "plan": "Max", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 119, "annualPrice": null, "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "minimax-coding-ultra-plan-2026-08-24", "entity": "MiniMax Coding Plan", "metric": "coding_plan_price", "value": 469, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "minimax-coding-plan", "sourceUrl": "https://platform.minimaxi.com/docs/guides/pricing-token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiniMax official Token Plan monthly price.",
+      "dimensions": { "vendor": "MiniMax", "plan": "Ultra", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 469, "annualPrice": null, "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-token-lite-plan-2026-08-24", "entity": "MiMo Token Plan", "metric": "coding_plan_price", "value": 39, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "mimo-token-plan", "sourceUrl": "https://mimo.mi.com/docs/en-US/price/token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official Token Plan monthly price and current monthly token-credit allowance.",
+      "dimensions": { "vendor": "MiMo", "plan": "Token Plan Lite", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 39, "annualPrice": null, "allowanceText": "每月 41 亿 Token Credits；海外官网等值 USD 6。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-token-standard-plan-2026-08-24", "entity": "MiMo Token Plan", "metric": "coding_plan_price", "value": 99, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "mimo-token-plan", "sourceUrl": "https://mimo.mi.com/docs/en-US/price/token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official Token Plan monthly price and current monthly token-credit allowance.",
+      "dimensions": { "vendor": "MiMo", "plan": "Token Plan Standard", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 99, "annualPrice": null, "allowanceText": "每月 110 亿 Token Credits；海外官网等值 USD 16。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-token-pro-plan-2026-08-24", "entity": "MiMo Token Plan", "metric": "coding_plan_price", "value": 329, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "mimo-token-plan", "sourceUrl": "https://mimo.mi.com/docs/en-US/price/token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official Token Plan monthly price and current monthly token-credit allowance.",
+      "dimensions": { "vendor": "MiMo", "plan": "Token Plan Pro", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 329, "annualPrice": null, "allowanceText": "每月 380 亿 Token Credits；海外官网等值 USD 50。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "mimo-token-max-plan-2026-08-24", "entity": "MiMo Token Plan", "metric": "coding_plan_price", "value": 659, "unit": "CNY per month", "asOf": "2026-08-24",
+      "sourceId": "mimo-token-plan", "sourceUrl": "https://mimo.mi.com/docs/en-US/price/token-plan", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "MiMo official Token Plan monthly price and current monthly token-credit allowance.",
+      "dimensions": { "vendor": "MiMo", "plan": "Token Plan Max", "pricingMode": "fixed", "currency": "CNY", "monthlyPrice": 659, "annualPrice": null, "allowanceText": "每月 820 亿 Token Credits；海外官网等值 USD 100。", "region": "China" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "qwen-code-plan-unavailable-2026-08-24", "entity": "Qwen Code", "metric": "coding_plan_price", "value": null, "unit": "not disclosed", "asOf": "2026-08-24",
+      "sourceId": "qwen-code-plan", "sourceUrl": "https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Qwen Code official authentication documentation was checked after free OAuth access ended; the checked page refers users to Alibaba Cloud Coding Plan but does not disclose a reproducible independent subscription price.",
+      "dimensions": { "vendor": "Qwen", "plan": "Qwen Code / Alibaba Cloud Coding Plan", "pricingMode": "unpublished", "allowanceText": "官网确认接入方式，未在检查页公开可复核套餐价。", "region": "China" },
+      "verification": { "status": "unavailable", "checkedAt": "2026-08-23T16:00:00.000Z", "note": "未找到独立公开套餐价；不得以 API Token 单价冒充 Coding Plan。" }
+    },
+    {
+      "id": "kimi-coding-plan-unavailable-2026-08-24", "entity": "Kimi Code", "metric": "coding_plan_price", "value": null, "unit": "not disclosed", "asOf": "2026-08-24",
+      "sourceId": "kimi-coding-plan", "sourceUrl": "https://platform.kimi.ai/docs/pricing/chat-k27-code", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Kimi official coding-model pricing page was checked; it exposes model usage pricing rather than a distinct fixed-price Coding Plan subscription.",
+      "dimensions": { "vendor": "Kimi", "plan": "Kimi Coding subscription", "pricingMode": "unpublished", "allowanceText": "官网公开模型用量价，未公开独立固定 Coding Plan。", "region": "global" },
+      "verification": { "status": "unavailable", "checkedAt": "2026-08-23T16:00:00.000Z", "note": "未发现独立固定 Coding Plan；页面明确显示未公开，不用 API 价替代。" }
+    },
+    {
+      "id": "deepseek-coding-plan-unavailable-2026-08-24", "entity": "DeepSeek Coding", "metric": "coding_plan_price", "value": null, "unit": "not disclosed", "asOf": "2026-08-24",
+      "sourceId": "deepseek-coding-plan", "sourceUrl": "https://api-docs.deepseek.com/quick_start/pricing/", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "DeepSeek official pricing documentation was checked; it publishes API token pricing but no distinct fixed-price Coding Plan subscription.",
+      "dimensions": { "vendor": "DeepSeek", "plan": "DeepSeek Coding subscription", "pricingMode": "unpublished", "allowanceText": "官网仅公开 API Token 价格，未公开独立固定 Coding Plan。", "region": "global" },
+      "verification": { "status": "unavailable", "checkedAt": "2026-08-23T16:00:00.000Z", "note": "未发现独立固定 Coding Plan；不得把 API Token 价当成套餐价。" }
+    },
+    {
+      "id": "coreweave-2025-debt-series", "entity": "CoreWeave", "metric": "capital_event_series", "value": "5 debt instruments", "unit": "individual tranches", "asOf": "2025-12-31",
+      "sourceId": "coreweave-sec", "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000104/crwv-20251231.htm", "sourceKind": "filing", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "CoreWeave 2025 Form 10-K debt table. Month-only issuance dates are normalized to month-end and explicitly noted; borrowing capacity is not confused with drawn balance.",
+      "dimensions": { "events": [
+        { "id": "coreweave-2030-senior-notes-2025-05", "entity": "CoreWeave", "geography": "US", "eventDate": "2025-05-31", "maturityDate": "2030-06-01", "instrumentCategory": "debt", "instrument": "9.25% Senior Notes due 2030", "amount": 2, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 2, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 9.25, "tenorYears": 5, "useOfProceeds": "General corporate purposes", "note": "10-K 仅披露 2025 年 5 月，图表日期归一为月末。" },
+        { "id": "coreweave-ddtl-3-2025-07", "entity": "CoreWeave", "geography": "US", "eventDate": "2025-07-31", "maturityDate": "2030-08-31", "instrumentCategory": "credit_facility", "instrument": "DDTL 3.0 delayed-draw term loan facility", "amount": 2.6, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 2.6, "comparableUsdAmountUnit": "billion", "rateType": "floating", "benchmark": "SOFR", "spreadBps": 400, "tenorYears": 5, "useOfProceeds": "Finance computing equipment purchases", "note": "金额为 borrowing capacity；10-K 仅披露 2025 年 7 月，日期归一为月末。" },
+        { "id": "coreweave-2031-senior-notes-2025-07", "entity": "CoreWeave", "geography": "US", "eventDate": "2025-07-31", "maturityDate": "2031-02-01", "instrumentCategory": "debt", "instrument": "9.00% Senior Notes due 2031", "amount": 1.75, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 1.75, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 9, "tenorYears": 5.5, "useOfProceeds": "General corporate purposes", "note": "10-K 仅披露 2025 年 7 月，图表日期归一为月末。" },
+        { "id": "coreweave-ddtl-2-1-2025-09", "entity": "CoreWeave", "geography": "US", "eventDate": "2025-09-30", "instrumentCategory": "credit_facility", "instrument": "DDTL 2.1 delayed-draw term loan facility", "amount": 3, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 3, "comparableUsdAmountUnit": "billion", "rateType": "floating", "benchmark": "SOFR", "spreadBps": 425, "useOfProceeds": "Finance computing equipment purchases", "note": "金额为 borrowing capacity；10-K 仅披露 2025 年 9 月，日期归一为月末。" },
+        { "id": "coreweave-convertible-notes-2031-2025-12", "entity": "CoreWeave", "geography": "US", "eventDate": "2025-12-11", "maturityDate": "2031-12-01", "instrumentCategory": "convertible", "instrument": "1.75% Convertible Senior Notes due 2031", "amount": 2.5875, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 2.5875, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 1.75, "tenorYears": 6, "useOfProceeds": "General corporate purposes" }
+      ] },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "alibaba-2024-senior-notes-series", "entity": "Alibaba", "metric": "capital_event_series", "value": "7 senior note tranches", "unit": "individual tranches", "asOf": "2024-11-28",
+      "sourceId": "alibaba-capital", "sourceUrl": "https://www.alibabagroup.com/en-US/document-1798945632384188416", "sourceKind": "filing", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Alibaba official completion announcement. Each USD and RMB senior-note tranche is preserved separately with its original currency and coupon; no FX conversion is inferred.",
+      "dimensions": { "events": [
+        { "id": "alibaba-usd-notes-2030-2024", "entity": "Alibaba", "geography": "China", "eventDate": "2024-11-26", "maturityDate": "2030-11-26", "instrumentCategory": "debt", "instrument": "4.875% USD Senior Unsecured Notes due 2030", "amount": 1, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 1, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 4.875, "tenorYears": 6 },
+        { "id": "alibaba-usd-notes-2035-2024", "entity": "Alibaba", "geography": "China", "eventDate": "2024-11-26", "maturityDate": "2035-11-26", "instrumentCategory": "debt", "instrument": "5.250% USD Senior Unsecured Notes due 2035", "amount": 1.15, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 1.15, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 5.25, "tenorYears": 11 },
+        { "id": "alibaba-usd-notes-2054-2024", "entity": "Alibaba", "geography": "China", "eventDate": "2024-11-26", "maturityDate": "2054-11-26", "instrumentCategory": "debt", "instrument": "5.625% USD Senior Unsecured Notes due 2054", "amount": 0.5, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 0.5, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 5.625, "tenorYears": 30 },
+        { "id": "alibaba-rmb-notes-2028-2024", "entity": "Alibaba", "geography": "China", "eventDate": "2024-11-28", "maturityDate": "2028-11-28", "instrumentCategory": "debt", "instrument": "2.65% RMB Senior Unsecured Notes due 2028", "amount": 8.4, "amountUnit": "billion", "currency": "CNY", "rateType": "fixed", "couponPercent": 2.65, "tenorYears": 4 },
+        { "id": "alibaba-rmb-notes-2029-2024", "entity": "Alibaba", "geography": "China", "eventDate": "2024-11-28", "maturityDate": "2029-11-28", "instrumentCategory": "debt", "instrument": "2.80% RMB Senior Unsecured Notes due 2029", "amount": 5, "amountUnit": "billion", "currency": "CNY", "rateType": "fixed", "couponPercent": 2.8, "tenorYears": 5 },
+        { "id": "alibaba-rmb-notes-2034-2024", "entity": "Alibaba", "geography": "China", "eventDate": "2024-11-28", "maturityDate": "2034-11-28", "instrumentCategory": "debt", "instrument": "3.10% RMB Senior Unsecured Notes due 2034", "amount": 2.5, "amountUnit": "billion", "currency": "CNY", "rateType": "fixed", "couponPercent": 3.1, "tenorYears": 10 },
+        { "id": "alibaba-rmb-notes-2044-2024", "entity": "Alibaba", "geography": "China", "eventDate": "2024-11-28", "maturityDate": "2044-11-28", "instrumentCategory": "debt", "instrument": "3.50% RMB Senior Unsecured Notes due 2044", "amount": 1.1, "amountUnit": "billion", "currency": "CNY", "rateType": "fixed", "couponPercent": 3.5, "tenorYears": 20 }
+      ] },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "alibaba-zero-coupon-convertible-2025", "entity": "Alibaba", "metric": "capital_event", "value": 3.2, "unit": "USD billion", "asOf": "2025-09-11",
+      "sourceId": "alibaba-capital", "sourceUrl": "https://home.alibabagroup.com/en-US/document-1902920248449826816", "sourceKind": "filing", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Alibaba official pricing announcement. Approximately 80% of net proceeds was earmarked for cloud infrastructure; coupon is explicitly zero.",
+      "dimensions": { "id": "alibaba-zero-coupon-convertible-2032-2025", "entity": "Alibaba", "geography": "China", "eventDate": "2025-09-11", "closeDate": "2025-09-16", "maturityDate": "2032-09-15", "instrumentCategory": "convertible", "instrument": "Zero Coupon Convertible Senior Notes due 2032", "amount": 3.2, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 3.2, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 0, "tenorYears": 7, "useOfProceeds": "Approximately 80% for cloud infrastructure and 20% for international commerce" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "baidu-cny-senior-notes-2025", "entity": "Baidu", "metric": "capital_event", "value": 4.4, "unit": "CNY billion", "asOf": "2025-09-15",
+      "sourceId": "baidu-capital", "sourceUrl": "https://ir.baidu.com/news-releases/news-release-details/baidu-announces-completion-cny44-billion-offering-cny/", "sourceKind": "filing", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Baidu official investor-relations completion announcement; original CNY amount and stated annual coupon retained without FX conversion.",
+      "dimensions": { "id": "baidu-cny-notes-2029-2025", "entity": "Baidu", "geography": "China", "eventDate": "2025-09-15", "maturityDate": "2029-09-15", "instrumentCategory": "debt", "instrument": "1.90% CNY Senior Unsecured Notes due 2029", "amount": 4.4, "amountUnit": "billion", "currency": "CNY", "rateType": "fixed", "couponPercent": 1.9, "tenorYears": 4, "useOfProceeds": "General corporate purposes, including repayment of indebtedness and interest" },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "meta-may-2026-senior-notes-series", "entity": "Meta", "metric": "capital_event_series", "value": "6 senior note tranches", "unit": "individual tranches", "asOf": "2026-04-30",
+      "sourceId": "meta-sec", "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1326801/000119312526197902/d148113dfwp.htm", "sourceKind": "filing", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Meta SEC pricing term sheet dated April 30, 2026. Each fixed-rate senior-note tranche is preserved separately using trade date, principal and stated coupon.",
+      "dimensions": { "events": [
+        { "id": "meta-notes-2031-2026", "entity": "Meta", "geography": "US", "eventDate": "2026-04-30", "closeDate": "2026-05-04", "maturityDate": "2031-05-15", "instrumentCategory": "debt", "instrument": "4.550% Senior Notes due 2031", "amount": 3, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 3, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 4.55, "tenorYears": 5 },
+        { "id": "meta-notes-2033-2026", "entity": "Meta", "geography": "US", "eventDate": "2026-04-30", "closeDate": "2026-05-04", "maturityDate": "2033-05-15", "instrumentCategory": "debt", "instrument": "4.875% Senior Notes due 2033", "amount": 2, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 2, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 4.875, "tenorYears": 7 },
+        { "id": "meta-notes-2036-2026", "entity": "Meta", "geography": "US", "eventDate": "2026-04-30", "closeDate": "2026-05-04", "maturityDate": "2036-05-15", "instrumentCategory": "debt", "instrument": "5.250% Senior Notes due 2036", "amount": 6, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 6, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 5.25, "tenorYears": 10 },
+        { "id": "meta-notes-2046-2026", "entity": "Meta", "geography": "US", "eventDate": "2026-04-30", "closeDate": "2026-05-04", "maturityDate": "2046-05-15", "instrumentCategory": "debt", "instrument": "6.200% Senior Notes due 2046", "amount": 4, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 4, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 6.2, "tenorYears": 20 },
+        { "id": "meta-notes-2056-2026", "entity": "Meta", "geography": "US", "eventDate": "2026-04-30", "closeDate": "2026-05-04", "maturityDate": "2056-05-15", "instrumentCategory": "debt", "instrument": "6.300% Senior Notes due 2056", "amount": 6, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 6, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 6.3, "tenorYears": 30 },
+        { "id": "meta-notes-2066-2026", "entity": "Meta", "geography": "US", "eventDate": "2026-04-30", "closeDate": "2026-05-04", "maturityDate": "2066-05-15", "instrumentCategory": "debt", "instrument": "6.450% Senior Notes due 2066", "amount": 4, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 4, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 6.45, "tenorYears": 40 }
+      ] },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "alphabet-february-2026-senior-notes-series", "entity": "Google", "metric": "capital_event_series", "value": "7 senior note tranches", "unit": "individual tranches", "asOf": "2026-02-09",
+      "sourceId": "google-sec", "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1652044/000119312526043127/d297481dfwp.htm", "sourceKind": "filing", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Alphabet SEC pricing term sheet dated February 9, 2026. Each USD senior-note tranche is preserved separately with trade date, settlement date, principal and coupon.",
+      "dimensions": { "events": [
+        { "id": "alphabet-notes-2029-2026", "entity": "Google", "geography": "US", "eventDate": "2026-02-09", "closeDate": "2026-02-13", "maturityDate": "2029-02-15", "instrumentCategory": "debt", "instrument": "3.700% Alphabet Senior Notes due 2029", "amount": 2.5, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 2.5, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 3.7, "tenorYears": 3 },
+        { "id": "alphabet-notes-2031-2026", "entity": "Google", "geography": "US", "eventDate": "2026-02-09", "closeDate": "2026-02-13", "maturityDate": "2031-02-15", "instrumentCategory": "debt", "instrument": "4.100% Alphabet Senior Notes due 2031", "amount": 3, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 3, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 4.1, "tenorYears": 5 },
+        { "id": "alphabet-notes-2033-2026", "entity": "Google", "geography": "US", "eventDate": "2026-02-09", "closeDate": "2026-02-13", "maturityDate": "2033-02-15", "instrumentCategory": "debt", "instrument": "4.400% Alphabet Senior Notes due 2033", "amount": 3, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 3, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 4.4, "tenorYears": 7 },
+        { "id": "alphabet-notes-2036-2026", "entity": "Google", "geography": "US", "eventDate": "2026-02-09", "closeDate": "2026-02-13", "maturityDate": "2036-02-15", "instrumentCategory": "debt", "instrument": "4.800% Alphabet Senior Notes due 2036", "amount": 4.25, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 4.25, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 4.8, "tenorYears": 10 },
+        { "id": "alphabet-notes-2046-2026", "entity": "Google", "geography": "US", "eventDate": "2026-02-09", "closeDate": "2026-02-13", "maturityDate": "2046-02-15", "instrumentCategory": "debt", "instrument": "5.500% Alphabet Senior Notes due 2046", "amount": 1.5, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 1.5, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 5.5, "tenorYears": 20 },
+        { "id": "alphabet-notes-2056-2026", "entity": "Google", "geography": "US", "eventDate": "2026-02-09", "closeDate": "2026-02-13", "maturityDate": "2056-02-15", "instrumentCategory": "debt", "instrument": "5.650% Alphabet Senior Notes due 2056", "amount": 4, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 4, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 5.65, "tenorYears": 30 },
+        { "id": "alphabet-notes-2066-2026", "entity": "Google", "geography": "US", "eventDate": "2026-02-09", "closeDate": "2026-02-13", "maturityDate": "2066-02-15", "instrumentCategory": "debt", "instrument": "5.750% Alphabet Senior Notes due 2066", "amount": 1.75, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 1.75, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 5.75, "tenorYears": 40 }
+      ] },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "amazon-july-2026-senior-notes-series", "entity": "Amazon", "metric": "capital_event_series", "value": "8 senior note tranches", "unit": "individual tranches", "asOf": "2026-07-07",
+      "sourceId": "amazon-sec", "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1018724/000110465926081786/tm2619352-2_424b5.htm", "sourceKind": "filing", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Amazon SEC prospectus supplement priced July 7, 2026. Floating and fixed-rate tranches are separated; the SOFR spread is stored in basis points.",
+      "dimensions": { "events": [
+        { "id": "amazon-floating-notes-2029-2026", "entity": "Amazon", "geography": "US", "eventDate": "2026-07-07", "closeDate": "2026-07-09", "maturityDate": "2029-07-09", "instrumentCategory": "debt", "instrument": "Floating Rate Senior Notes due 2029", "amount": 0.75, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 0.75, "comparableUsdAmountUnit": "billion", "rateType": "floating", "benchmark": "Compounded SOFR", "spreadBps": 58, "tenorYears": 3 },
+        { "id": "amazon-fixed-notes-2029-2026", "entity": "Amazon", "geography": "US", "eventDate": "2026-07-07", "closeDate": "2026-07-09", "maturityDate": "2029-07-09", "instrumentCategory": "debt", "instrument": "4.600% Senior Notes due 2029", "amount": 3.5, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 3.5, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 4.6, "tenorYears": 3 },
+        { "id": "amazon-fixed-notes-2031-2026", "entity": "Amazon", "geography": "US", "eventDate": "2026-07-07", "closeDate": "2026-07-09", "maturityDate": "2031-07-09", "instrumentCategory": "debt", "instrument": "4.800% Senior Notes due 2031", "amount": 4.25, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 4.25, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 4.8, "tenorYears": 5 },
+        { "id": "amazon-fixed-notes-2033-2026", "entity": "Amazon", "geography": "US", "eventDate": "2026-07-07", "closeDate": "2026-07-09", "maturityDate": "2033-07-09", "instrumentCategory": "debt", "instrument": "5.100% Senior Notes due 2033", "amount": 3, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 3, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 5.1, "tenorYears": 7 },
+        { "id": "amazon-fixed-notes-2036-2026", "entity": "Amazon", "geography": "US", "eventDate": "2026-07-07", "closeDate": "2026-07-09", "maturityDate": "2036-07-09", "instrumentCategory": "debt", "instrument": "5.300% Senior Notes due 2036", "amount": 4.5, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 4.5, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 5.3, "tenorYears": 10 },
+        { "id": "amazon-fixed-notes-2046-2026", "entity": "Amazon", "geography": "US", "eventDate": "2026-07-07", "closeDate": "2026-07-09", "maturityDate": "2046-07-09", "instrumentCategory": "debt", "instrument": "6.000% Senior Notes due 2046", "amount": 2.75, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 2.75, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 6, "tenorYears": 20 },
+        { "id": "amazon-fixed-notes-2056-2026", "entity": "Amazon", "geography": "US", "eventDate": "2026-07-07", "closeDate": "2026-07-09", "maturityDate": "2056-07-09", "instrumentCategory": "debt", "instrument": "6.100% Senior Notes due 2056", "amount": 4, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 4, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 6.1, "tenorYears": 30 },
+        { "id": "amazon-fixed-notes-2066-2026", "entity": "Amazon", "geography": "US", "eventDate": "2026-07-07", "closeDate": "2026-07-09", "maturityDate": "2066-07-09", "instrumentCategory": "debt", "instrument": "6.250% Senior Notes due 2066", "amount": 2.25, "amountUnit": "billion", "currency": "USD", "comparableUsdAmount": 2.25, "comparableUsdAmountUnit": "billion", "rateType": "fixed", "couponPercent": 6.25, "tenorYears": 40 }
+      ] },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "aws-capacity-block-gpu-quotes-2026-08-24", "entity": "AWS", "metric": "compute_quote_series", "value": "3 exact capacity-block quotes", "unit": "USD per instance hour", "asOf": "2026-08-24",
+      "sourceId": "aws-ec2-pricing", "sourceUrl": "https://aws.amazon.com/ec2/capacityblocks/pricing/", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "AWS official EC2 Capacity Blocks for ML table. Capacity-block rates are labeled separately and never merged with on-demand prices.",
+      "dimensions": { "quotes": [
+        { "id": "aws-p5-4xlarge-h100-us-east-1", "platform": "AWS", "gpu": "NVIDIA H100 80GB", "instanceSpec": "p5.4xlarge", "gpuCount": 1, "region": "US East (N. Virginia)", "billingMode": "capacity_block", "currency": "USD", "instanceHourlyPrice": 4.326 },
+        { "id": "aws-p5-48xlarge-h100-us-east-1", "platform": "AWS", "gpu": "NVIDIA H100 80GB", "instanceSpec": "p5.48xlarge", "gpuCount": 8, "region": "US East (N. Virginia)", "billingMode": "capacity_block", "currency": "USD", "instanceHourlyPrice": 34.608 },
+        { "id": "aws-p6-b200-48xlarge-us-east-1", "platform": "AWS", "gpu": "NVIDIA B200 180GB", "instanceSpec": "p6-b200.48xlarge", "gpuCount": 8, "region": "US East (N. Virginia)", "billingMode": "capacity_block", "currency": "USD", "instanceHourlyPrice": 82.368 }
+      ] },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "coreweave-gpu-quotes-2026-08-24", "entity": "CoreWeave", "metric": "compute_quote_series", "value": "6 exact on-demand/spot quotes", "unit": "USD per instance hour", "asOf": "2026-08-24",
+      "sourceId": "coreweave-pricing", "sourceUrl": "https://coreweave.com/pricing", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "CoreWeave official pricing page. Eight-GPU instance totals are divided by the disclosed GPU count only after preserving region and billing mode.",
+      "dimensions": { "quotes": [
+        { "id": "coreweave-h100-us-on-demand", "platform": "CoreWeave", "gpu": "NVIDIA HGX H100 80GB", "instanceSpec": "HGX H100 8-GPU", "gpuCount": 8, "region": "US", "billingMode": "on_demand", "currency": "USD", "instanceHourlyPrice": 49.24 },
+        { "id": "coreweave-h100-us-spot", "platform": "CoreWeave", "gpu": "NVIDIA HGX H100 80GB", "instanceSpec": "HGX H100 8-GPU", "gpuCount": 8, "region": "US", "billingMode": "spot", "currency": "USD", "instanceHourlyPrice": 19.71 },
+        { "id": "coreweave-h200-us-on-demand", "platform": "CoreWeave", "gpu": "NVIDIA HGX H200 141GB", "instanceSpec": "HGX H200 8-GPU", "gpuCount": 8, "region": "US", "billingMode": "on_demand", "currency": "USD", "instanceHourlyPrice": 50.44 },
+        { "id": "coreweave-h200-us-spot", "platform": "CoreWeave", "gpu": "NVIDIA HGX H200 141GB", "instanceSpec": "HGX H200 8-GPU", "gpuCount": 8, "region": "US", "billingMode": "spot", "currency": "USD", "instanceHourlyPrice": 20.93 },
+        { "id": "coreweave-b200-us-on-demand", "platform": "CoreWeave", "gpu": "NVIDIA HGX B200 180GB", "instanceSpec": "HGX B200 8-GPU", "gpuCount": 8, "region": "US", "billingMode": "on_demand", "currency": "USD", "instanceHourlyPrice": 68.8 },
+        { "id": "coreweave-b200-us-spot", "platform": "CoreWeave", "gpu": "NVIDIA HGX B200 180GB", "instanceSpec": "HGX B200 8-GPU", "gpuCount": 8, "region": "US", "billingMode": "spot", "currency": "USD", "instanceHourlyPrice": 34.11 }
+      ] },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "gcp-accelerator-vm-quotes-2026-08-24", "entity": "Google Cloud", "metric": "compute_quote_series", "value": "6 exact accelerator-VM quotes", "unit": "USD per instance hour", "asOf": "2026-08-24",
+      "sourceId": "gcp-gpu-pricing", "sourceUrl": "https://cloud.google.com/products/compute/pricing/accelerator-optimized", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Google Cloud official accelerator-optimized VM table. Full VM hourly price is divided by exactly eight disclosed GPUs, with on-demand and spot kept separate.",
+      "dimensions": { "quotes": [
+        { "id": "gcp-a3-high-h100-on-demand", "platform": "Google Cloud", "gpu": "NVIDIA H100 80GB", "instanceSpec": "a3-highgpu-8g", "gpuCount": 8, "region": "listed regions", "billingMode": "on_demand", "currency": "USD", "instanceHourlyPrice": 88.490000119 },
+        { "id": "gcp-a3-high-h100-spot", "platform": "Google Cloud", "gpu": "NVIDIA H100 80GB", "instanceSpec": "a3-highgpu-8g", "gpuCount": 8, "region": "listed regions", "billingMode": "spot", "currency": "USD", "instanceHourlyPrice": 48.185646027 },
+        { "id": "gcp-a3-mega-h100-on-demand", "platform": "Google Cloud", "gpu": "NVIDIA H100 80GB", "instanceSpec": "a3-megagpu-8g", "gpuCount": 8, "region": "listed regions", "billingMode": "on_demand", "currency": "USD", "instanceHourlyPrice": 93.400712807 },
+        { "id": "gcp-a3-mega-h100-spot", "platform": "Google Cloud", "gpu": "NVIDIA H100 80GB", "instanceSpec": "a3-megagpu-8g", "gpuCount": 8, "region": "listed regions", "billingMode": "spot", "currency": "USD", "instanceHourlyPrice": 50.794798027 },
+        { "id": "gcp-a3-ultra-h200-on-demand", "platform": "Google Cloud", "gpu": "NVIDIA H200 141GB", "instanceSpec": "a3-ultragpu-8g", "gpuCount": 8, "region": "listed regions", "billingMode": "on_demand", "currency": "USD", "instanceHourlyPrice": 84.806908493 },
+        { "id": "gcp-a3-ultra-h200-spot", "platform": "Google Cloud", "gpu": "NVIDIA H200 141GB", "instanceSpec": "a3-ultragpu-8g", "gpuCount": 8, "region": "listed regions", "billingMode": "spot", "currency": "USD", "instanceHourlyPrice": 46.560196055 }
+      ] },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "lambda-gpu-quotes-2026-08-24", "entity": "Lambda", "metric": "compute_quote_series", "value": "3 exact per-GPU quotes", "unit": "USD per GPU hour", "asOf": "2026-08-24",
+      "sourceId": "lambda-cloud-pricing", "sourceUrl": "https://lambda.ai/instances", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Lambda official instances table already quotes USD per GPU per hour; no instance-total derivation is applied.",
+      "dimensions": { "quotes": [
+        { "id": "lambda-b200-sxm6-on-demand", "platform": "Lambda", "gpu": "NVIDIA B200 SXM6 180GB", "instanceSpec": "1-GPU plan", "gpuCount": 1, "region": "global availability", "billingMode": "on_demand", "currency": "USD", "pricePerGpuHour": 6.99 },
+        { "id": "lambda-h100-sxm-on-demand", "platform": "Lambda", "gpu": "NVIDIA H100 SXM 80GB", "instanceSpec": "1-GPU plan", "gpuCount": 1, "region": "global availability", "billingMode": "on_demand", "currency": "USD", "pricePerGpuHour": 4.29 },
+        { "id": "lambda-h100-pcie-on-demand", "platform": "Lambda", "gpu": "NVIDIA H100 PCIe 80GB", "instanceSpec": "1-GPU plan", "gpuCount": 1, "region": "global availability", "billingMode": "on_demand", "currency": "USD", "pricePerGpuHour": 3.29 }
+      ] },
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "azure-gpu-price-unavailable-2026-08-24", "entity": "Azure", "metric": "compute_quote", "value": null, "unit": "not disclosed on reproducible static table", "asOf": "2026-08-24",
+      "sourceId": "azure-vm-pricing", "sourceUrl": "https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/", "sourceKind": "official", "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "The official Azure Linux VM page was checked, but the GPU VM price depends on an interactive region/currency selector and did not expose a stable exact quote in the checked static page.",
+      "dimensions": { "platform": "Azure", "gpu": "NVIDIA H100", "instanceSpec": "ND H100 v5", "region": "not reproducibly disclosed", "billingMode": "on_demand", "currency": "USD", "gpuCount": 8 },
+      "verification": { "status": "unavailable", "checkedAt": "2026-08-23T16:00:00.000Z", "note": "官网确认实例存在，但静态公开页未给出可复核地区单价；不使用第三方价格填空。" }
+    },
+    {
+      "id": "aa-index-claude-opus-5-max-2026-08-24",
+      "entity": "Claude Opus 5 max",
+      "metric": "artificial_analysis_intelligence_index",
+      "value": 63.0532,
+      "unit": "index points",
+      "asOf": "2026-08-24",
+      "sourceId": "artificial-analysis-index",
+      "sourceUrl": "https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index",
+      "sourceKind": "named-third-party",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Public JSON-LD dataset published on the named third-party index page; kept separate from official model-card Benchmark.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    },
+    {
+      "id": "aa-index-gpt-5-6-sol-max-2026-08-24",
+      "entity": "GPT-5.6 Sol max",
+      "metric": "artificial_analysis_intelligence_index",
+      "value": 60.9299,
+      "unit": "index points",
+      "asOf": "2026-08-24",
+      "sourceId": "artificial-analysis-index",
+      "sourceUrl": "https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index",
+      "sourceKind": "named-third-party",
+      "retrievedAt": "2026-08-23T16:00:00.000Z",
+      "methodology": "Public JSON-LD dataset published on the named third-party index page; kept separate from official model-card Benchmark.",
+      "verification": { "status": "verified", "checkedAt": "2026-08-23T16:00:00.000Z" }
+    }
+  ]
+}

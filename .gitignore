@@ -48,6 +48,8 @@ server/public/reports/
 server/price_tracking/*.xlsx*
 server/price_tracking/*.csv
 .playwright-cli/
+.worktrees/
+.superpowers/
 output/
 state/
 tmp/

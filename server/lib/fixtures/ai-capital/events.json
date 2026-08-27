@@ -1,0 +1,81 @@
+[
+  {
+    "entity": "Anthropic",
+    "geography": "US",
+    "eventDate": "2025-11-01",
+    "instrumentCategory": "debt",
+    "instrument": "Senior unsecured notes",
+    "amount": 2000,
+    "currency": "USD",
+    "amountUnit": "million",
+    "comparableUsdAmount": 2000,
+    "rateType": "fixed",
+    "couponPercent": 5.5,
+    "tenorYears": 5
+  },
+  {
+    "entity": "CoreWeave",
+    "geography": "US",
+    "eventDate": "2026-02-15",
+    "instrumentCategory": "debt",
+    "instrument": "Term loan",
+    "amount": 1000,
+    "currency": "USD",
+    "amountUnit": "million",
+    "comparableUsdAmount": 1000,
+    "rateType": "floating",
+    "benchmark": "SOFR",
+    "spreadBps": 450,
+    "tenorYears": 4
+  },
+  {
+    "entity": "CoreWeave",
+    "geography": "US",
+    "eventDate": "2026-06-10",
+    "instrumentCategory": "convertible",
+    "instrument": "Convertible senior notes",
+    "amount": 2000,
+    "currency": "USD",
+    "amountUnit": "million",
+    "comparableUsdAmount": 2000,
+    "rateType": "fixed",
+    "couponPercent": 3,
+    "tenorYears": 6
+  },
+  {
+    "entity": "OpenAI",
+    "geography": "US",
+    "eventDate": "2026-03-31",
+    "instrumentCategory": "equity",
+    "instrument": "Primary equity round",
+    "amount": 110000,
+    "currency": "USD",
+    "amountUnit": "million",
+    "comparableUsdAmount": 110000,
+    "rateType": "not_applicable"
+  },
+  {
+    "entity": "智谱",
+    "geography": "China",
+    "eventDate": "2026-05-20",
+    "instrumentCategory": "equity",
+    "instrument": "Series financing",
+    "amount": 5000,
+    "currency": "CNY",
+    "amountUnit": "million",
+    "comparableUsdAmount": 690,
+    "rateType": "not_applicable"
+  },
+  {
+    "entity": "xAI",
+    "geography": "US",
+    "eventDate": "2026-07-01",
+    "instrumentCategory": "debt",
+    "instrument": "Debt financing",
+    "amount": 5000,
+    "currency": "USD",
+    "amountUnit": "million",
+    "comparableUsdAmount": 5000,
+    "rateType": "unknown"
+  }
+]

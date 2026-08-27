@@ -2,18 +2,36 @@
 
 ## AI 投资看板配置
 
-AI 看板位于 `/ai-dashboard`，沿用网站现有访问边界，不再要求单独输入访问口令。实时数据源可配置：
+AI 看板位于 `/ai-dashboard`，沿用网站现有访问边界，不再要求单独输入访问口令。看板已停止读取飞书；增长、价格、融资、官网模型卡、算力租赁等板块由服务端从登记过的公开网页读取，每条记录保留来源、口径、数据日期和同步状态。
+
+OpenRouter 只用于公开 Token 流量。若要读取完整的日度排名数据并计算周环比，可配置：
 
 ```bash
-export FEISHU_APP_ID='cli_xxx'
-export FEISHU_APP_SECRET='xxx'
-export FEISHU_AI_SHEET_TOKEN='F9W3s5BBEhRRV8tdZvCchEAfnCf'
 export OPENROUTER_API_KEY='sk-or-v1-xxx'
 ```
 
-本地开发也可以将同名变量写入仓库根目录的 `.env.local`；`npm run server` 会自动加载该文件，且该文件已被 Git 忽略。系统环境变量优先于 `.env.local` 中的同名配置。没有飞书 API 凭证时，服务会读取 `server/data/ai-dashboard/feishu-export.json` 作为本地只读快照。
+本地开发也可以将同名变量写入仓库根目录的 `.env.local`；`npm run server` 会自动加载该文件，且该文件已被 Git 忽略。系统环境变量优先于 `.env.local` 中的同名配置。未配置 OpenRouter key 时，页面可以读取本地保存的公开榜单 Top 10，但不会把 Top 10 合计冒充全平台总量，也不会伪造周环比。
 
-飞书应用只需电子表格读取权限，并需要作为协作者加入源表。服务端会按工作表名称发现 sheet ID；飞书每小时同步、OpenRouter 每日同步，也可以在页面手动刷新。未配置 OpenRouter Data API 密钥时，页面可读取本地保存的官方公开榜单 Top 10，但不会把 Top 10 合计冒充全平台总量。快照原子写入 `server/data/ai-dashboard/snapshot.json`，单一来源失败时继续返回上一版数据并标记过期。
+### Benchmark 数据边界
+
+Benchmark 不使用 OpenRouter Benchmark API、飞书、Artificial Analysis、Design Arena 或其他公开测评机构补分。它只读取 12 家厂商控制的模型卡、系统卡、发布页、官方 GitHub/Hugging Face 组织：
+
+- Anthropic：`anthropic.com/system-cards`
+- OpenAI：`deploymentsafety.openai.com`
+- Gemini：`deepmind.google/models/model-cards`
+- 智谱：`docs.bigmodel.cn`
+- MiniMax：`github.com/MiniMax-AI`
+- Qwen：`huggingface.co/Qwen` 与 `github.com/QwenLM`
+- MiMo：`github.com/XiaomiMiMo`
+- DeepSeek：`github.com/deepseek-ai`
+- Kimi：`github.com/MoonshotAI`
+- Meta：`developer.meta.com/ai/models`
+- Tencent：`github.com/Tencent-Hunyuan`
+- xAI：`x.ai/news`
+
+每家只展示当前确认的最新旗舰/通用文本模型。官网未披露分数时显示“未披露”，读取失败时仅保留该厂商上一版官网结果并标旧，不会拿旧模型或另一家数据顶替。同一测试名、版本、split、分数口径的披露合并到一个展示分项；同一模型存在多个运行配置时全部保留并标记歧义。Agent 类冠军要求 Agent、Harness、推理强度、shots/Pass@k 和工具策略逐字段一致；非 Agent 类仅在至少两家披露同一精确测试、未明确标注配置不完整且已披露配置不冲突时生成严格冠军。其他共享分项只显示“官网披露最高值 · 非严格横比”。Terminal-Bench 始终放在 Agent 类别首位，2.0、2.1、3.0 不合并。Fable 与 Mythos 不做名称排除。
+
+进入 Benchmark 页签时会强制触发一次仅限官网模型卡的刷新；并发刷新会合并为同一个请求。所有公开来源每日检查一次，快照原子写入 `server/data/ai-dashboard/snapshot.json`。这些同步请求只读网页，不调用模型推理，也不产生模型 Token 费用。
 
 ## 本地公网访问
 

@@ -1,0 +1,141 @@
+[
+  {
+    "vendor": "OpenAI",
+    "model": "GPT 5.6 Sol",
+    "generation": "GPT 5.6",
+    "currentGeneration": true,
+    "contextTier": "short",
+    "serviceTier": "standard",
+    "currency": "USD",
+    "perTokens": 1000000,
+    "inputPrice": 5,
+    "cacheReadPrice": 0.5,
+    "cacheWritePrice": 6.25,
+    "outputPrice": 30
+  },
+  {
+    "vendor": "OpenAI",
+    "model": "GPT 5.6 Sol",
+    "generation": "GPT 5.6",
+    "currentGeneration": true,
+    "contextTier": "long",
+    "serviceTier": "standard",
+    "currency": "USD",
+    "perTokens": 1000000,
+    "inputPrice": 10,
+    "cacheReadPrice": 1,
+    "cacheWritePrice": 12.5,
+    "outputPrice": 45
+  },
+  {
+    "vendor": "OpenAI",
+    "model": "GPT 5.5",
+    "generation": "GPT 5.5",
+    "currentGeneration": false,
+    "currency": "USD",
+    "perTokens": 1000000,
+    "inputPrice": 3,
+    "outputPrice": 18
+  },
+  {
+    "vendor": "Anthropic",
+    "model": "Claude Fable 5",
+    "generation": "Claude 5",
+    "currentGeneration": true,
+    "currency": "USD",
+    "perTokens": 1000000,
+    "inputPrice": 10,
+    "cacheReadPrice": 1,
+    "cacheWritePrice": 12.5,
+    "outputPrice": 50
+  },
+  {
+    "vendor": "Anthropic",
+    "model": "Claude Mythos 5",
+    "generation": "Claude 5",
+    "currentGeneration": true,
+    "currency": "USD",
+    "perTokens": 1000000,
+    "inputPrice": 10,
+    "cacheReadPrice": 1,
+    "cacheWritePrice": 12.5,
+    "outputPrice": 50
+  },
+  {
+    "vendor": "Gemini",
+    "model": "Gemini 3.1 Pro",
+    "generation": "Gemini 3",
+    "currentGeneration": true,
+    "contextTier": "short",
+    "currency": "USD",
+    "perTokens": 1000,
+    "inputPrice": 0.002,
+    "cacheReadPrice": 0.0002,
+    "outputPrice": 0.012
+  },
+  {
+    "vendor": "智谱",
+    "model": "GLM-5.2",
+    "generation": "GLM-5.2",
+    "currentGeneration": false,
+    "currency": "CNY",
+    "perTokens": 1000000,
+    "inputPrice": 1,
+    "outputPrice": 2
+  },
+  {
+    "vendor": "MiniMax",
+    "model": "MiniMax M3",
+    "generation": "M3",
+    "currentGeneration": true,
+    "currency": "CNY",
+    "perTokens": 1000000,
+    "inputPrice": 2.1,
+    "cacheReadPrice": 0.42,
+    "outputPrice": 8.4
+  },
+  {
+    "vendor": "Kimi",
+    "model": "Kimi K3",
+    "generation": "K3",
+    "currentGeneration": true,
+    "currency": "USD",
+    "perTokens": 1000000,
+    "inputPrice": 3,
+    "cacheReadPrice": 0.3,
+    "outputPrice": 15
+  },
+  {
+    "vendor": "DeepSeek",
+    "model": "DeepSeek V4 Flash",
+    "generation": "V4",
+    "currentGeneration": true,
+    "currency": "USD",
+    "perTokens": 1000000,
+    "inputPrice": 0.14,
+    "cacheReadPrice": 0.0028,
+    "outputPrice": 0.28
+  },
+  {
+    "vendor": "MiMo",
+    "model": "MiMo V2.5 Pro",
+    "generation": "V2.5",
+    "currentGeneration": true,
+    "currency": "USD",
+    "perTokens": 1000000,
+    "inputPrice": 0.435,
+    "cacheReadPrice": 0.0036,
+    "cacheWritePrice": 0,
+    "outputPrice": 0.87
+  },
+  {
+    "vendor": "Qwen",
+    "model": "Qwen3.8-Max",
+    "generation": "Qwen3.8",
+    "currentGeneration": true,
+    "currency": "CNY",
+    "perTokens": 1000000,
+    "inputPrice": 12,
+    "outputPrice": 36
+  }
+]

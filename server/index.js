@@ -18,6 +18,12 @@ import {
   createAiDashboardServiceFromEnv,
   startAiDashboardAutoRefresh,
 } from './lib/aiDashboardService.js';
+import { createIceCdsPipelineFromEnv } from './lib/iceCdsPipeline.js';
+import {
+  createIceCdsPublicClient,
+  refreshIceCdsFromPublicSources,
+  startIceCdsAutoRefresh,
+} from './lib/iceCdsPublicSource.js';
 import {
   isExactMissingOptionalModuleError,
   validateQuantStrategyExports,
@@ -56,6 +62,12 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.set('trust proxy', 'loopback');
 const aiDashboardService = createAiDashboardServiceFromEnv();
+const iceCdsPipeline = createIceCdsPipelineFromEnv();
+const iceCdsPublicClient = createIceCdsPublicClient();
+const refreshPublicIceCds = () => refreshIceCdsFromPublicSources({
+  client: iceCdsPublicClient,
+  pipeline: iceCdsPipeline,
+});
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 const NEWS_FILE = path.join(__dirname, 'data', 'news.json');
@@ -2526,7 +2538,7 @@ app.use('/api/tmt-margin', tmtMarginRouter);
 app.use('/api/etf-monitor', etfMonitorRouter);
 app.use('/api/research', researchRouter);
 app.use('/api/calendar', calendarRouter);
-app.use('/api/ai-dashboard', createAiDashboardRouter({ service: aiDashboardService }));
+app.use('/api/ai-dashboard', createAiDashboardRouter({ service: aiDashboardService, cdsPipeline: iceCdsPipeline }));
 
 // 研究报告（cninfo/earnings）的原始文件 xlsx/pdf 静态服务
 const REPORTS_DIR = process.env.RESEARCH_REPORTS_DIR || path.join(__dirname, 'public/reports');
@@ -3311,5 +3323,6 @@ app.listen(PORT, HOST, () => {
     startNewsAutoRefresh();
     priceTracking.startAutoRefresh();
     startAiDashboardAutoRefresh(aiDashboardService);
+    startIceCdsAutoRefresh(refreshPublicIceCds);
   }
 });
