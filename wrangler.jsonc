@@ -5,6 +5,9 @@
   "main": "worker/index.ts",
   "compatibility_date": "2026-08-28",
   "compatibility_flags": ["nodejs_compat"],
+  "secrets": {
+    "required": ["GITHUB_DISPATCH_TOKEN", "RESEARCH_PUBLISH_TOKEN"]
+  },
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist",
