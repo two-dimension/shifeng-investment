@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { researchObjectKey } from './research-files'
 import { handleWorkerRequest, type WorkerEnv } from './index'
-import { putSummary } from './research-store'
+import { getSummary, putSummary } from './research-store'
 
 function createEnv(options?: {
   legacyOrigin?: string
@@ -100,6 +100,52 @@ describe('public research API', () => {
     expect(response.status).toBe(200)
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes)
     expect(assetFetch).not.toHaveBeenCalled()
+  })
+})
+
+describe('workers.dev internal-only surface', () => {
+  it('blocks the public site and read APIs on the unprotected workers.dev hostname', async () => {
+    const workerEnv = createEnv()
+    const site = await handleWorkerRequest(
+      new Request('https://shifeng-investment.example.workers.dev/'),
+      workerEnv,
+      createContext(),
+    )
+    const research = await handleWorkerRequest(
+      new Request('https://shifeng-investment.example.workers.dev/api/research/cninfo/latest'),
+      workerEnv,
+      createContext(),
+    )
+
+    expect(site.status).toBe(404)
+    expect(research.status).toBe(404)
+    await expect(research.json()).resolves.toEqual({
+      error: 'This hostname only accepts internal research publishing requests.',
+      code: 'INTERNAL_HOST_ONLY',
+    })
+  })
+
+  it('keeps authenticated internal publishing available on workers.dev', async () => {
+    const response = await handleWorkerRequest(
+      new Request(
+        'https://shifeng-investment.example.workers.dev/api/research/internal/summaries/cninfo/2026-08-28',
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${env.RESEARCH_PUBLISH_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ generatedAt: '2026-08-28T02:00:00.000Z', totalCount: 3 }),
+        },
+      ),
+      createEnv(),
+      createContext(),
+    )
+
+    expect(response.status).toBe(201)
+    await expect(getSummary(env.RESEARCH_DB, 'cninfo', '2026-08-28')).resolves.toMatchObject({
+      totalCount: 3,
+    })
   })
 })
 
