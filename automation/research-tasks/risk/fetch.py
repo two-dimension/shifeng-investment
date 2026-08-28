@@ -70,6 +70,15 @@ def _fetch_page(page: int, column: str, se_date: str) -> Optional[Dict]:
     return None
 
 
+def _first_page_signature(data: Dict):
+    """识别 cninfo 忽略 column 参数后返回的同一条公告流。"""
+    announcements = data.get('announcements') or []
+    announcement_ids = tuple(a.get('announcementId') for a in announcements)
+    if not announcement_ids or any(not aid for aid in announcement_ids):
+        return None
+    return data.get('totalAnnouncement') or 0, announcement_ids
+
+
 def fetch_range(
     start_date: str,
     end_date: Optional[str] = None,
@@ -96,7 +105,11 @@ def fetch_range(
     all_anns: List[Dict] = []
     col_meta: Dict[str, Dict] = {}
     is_complete = True
+    unique_feeds = []
+    first_page_feeds = {}
 
+    # 先紧挨着探测两个 column 的第一页。cninfo 当前有时会忽略 column，
+    # 给 sse/szse 返回完全相同的全市场公告；这种情况只翻页一次。
     for col in columns:
         d = _fetch_page(1, col, se_date)
         if not d:
@@ -107,7 +120,26 @@ def fetch_range(
         total = d.get('totalAnnouncement') or 0
         pages = (total + PAGE_SIZE - 1) // PAGE_SIZE
         _log(f"  {col} | {se_date} | total={total} pages={pages}")
+        signature = _first_page_signature(d)
+        duplicate_of = first_page_feeds.get(signature) if signature else None
+        if duplicate_of:
+            col_meta[col] = {
+                'total': total,
+                'pages': pages,
+                'count': 0,
+                'skipped_duplicate': True,
+                'duplicate_of': duplicate_of,
+            }
+            _log(f"  {col} 与 {duplicate_of} 首页及总数相同,跳过重复翻页")
+            continue
+
         col_meta[col] = {'total': total, 'pages': pages, 'count': 0}
+        if signature:
+            first_page_feeds[signature] = col
+        unique_feeds.append((col, d, pages))
+
+    for col, first_page, pages in unique_feeds:
+        d = first_page
 
         for p in range(1, pages + 1):
             if p > 1:
