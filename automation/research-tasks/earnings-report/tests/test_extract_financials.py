@@ -262,3 +262,14 @@ def test_only_derives_yoy_from_exactly_two_unambiguous_amounts():
     three_values = extract_financial_metrics("单位：元\n营业收入 300000000 200000000 100000000")
     assert three_values["营业收入亿元"] == 3.0
     assert three_values["营业收入同比%"] is None
+
+
+def test_implausible_pdf_yoy_is_left_blank_instead_of_failing_the_batch():
+    result = extract_financial_metrics(
+        "单位：元\n归属于上市公司股东的扣除非经常性损益的净利润 "
+        "100000000 100 -76727202.54%",
+        report_type="半年度报告",
+    )
+
+    assert result["扣非净利润亿元"] == 1.0
+    assert result["扣非净利润同比%"] is None

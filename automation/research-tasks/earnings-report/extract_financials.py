@@ -59,6 +59,7 @@ METRICS = (
     ("基本每股收益", ("基本每股收益", "Basic earnings per share"), "per_share"),
     ("加权ROE", ("加权平均净资产收益率", "Weighted average ROE", "Weighted average return on equity"), "percent"),
 )
+MAX_ABS_YOY_PCT = 1_000_000
 
 
 def pdf_bytes_to_text(data: bytes, max_pages: int = 60) -> tuple[str, dict]:
@@ -245,6 +246,13 @@ def _clean_number(value: float | None, digits: int = 4) -> float | None:
     return round(value, digits)
 
 
+def _clean_yoy(value: float | None) -> float | None:
+    cleaned = _clean_number(value, 2)
+    if cleaned is None or abs(cleaned) > MAX_ABS_YOY_PCT:
+        return None
+    return cleaned
+
+
 def _is_q3_dual_table(lines: list[str], index: int, report_type: str | None) -> bool:
     if report_type != "第三季度报告":
         return False
@@ -336,7 +344,7 @@ def _find_metric(lines: list[str], aliases: tuple[str, ...], kind: str, report_t
                 return {
                     "value_yi": _clean_number(current_yi),
                     "previous_yi": None,
-                    "yoy_pct": _clean_number(yoy, 2),
+                    "yoy_pct": _clean_yoy(yoy),
                     "raw": target["raw"],
                     "line": idx + 1,
                     "unit_context": unit,
@@ -370,7 +378,7 @@ def _find_metric(lines: list[str], aliases: tuple[str, ...], kind: str, report_t
         return {
             "value_yi": _clean_number(current_yi),
             "previous_yi": _clean_number(previous_yi),
-            "yoy_pct": _clean_number(yoy, 2),
+            "yoy_pct": _clean_yoy(yoy),
             "raw": plain[0]["raw"],
             "line": idx + 1,
             "unit_context": unit,
