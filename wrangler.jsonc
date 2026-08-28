@@ -5,10 +5,11 @@
   "main": "worker/index.ts",
   "compatibility_date": "2026-08-28",
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
   "routes": [
     {
-      "pattern": "www.shifeng-investment.com",
-      "custom_domain": true
+      "pattern": "www.shifeng-investment.com/*",
+      "zone_name": "shifeng-investment.com"
     }
   ],
   "secrets": {
