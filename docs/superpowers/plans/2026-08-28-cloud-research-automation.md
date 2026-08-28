@@ -164,7 +164,7 @@ git commit -m "feat: add D1 research summary store"
   - `PUT /api/research/internal/files/:kind/:date/:filename`
 - Produces public route: `GET /api/research/files/:kind/:date/:filename`.
 
-- [ ] **Step 1: Write failing auth, validation, D1 and R2 tests**
+- [x] **Step 1: Write failing auth, validation, D1 and R2 tests**
 
 Tests must assert `401` without/wrong token, `400` for invalid kind/date/filename, `413` above the configured upload limit, successful summary upsert, successful R2 stream upload, and byte-identical download with `Content-Disposition`.
 
@@ -179,23 +179,23 @@ const response = await SELF.fetch('https://example.com/api/research/internal/fil
 expect(response.status).toBe(201);
 ```
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run: `npm run test:worker -- worker/research-publish.test.ts`
 
 Expected: FAIL because routes/helpers are missing.
 
-- [ ] **Step 3: Implement minimal streaming publish/download**
+- [x] **Step 3: Implement minimal streaming publish/download**
 
 Do not buffer report files. Send `request.body` directly to `env.RESEARCH_REPORTS.put()` with `httpMetadata` and custom metadata `{ kind, date, filename }`; stream `R2ObjectBody.body` back to the client. Limit summary JSON to 1 MiB and report uploads to 20 MiB using `Content-Length` plus R2 streaming.
 
-- [ ] **Step 4: Run tests and typecheck**
+- [x] **Step 4: Run tests and typecheck**
 
 Run: `npm run test:worker -- worker/research-publish.test.ts && npx tsc -p tsconfig.worker.json --noEmit`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add worker/auth.ts worker/research-files.ts worker/research-publish.ts worker/research-publish.test.ts
