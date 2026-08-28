@@ -5,6 +5,12 @@
   "main": "worker/index.ts",
   "compatibility_date": "2026-08-28",
   "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    {
+      "pattern": "www.shifeng-investment.com",
+      "custom_domain": true
+    }
+  ],
   "secrets": {
     "required": ["GITHUB_DISPATCH_TOKEN", "RESEARCH_PUBLISH_TOKEN"]
   },
