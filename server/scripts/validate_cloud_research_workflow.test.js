@@ -26,6 +26,10 @@ test('cloud research workflow has the required triggers, runtime, and failure re
   assert.equal(job.env.CLOUD_RESEARCH_BASE_URL, '${{ secrets.CLOUD_RESEARCH_BASE_URL }}');
   assert.equal(job.env.RESEARCH_PUBLISH_TOKEN, '${{ secrets.RESEARCH_PUBLISH_TOKEN }}');
   assert.equal(
+    job.env.RESEARCH_CJK_FONT,
+    '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc',
+  );
+  assert.equal(
     job.env.RESEARCH_JOB_ID,
     '${{ github.event.client_payload.job_id || github.run_id }}',
   );
@@ -36,7 +40,7 @@ test('cloud research workflow has the required triggers, runtime, and failure re
   assert.match(serializedSteps, /actions\/setup-python@v5/);
   assert.match(serializedSteps, /"python-version":"3\.12"/);
   assert.match(serializedSteps, /"cache":"pip"/);
-  assert.match(serializedSteps, /fonts-noto-cjk/);
+  assert.match(serializedSteps, /fonts-wqy-zenhei/);
   assert.match(serializedSteps, /npm ci/);
   assert.match(serializedSteps, /pip install -r automation\/research-tasks\/requirements\.txt/);
   assert.match(serializedSteps, /Asia\/Shanghai/);

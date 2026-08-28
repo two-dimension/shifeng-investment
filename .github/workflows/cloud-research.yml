@@ -23,6 +23,7 @@ jobs:
       RESEARCH_PUBLISH_TOKEN: ${{ secrets.RESEARCH_PUBLISH_TOKEN }}
       RESEARCH_JOB_ID: ${{ github.event.client_payload.job_id || github.run_id }}
       CLOUD_RESEARCH_MANIFEST_PATH: ${{ github.workspace }}/cloud-research-manifest.json
+      RESEARCH_CJK_FONT: /usr/share/fonts/truetype/wqy/wqy-zenhei.ttc
 
     steps:
       - name: Check out repository
@@ -44,7 +45,7 @@ jobs:
       - name: Install CJK fonts
         run: |
           sudo apt-get update
-          sudo apt-get install --yes fonts-noto-cjk
+          sudo apt-get install --yes fonts-wqy-zenhei
 
       - name: Install Node dependencies
         run: npm ci
