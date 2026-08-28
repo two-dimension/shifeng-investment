@@ -20,6 +20,11 @@
     "quant:loop": "node --max-old-space-size=8192 --input-type=module -e \"import('./server/lib/quantStrategy.js').then(async ({ runQuantIteration }) => console.log(JSON.stringify(await runQuantIteration(), null, 2)))\"",
     "check:earnings-copy": "node scripts/check-earnings-copy.mjs",
     "sync:online": "bash scripts/sync-online.sh",
+    "cf:typegen": "wrangler types --env-file .dev.vars.example --strict-vars false",
+    "test:worker": "vitest run --config vitest.config.ts",
+    "cf:migrate:local": "wrangler d1 migrations apply RESEARCH_DB --local",
+    "cf:migrate:remote": "wrangler d1 migrations apply RESEARCH_DB --remote",
+    "deploy:cloud": "npm run build && wrangler deploy",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -44,6 +49,7 @@
     "xlsx-js-style": "^1.2.0"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.22.0",
     "@eslint/js": "^9.39.4",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
@@ -55,6 +61,8 @@
     "globals": "^17.4.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
-    "vite": "^8.0.4"
+    "vite": "^8.0.4",
+    "vitest": "4.1.11",
+    "wrangler": "4.127.0"
   }
 }

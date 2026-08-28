@@ -49,6 +49,9 @@ server/public/reports/
 server/price_tracking/*.xlsx*
 server/price_tracking/*.csv
 .playwright-cli/
+.wrangler/
+.dev.vars*
+!.dev.vars.example
 .worktrees/
 .superpowers/
 output/

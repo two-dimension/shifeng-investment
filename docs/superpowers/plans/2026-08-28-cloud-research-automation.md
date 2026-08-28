@@ -38,13 +38,12 @@
 - Create: `.dev.vars.example`
 - Create: `worker/migrations/0001_research.sql`
 - Generate: `worker-configuration.d.ts`
-- Test: `worker/config.test.ts`
 
 **Interfaces:**
 - Produces: generated global `Env` with `ASSETS: Fetcher`, `RESEARCH_DB: D1Database`, `RESEARCH_REPORTS: R2Bucket`, `GITHUB_DISPATCH_TOKEN: string`, `RESEARCH_PUBLISH_TOKEN: string`, `GITHUB_OWNER: string`, `GITHUB_REPO: string`, `LEGACY_API_ORIGIN: string`. Secret names are inferred from committed fake values in `.dev.vars.example`; real values remain Worker secrets.
 - Produces: D1 tables `research_summaries` and `research_refresh_state`.
 
-- [ ] **Step 1: Install exact Worker development dependencies**
+- [x] **Step 1: Install exact Worker development dependencies**
 
 Run:
 
@@ -54,26 +53,7 @@ npm install --save-dev wrangler@4.127.0 @cloudflare/vitest-pool-workers@0.22.0 v
 
 Expected: `package-lock.json` records those versions and `npm ls` exits 0.
 
-- [ ] **Step 2: Write the failing configuration test**
-
-Create `worker/config.test.ts` to parse the comment-free JSONC with `JSON.parse` and assert:
-
-```ts
-assert.equal(config.compatibility_date, '2026-08-28');
-assert.deepEqual(config.compatibility_flags, ['nodejs_compat']);
-assert.equal(config.assets?.binding, 'ASSETS');
-assert.equal(config.d1_databases?.[0]?.binding, 'RESEARCH_DB');
-assert.equal(config.r2_buckets?.[0]?.binding, 'RESEARCH_REPORTS');
-assert.equal(config.observability?.enabled, true);
-```
-
-- [ ] **Step 3: Run the test to verify it fails**
-
-Run: `npx vitest run worker/config.test.ts`
-
-Expected: FAIL because `wrangler.jsonc` and bindings do not exist.
-
-- [ ] **Step 4: Create the real Cloudflare resources and config**
+- [x] **Step 2: Create the real Cloudflare resources and config**
 
 Run `npx wrangler whoami`, then:
 
@@ -84,7 +64,7 @@ npx wrangler r2 bucket create shifeng-research-reports
 
 Write the returned D1 UUID directly into `wrangler.jsonc`; never invent or commit a dummy UUID. Configure `main: "worker/index.ts"`, SPA assets from `./dist`, `run_worker_first: ["/api/*"]`, D1/R2 bindings, `GITHUB_OWNER: "raywang99131"`, `GITHUB_REPO: "shifeng-investment"`, empty `LEGACY_API_ORIGIN`, local dev port 8788, and observability sampling 1.0. Add `.dev.vars*` to `.gitignore`, re-include `.dev.vars.example`, and give the example file only fake local tokens.
 
-- [ ] **Step 5: Add the D1 migration**
+- [x] **Step 3: Add the D1 migration**
 
 Use the exact schema from the spec and seed the singleton state atomically:
 
@@ -95,19 +75,20 @@ VALUES ('all', 'idle');
 
 Add package scripts `cf:typegen`, `test:worker`, `cf:migrate:local`, `cf:migrate:remote`, and `deploy:cloud`; `cf:typegen` runs `wrangler types --env-file .dev.vars.example --strict-vars false`.
 
-- [ ] **Step 6: Generate types and make the test pass**
+- [x] **Step 4: Validate the configuration through Wrangler**
 
 Run:
 
 ```bash
 npm run cf:typegen
+npx wrangler types --check --env-file .dev.vars.example --strict-vars false
 npm run cf:migrate:local
-npx vitest run worker/config.test.ts
+npx wrangler deploy --dry-run --outdir /tmp/shifeng-worker-dry-run
 ```
 
-Expected: generated types contain all bindings, migration applies once, test PASS.
+Expected: generated types contain all bindings, the type freshness check exits 0, the migration applies once, and Wrangler's real config/schema/bundle validation succeeds. Task 1 is configuration/generated-code scaffolding, the explicit TDD exception; behavioral tests begin before the first Worker production function in Task 2.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add package.json package-lock.json wrangler.jsonc tsconfig.worker.json vitest.config.ts worker worker-configuration.d.ts .gitignore .dev.vars.example
