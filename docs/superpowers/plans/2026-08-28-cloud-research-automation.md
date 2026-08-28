@@ -432,21 +432,21 @@ git commit -m "feat: run and publish cloud research jobs"
 - Concurrency group: `cloud-research-all`, `cancel-in-progress: false`.
 - Secrets: `CLOUD_RESEARCH_BASE_URL`, `RESEARCH_PUBLISH_TOKEN`.
 
-- [ ] **Step 1: Write the failing workflow contract test**
+- [x] **Step 1: Write the failing workflow contract test**
 
 Parse YAML and assert exact triggers, concurrency, `ubuntu-latest`, Node 24, Python 3.12, pip cache, Noto CJK font installation, dependency install, runner command, publisher command, and `if: always()` failure reporting path.
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run: `node --test server/scripts/validate_cloud_research_workflow.test.js`
 
 Expected: FAIL because the workflow is missing.
 
-- [ ] **Step 3: Implement the workflow**
+- [x] **Step 3: Implement the workflow**
 
 Resolve `JOB_ID` from `github.event.client_payload.job_id || github.run_id`; resolve target date inside Node using `Asia/Shanghai`; install `fonts-noto-cjk`; run all scripts without echoing environment values. Grant only `contents: read` to the Action itself. On `if: failure()`, call `node server/scripts/publish_cloud_research.mjs --mark-failed` so a runner failure cannot leave the D1 state locked.
 
-- [ ] **Step 4: Validate workflow and local script contracts**
+- [x] **Step 4: Validate workflow and local script contracts**
 
 Run:
 
@@ -456,7 +456,7 @@ node --test server/scripts/validate_cloud_research_workflow.test.js server/scrip
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .github/workflows/cloud-research.yml server/scripts/validate_cloud_research_workflow.test.js

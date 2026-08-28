@@ -221,6 +221,35 @@ describe('refresh routes and internal transitions', () => {
     expect(wrongJob?.status).toBe(409)
   })
 
+  it('lets scheduled and manual workflows claim an inactive refresh state', async () => {
+    await setRefreshState({
+      jobId: 'previous-job',
+      status: 'success',
+      requestedAt: hoursBefore(8),
+      startedAt: hoursBefore(8),
+      lastSuccessAt: hoursBefore(8),
+    })
+
+    const response = await handleResearchPublishRequest(
+      new Request('https://example.com/api/research/internal/refresh-state', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer test-publish-token' },
+        body: JSON.stringify({ jobId: 'scheduled-123', status: 'running' }),
+      }),
+      env,
+      now,
+    )
+
+    expect(response?.status).toBe(200)
+    await expect(getRefreshStatus(env.RESEARCH_DB)).resolves.toMatchObject({
+      jobId: 'scheduled-123',
+      status: 'running',
+      requestedAt: now.toISOString(),
+      startedAt: now.toISOString(),
+      lastSuccessAt: hoursBefore(8),
+    })
+  })
+
   it('records running and success timestamps for the active job', async () => {
     await setRefreshState({
       jobId: fixedJobId,

@@ -213,14 +213,22 @@ async function transitionRefreshState(
 ): Promise<{ updated: boolean; state: RefreshState }> {
   let statement: D1PreparedStatement
   if (status === 'running') {
+    const lockCutoff = new Date(new Date(nowIso).getTime() - REFRESH_LOCK_MS).toISOString()
     statement = db
       .prepare(
         `UPDATE research_refresh_state
-         SET status = 'running', started_at = COALESCE(started_at, ?),
+         SET job_id = ?, status = 'running',
+             requested_at = CASE WHEN job_id = ? THEN COALESCE(requested_at, ?) ELSE ? END,
+             started_at = CASE WHEN job_id = ? THEN COALESCE(started_at, ?) ELSE ? END,
              finished_at = NULL, last_error = NULL
-         WHERE scope = 'all' AND job_id = ? AND status IN ('queued', 'running')`,
+         WHERE scope = 'all'
+           AND (
+             (job_id = ? AND status IN ('queued', 'running'))
+             OR status NOT IN ('queued', 'running')
+             OR COALESCE(started_at, requested_at, '') <= ?
+           )`,
       )
-      .bind(nowIso, jobId)
+      .bind(jobId, jobId, nowIso, nowIso, jobId, nowIso, nowIso, jobId, lockCutoff)
   } else if (status === 'success') {
     statement = db
       .prepare(

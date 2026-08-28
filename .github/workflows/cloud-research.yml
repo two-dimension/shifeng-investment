@@ -1,0 +1,83 @@
+name: Cloud research refresh
+
+on:
+  repository_dispatch:
+    types: [research-refresh]
+  workflow_dispatch:
+  schedule:
+    - cron: '35 14 * * 1-5'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloud-research-all
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      CLOUD_RESEARCH_BASE_URL: ${{ secrets.CLOUD_RESEARCH_BASE_URL }}
+      RESEARCH_PUBLISH_TOKEN: ${{ secrets.RESEARCH_PUBLISH_TOKEN }}
+      RESEARCH_JOB_ID: ${{ github.event.client_payload.job_id || github.run_id }}
+      CLOUD_RESEARCH_MANIFEST_PATH: ${{ github.workspace }}/cloud-research-manifest.json
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: automation/research-tasks/requirements.txt
+
+      - name: Install CJK fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes fonts-noto-cjk
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install research dependencies
+        run: python -m pip install -r automation/research-tasks/requirements.txt
+
+      - name: Resolve Shanghai report date
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Shanghai',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          }).formatToParts(new Date());
+          const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+          const targetDate = `${values.year}-${values.month}-${values.day}`;
+          fs.appendFileSync(process.env.GITHUB_ENV, `RESEARCH_TARGET_DATE=${targetDate}\n`);
+          NODE
+
+      - name: Run and normalize research tasks
+        id: run-research
+        run: node server/scripts/cloud_research_runner.mjs
+
+      - name: Publish reports and summaries
+        id: publish
+        run: node server/scripts/publish_cloud_research.mjs
+
+      - name: Record failed refresh
+        if: ${{ always() && failure() }}
+        continue-on-error: true
+        env:
+          RESEARCH_FAILURE_MESSAGE: GitHub Actions research workflow failed
+        run: node server/scripts/publish_cloud_research.mjs --mark-failed
