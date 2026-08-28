@@ -54,6 +54,7 @@ server/price_tracking/*.csv
 !.dev.vars.example
 .worktrees/
 .superpowers/
+automation/research-tasks/.venv/
 output/
 state/
 tmp/

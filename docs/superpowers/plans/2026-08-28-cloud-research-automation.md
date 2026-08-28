@@ -316,7 +316,7 @@ git commit -m "feat: serve research API and site from Cloudflare"
   - earnings-report example: `python run.py --date 2026-08-28 --no-mail --force`
   - risk example: `python run.py --scan-date 2026-08-28`
 
-- [ ] **Step 1: Import only executable source and regression tests**
+- [x] **Step 1: Import only executable source and regression tests**
 
 Copy the current recovered filesystem versions, including dirty fixes and untracked regression tests that are imported by current code. Exact import set:
 
@@ -327,7 +327,7 @@ Copy the current recovered filesystem versions, including dirty fixes and untrac
 
 Exclude `.git`, `AGENTS.md`, `SKILL.md`, mail/publish scripts, launchd/cron installers, caches, `tmp`, historical output directories, generated PDF/XLSX, and credentials. Remove the optional local publisher calls from copied cninfo/earnings code and the mail import/path from earnings-report `run.py`.
 
-- [ ] **Step 2: Write the failing portability test**
+- [x] **Step 2: Write the failing portability test**
 
 The test recursively scans executable source and asserts none of these strings remain:
 
@@ -337,17 +337,17 @@ FORBIDDEN = ("/Users/rayw", "/Users/ray_wang", "Library/LaunchAgents")
 
 It also imports each task from a temporary checkout and verifies output roots resolve under that checkout.
 
-- [ ] **Step 3: Run tests to verify failure**
+- [x] **Step 3: Run tests to verify failure**
 
 Create ignored `automation/research-tasks/.venv`, install the pinned requirements, then run: `automation/research-tasks/.venv/bin/python -m pytest automation/research-tasks/tests/test_portable_paths.py -q`.
 
 Expected: FAIL on hard-coded giant/risk paths and macOS-only font assumptions.
 
-- [ ] **Step 4: Make paths and fonts portable**
+- [x] **Step 4: Make paths and fonts portable**
 
 Replace absolute paths with `Path(__file__).resolve().parent` and explicit environment overrides. Font lookup order is `RESEARCH_CJK_FONT`, `/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc`, then existing macOS fonts; report generation fails with a clear message if no CJK font exists.
 
-- [ ] **Step 5: Run all imported task tests**
+- [x] **Step 5: Run all imported task tests**
 
 Run:
 
@@ -358,7 +358,7 @@ automation/research-tasks/.venv/bin/python -m unittest discover -s automation/re
 
 Expected: all recovered regression tests and portability tests PASS without reading the Downloads donor directories.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add automation/research-tasks .gitignore
