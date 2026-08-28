@@ -20,7 +20,23 @@ type ResearchPublishEnv = Pick<
 class PayloadTooLargeError extends Error {}
 
 function jsonResponse(body: unknown, status: number): Response {
-  return Response.json(body, {
+  const errorCodes: Record<number, string> = {
+    400: 'BAD_REQUEST',
+    401: 'UNAUTHORIZED',
+    404: 'NOT_FOUND',
+    405: 'METHOD_NOT_ALLOWED',
+    411: 'LENGTH_REQUIRED',
+    413: 'PAYLOAD_TOO_LARGE',
+  }
+  let responseBody = body
+  if (status >= 400 && typeof body === 'object' && body !== null && !Array.isArray(body)) {
+    const record = body as Record<string, unknown>
+    if (typeof record.error === 'string' && typeof record.code !== 'string') {
+      responseBody = { ...record, code: errorCodes[status] ?? 'REQUEST_FAILED' }
+    }
+  }
+
+  return Response.json(responseBody, {
     status,
     headers: {
       'Cache-Control': 'no-store',

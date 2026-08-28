@@ -248,7 +248,21 @@ async function transitionRefreshState(
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
-  return Response.json(body, {
+  const errorCodes: Record<number, string> = {
+    400: 'BAD_REQUEST',
+    401: 'UNAUTHORIZED',
+    405: 'METHOD_NOT_ALLOWED',
+    409: 'REFRESH_CONFLICT',
+  }
+  let responseBody = body
+  if (status >= 400 && typeof body === 'object' && body !== null && !Array.isArray(body)) {
+    const record = body as Record<string, unknown>
+    if (typeof record.error === 'string' && typeof record.code !== 'string') {
+      responseBody = { ...record, code: errorCodes[status] ?? 'REQUEST_FAILED' }
+    }
+  }
+
+  return Response.json(responseBody, {
     status,
     headers: { 'Cache-Control': 'no-store' },
   })

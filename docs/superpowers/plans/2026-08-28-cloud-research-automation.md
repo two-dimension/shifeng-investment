@@ -263,21 +263,21 @@ git commit -m "feat: dispatch idempotent cloud research refreshes"
 - Produces `default satisfies ExportedHandler<Env>`.
 - Routing order: research internal/public routes → other `/api/*` legacy proxy/503 → `env.ASSETS.fetch(request)`.
 
-- [ ] **Step 1: Write failing end-to-end route tests**
+- [x] **Step 1: Write failing end-to-end route tests**
 
 Assert latest/history/date/null/404 contracts, R2 file route precedence, SPA fallback, non-research `503` when `LEGACY_API_ORIGIN` is empty, proxy URL/header/status preservation when configured, and recursive-origin rejection.
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run: `npm run test:worker -- worker/index.test.ts`
 
 Expected: FAIL because the Worker entry does not exist.
 
-- [ ] **Step 3: Implement explicit routing and errors**
+- [x] **Step 3: Implement explicit routing and errors**
 
 Return JSON errors with `{ error, code }`; add cache headers only to public GET responses; never use `passThroughOnException`; log structured objects with request ID, route, status and elapsed milliseconds. Legacy proxy must remove hop-by-hop headers and must not forward publishing secrets.
 
-- [ ] **Step 4: Verify Worker locally**
+- [x] **Step 4: Verify Worker locally**
 
 Run:
 
@@ -289,7 +289,7 @@ npm run build
 
 Expected: all Worker tests/typecheck/build PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add worker/index.ts worker/index.test.ts
