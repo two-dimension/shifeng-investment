@@ -190,35 +190,46 @@ export async function handleWorkerRequest(
   let response: Response
 
   try {
-    const publishResponse = await handleResearchPublishRequest(request, env)
-    if (publishResponse !== null) {
-      route = 'research-publish'
-      response = publishResponse
-    } else {
-      const refreshResponse = await handleResearchRefreshRequest(
-        request,
-        env,
-        ctx,
-        new Date(),
-        fetchImpl,
+    const workersDevInternalOnly = requestUrl.hostname.endsWith('.workers.dev')
+      && !requestUrl.pathname.startsWith('/api/research/internal/')
+    if (workersDevInternalOnly) {
+      route = 'internal-host-only'
+      response = errorResponse(
+        'This hostname only accepts internal research publishing requests.',
+        'INTERNAL_HOST_ONLY',
+        404,
       )
-      if (refreshResponse !== null) {
-        route = 'research-refresh'
-        response = refreshResponse
+    } else {
+      const publishResponse = await handleResearchPublishRequest(request, env)
+      if (publishResponse !== null) {
+        route = 'research-publish'
+        response = publishResponse
       } else {
-        const readResponse = await handleResearchReadRequest(request, env)
-        if (readResponse !== null) {
-          route = 'research-read'
-          response = readResponse
-        } else if (requestUrl.pathname === '/api/research' || requestUrl.pathname.startsWith('/api/research/')) {
-          route = 'research-not-found'
-          response = errorResponse('Research route not found.', 'RESEARCH_ROUTE_NOT_FOUND', 404)
-        } else if (requestUrl.pathname === '/api' || requestUrl.pathname.startsWith('/api/')) {
-          route = 'legacy-api'
-          response = await proxyLegacyApi(request, env, fetchImpl)
+        const refreshResponse = await handleResearchRefreshRequest(
+          request,
+          env,
+          ctx,
+          new Date(),
+          fetchImpl,
+        )
+        if (refreshResponse !== null) {
+          route = 'research-refresh'
+          response = refreshResponse
         } else {
-          route = 'assets'
-          response = await env.ASSETS.fetch(request)
+          const readResponse = await handleResearchReadRequest(request, env)
+          if (readResponse !== null) {
+            route = 'research-read'
+            response = readResponse
+          } else if (requestUrl.pathname === '/api/research' || requestUrl.pathname.startsWith('/api/research/')) {
+            route = 'research-not-found'
+            response = errorResponse('Research route not found.', 'RESEARCH_ROUTE_NOT_FOUND', 404)
+          } else if (requestUrl.pathname === '/api' || requestUrl.pathname.startsWith('/api/')) {
+            route = 'legacy-api'
+            response = await proxyLegacyApi(request, env, fetchImpl)
+          } else {
+            route = 'assets'
+            response = await env.ASSETS.fetch(request)
+          }
         }
       }
     }
