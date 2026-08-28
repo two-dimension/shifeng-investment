@@ -92,6 +92,54 @@ def test_missing_or_invalid_total_falls_back_to_empty_page(monkeypatch):
     assert stats["stop_reason"] == "empty_page"
 
 
+def test_watchlist_only_processes_matching_reports(monkeypatch, tmp_path):
+    rows = [
+        {
+            "announcementId": "a",
+            "secCode": "000001",
+            "announcementTitle": "测试公司2026年半年度报告",
+        },
+        {
+            "announcementId": "b",
+            "secCode": "600000",
+            "announcementTitle": "另一公司2026年半年度报告",
+        },
+    ]
+    processed_codes = []
+
+    monkeypatch.setattr(fetch_cninfo, "COLUMNS", ("sse",))
+    monkeypatch.setattr(fetch_cninfo, "SEARCH_KEYS", ("半年度报告",))
+    monkeypatch.setattr(fetch_cninfo, "load_watchlist", lambda: {"000001": {"name": "测试公司"}})
+    monkeypatch.setattr(
+        fetch_cninfo,
+        "fetch_query",
+        lambda *_args: (rows, {"complete": True, "rows": 2, "total_expected": 2}),
+    )
+    monkeypatch.setattr(fetch_cninfo.time, "sleep", lambda _: None)
+
+    def fake_process(item, _raw_dir, _max_pdf_pages):
+        processed_codes.append(item["secCode"])
+        return {
+            "证券代码": item["secCode"],
+            "报告类型": "半年度报告",
+            "全文解析状态": "ok",
+            "指标覆盖数": 1,
+        }
+
+    monkeypatch.setattr(fetch_cninfo, "_process_one", fake_process)
+
+    data = fetch_cninfo.fetch_for_date(
+        "2026-08-28",
+        tmp_path,
+        watchlist_only=True,
+    )
+
+    assert processed_codes == ["000001"]
+    assert data["fetch_summary"]["formal_report_rows"] == 2
+    assert data["fetch_summary"]["included_report_rows"] == 1
+    assert data["fetch_summary"]["watchlist_only"] is True
+
+
 def test_validate_rejects_query_total_mismatch_even_if_fetch_complete_is_true(monkeypatch):
     monkeypatch.setattr(validate_input, "load_watchlist", lambda: {})
     data = {

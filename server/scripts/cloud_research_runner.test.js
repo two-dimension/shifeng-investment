@@ -37,7 +37,9 @@ test('run plan uses four portable task groups in the required order', async (t) 
     '--skip-recap',
   ]);
   assert.equal(plan[1].commands.length, 2);
-  assert.deepEqual(plan[2].commands[0].args.slice(-4), ['--date', '2026-08-28', '--no-mail', '--force']);
+  assert.deepEqual(plan[2].commands[0].args.slice(-5), [
+    '--date', '2026-08-28', '--no-mail', '--force', '--watchlist-only',
+  ]);
   assert.deepEqual(plan[3].commands[0].args.slice(-2), ['--scan-date', '2026-08-28']);
   assert.ok(plan.every((group) => group.outputRoot.startsWith(root)));
   assert.doesNotMatch(JSON.stringify(plan), /\/Users\/|Downloads|石锋平台要用的/);

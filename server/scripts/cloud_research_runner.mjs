@@ -75,6 +75,7 @@ export function resolveResearchRunPlan(targetDate, root, { pythonBin = 'python3'
           '--date', targetDate,
           '--no-mail',
           '--force',
+          '--watchlist-only',
         ],
       }],
     },

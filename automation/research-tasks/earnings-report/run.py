@@ -70,6 +70,7 @@ def run(args: argparse.Namespace) -> int:
                     max_items=args.max_items,
                     workers=args.workers,
                     max_pdf_pages=args.max_pdf_pages,
+                    watchlist_only=args.watchlist_only,
                 )
 
             print("[run] step 2/4 validate")
@@ -120,6 +121,7 @@ def main() -> int:
     parser.add_argument("--dry-run-mail", action="store_true")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--max-items", type=int)
+    parser.add_argument("--watchlist-only", action="store_true", help="只下载并解析自选股的正式报告")
     parser.add_argument("--workers", type=int, default=int(os.environ.get("REPORT_FETCH_WORKERS", "4")))
     parser.add_argument("--max-pdf-pages", type=int, default=int(os.environ.get("REPORT_MAX_PDF_PAGES", "60")))
     return run(parser.parse_args())

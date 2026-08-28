@@ -285,6 +285,7 @@ def fetch_for_date(
     max_items: int | None = None,
     workers: int = 4,
     max_pdf_pages: int = 60,
+    watchlist_only: bool = False,
 ) -> dict:
     datetime.strptime(date_str, "%Y-%m-%d")
     watchlist = load_watchlist()
@@ -312,7 +313,10 @@ def fetch_for_date(
         report = classify_report_title(item.get("announcementTitle") or "")
         if report:
             targets.append(item)
-    included_targets = list(targets)
+    included_targets = [
+        item for item in targets
+        if not watchlist_only or normalize_code(item.get("secCode")) in watchlist
+    ]
     included_targets.sort(key=lambda row: (normalize_code(row.get("secCode")), str(row.get("announcementId") or "")))
     if max_items is not None:
         included_targets = included_targets[: max(0, max_items)]
@@ -370,6 +374,7 @@ def fetch_for_date(
             "included_report_rows": len(included_targets),
             "watchlist_report_rows": watchlist_target_count,
             "watchlist_size": len(watchlist),
+            "watchlist_only": watchlist_only,
             "pdf_parse_ok": parse_ok,
             "metric_parse_ok": metric_ok,
             "test_limit": max_items,
@@ -379,7 +384,11 @@ def fetch_for_date(
         "notes": [
             "收录正式定期报告全文及其英文版、更正后、修订版；摘要、单独更正公告、问询回复等已排除。",
             "财务数字来自 PDF 自动抽取，缺失值留空并保留原文链接。",
-            "覆盖全部 A 股正式报告；watchlist 仅作为标记和子集归属，不作为准入条件。",
+            (
+                "云端只下载并解析 watchlist 内公司的正式报告。"
+                if watchlist_only
+                else "覆盖全部 A 股正式报告；watchlist 仅作为标记和子集归属，不作为准入条件。"
+            ),
         ],
     }
     _safe_write(output_dir / "input.json", json.dumps(data, ensure_ascii=False, indent=2))
@@ -391,6 +400,7 @@ def main() -> int:
     parser.add_argument("date", help="报告日 YYYY-MM-DD")
     parser.add_argument("output_dir", type=Path)
     parser.add_argument("--max-items", type=int, default=None, help="仅测试时限制处理条数")
+    parser.add_argument("--watchlist-only", action="store_true", help="只下载并解析自选股的正式报告")
     parser.add_argument("--workers", type=int, default=int(os.environ.get("REPORT_FETCH_WORKERS", "4")))
     parser.add_argument("--max-pdf-pages", type=int, default=int(os.environ.get("REPORT_MAX_PDF_PAGES", "60")))
     args = parser.parse_args()
@@ -400,6 +410,7 @@ def main() -> int:
         max_items=args.max_items,
         workers=args.workers,
         max_pdf_pages=args.max_pdf_pages,
+        watchlist_only=args.watchlist_only,
     )
     summary = data["fetch_summary"]
     print(
