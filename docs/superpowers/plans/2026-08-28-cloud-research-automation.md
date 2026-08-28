@@ -478,25 +478,25 @@ git commit -m "ci: automate cloud research refreshes"
 - Produces `requestResearchRefresh(fetcher)` and `pollResearchRefresh(fetcher, options)` pure helpers.
 - UI mounts cached latest/history first, requests refresh once, polls every 4 seconds only while queued/running, then refetches current kind.
 
-- [ ] **Step 1: Write failing pure-helper tests**
+- [x] **Step 1: Write failing pure-helper tests**
 
 Cover fresh, queued, running→success, running→failed, timeout, abort, malformed responses, and ensure failed refresh never clears existing summary data.
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run: `node --test tests/researchRefresh.test.ts`
 
 Expected: FAIL because helpers do not exist.
 
-- [ ] **Step 3: Implement refresh helpers and types**
+- [x] **Step 3: Implement refresh helpers and types**
 
 Use injected `fetcher`, `AbortSignal`, 4-second poll delay, and a 50-minute client deadline. Return state; do not throw away cached research data on refresh failure.
 
-- [ ] **Step 4: Replace local sync UI with cloud refresh UI**
+- [x] **Step 4: Replace local sync UI with cloud refresh UI**
 
 Change tooltip from “刷新最近 14 天本地产物” to “检查云端更新”。On mount call once; manual button uses the same function. Show `云端更新中` for queued/running, success toast then refetch, and a warning with the last-good content still mounted on failure.
 
-- [ ] **Step 5: Run tests and build**
+- [x] **Step 5: Run tests and build**
 
 Run:
 
@@ -507,7 +507,7 @@ npm run build
 
 Expected: PASS; no TypeScript error and cached detail remains rendered during refresh.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/hooks/useResearch.ts src/hooks/researchRefresh.ts src/pages/Research/ResearchPanel.tsx src/pages/Research/ResearchPanel.css src/types/research.ts tests/researchRefresh.test.ts

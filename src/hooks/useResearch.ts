@@ -4,6 +4,7 @@ import type {
   ResearchSummary,
   ResearchHistoryResponse,
 } from '../types/research';
+import { keepCachedResearchData } from './researchRefresh';
 
 interface FetchState<T> {
   data: T | null;
@@ -25,7 +26,7 @@ async function fetchJson<T>(url: string): Promise<T> {
 export function useResearchSummary(
   kind: ResearchKind,
   date: string | null
-): FetchState<ResearchSummary> & { refetch: () => void } {
+): FetchState<ResearchSummary> & { refetch: () => Promise<void> } {
   const [state, setState] = useState<FetchState<ResearchSummary>>({
     data: null,
     loading: true,
@@ -37,18 +38,14 @@ export function useResearchSummary(
       setState({ data: null, loading: false, error: null });
       return;
     }
-    setState((s) => ({ ...s, loading: true, error: null }));
+    setState((s) => ({ ...s, loading: s.data === null, error: null }));
     try {
       const data = await fetchJson<ResearchSummary>(
         `/api/research/${kind}/${date}`
       );
       setState({ data, loading: false, error: null });
     } catch (e) {
-      setState({
-        data: null,
-        loading: false,
-        error: e instanceof Error ? e.message : String(e),
-      });
+      setState((s) => keepCachedResearchData(s.data, e));
     }
   }, [kind, date]);
 
@@ -62,7 +59,7 @@ export function useResearchSummary(
 // 获取最新一天的研判摘要
 export function useResearchLatest(
   kind: ResearchKind
-): FetchState<ResearchSummary> & { refetch: () => void } {
+): FetchState<ResearchSummary> & { refetch: () => Promise<void> } {
   const [state, setState] = useState<FetchState<ResearchSummary>>({
     data: null,
     loading: true,
@@ -70,18 +67,14 @@ export function useResearchLatest(
   });
 
   const fetchData = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true, error: null }));
+    setState((s) => ({ ...s, loading: s.data === null, error: null }));
     try {
       const data = await fetchJson<ResearchSummary | null>(
         `/api/research/${kind}/latest`
       );
       setState({ data, loading: false, error: null });
     } catch (e) {
-      setState({
-        data: null,
-        loading: false,
-        error: e instanceof Error ? e.message : String(e),
-      });
+      setState((s) => keepCachedResearchData(s.data, e));
     }
   }, [kind]);
 
@@ -95,7 +88,7 @@ export function useResearchLatest(
 // 获取历史日期列表
 export function useResearchHistory(
   kind: ResearchKind
-): FetchState<ResearchHistoryResponse> & { refetch: () => void } {
+): FetchState<ResearchHistoryResponse> & { refetch: () => Promise<void> } {
   const [state, setState] = useState<FetchState<ResearchHistoryResponse>>({
     data: null,
     loading: true,
@@ -103,18 +96,14 @@ export function useResearchHistory(
   });
 
   const fetchData = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true, error: null }));
+    setState((s) => ({ ...s, loading: s.data === null, error: null }));
     try {
       const data = await fetchJson<ResearchHistoryResponse>(
         `/api/research/${kind}/history`
       );
       setState({ data, loading: false, error: null });
     } catch (e) {
-      setState({
-        data: null,
-        loading: false,
-        error: e instanceof Error ? e.message : String(e),
-      });
+      setState((s) => keepCachedResearchData(s.data, e));
     }
   }, [kind]);
 

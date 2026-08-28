@@ -38,12 +38,16 @@ import {
   WarningOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-// 顶部显示更新时间，并支持手动触发本地产物同步
+// 顶部显示更新时间，并支持云端缓存更新
 import {
   useResearchLatest,
   useResearchHistory,
   useResearchSummary,
 } from '../../hooks/useResearch';
+import {
+  pollResearchRefresh,
+  requestResearchRefresh,
+} from '../../hooks/researchRefresh';
 import {
   formatScore,
   formatFileSize,
@@ -59,6 +63,7 @@ import type {
   ResearchTopEntry,
   EarningsItem,
   ResearchFile,
+  ResearchRefreshState,
 } from '../../types/research';
 import { useTheme } from '../../hooks/useTheme';
 import './ResearchPanel.css';
@@ -74,37 +79,6 @@ const KIND_META: Record<ResearchKind, { label: string; icon: React.ReactNode }> 
 
 function isEarningsKind(kind: ResearchKind): kind is 'earnings' | 'earnings-report' {
   return kind === 'earnings' || kind === 'earnings-report';
-}
-
-interface ResearchSyncResponse {
-  success: boolean;
-  error?: string;
-  totals?: {
-    attempted: number;
-    succeeded: number;
-    failed: number;
-    changedDates: number;
-    filesCopied: number;
-    filesSkipped: number;
-  };
-}
-
-async function postResearchSync(kind: ResearchKind, date: string | null): Promise<ResearchSyncResponse> {
-  const res = await fetch('/api/research/sync', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      kind,
-      date: date || undefined,
-      days: date ? undefined : 14,
-      force: false,
-    }),
-  });
-  const payload = await res.json().catch(() => ({})) as ResearchSyncResponse;
-  if (!res.ok) {
-    throw new Error(payload.error || `同步失败: HTTP ${res.status}`);
-  }
-  return payload;
 }
 
 function formatWanForDisplay(low?: number | null, high?: number | null): string {
@@ -223,14 +197,23 @@ const ResearchPanel: React.FC = () => {
   const colors = getResearchColors(theme);
   const [kind, setKind] = useState<ResearchKind>('cninfo');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [syncing, setSyncing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshState, setRefreshState] = useState<ResearchRefreshState | null>(null);
+  const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
   const [detailVersion, setDetailVersion] = useState(0);
   const previousLatestDateRef = useRef<string | null>(null);
+  const refreshInFlightRef = useRef(false);
+  const refreshAbortRef = useRef<AbortController | null>(null);
+  const refetchCurrentRef = useRef<() => Promise<void>>(async () => {});
 
   const { data: history, loading: historyLoading, refetch: refetchHistory } = useResearchHistory(kind);
   const { data: latest, refetch: refetchLatest } = useResearchLatest(kind);
   const activeHistory = history?.kind === kind ? history : null;
   const activeLatest = latest?.kind === kind ? latest : null;
+  refetchCurrentRef.current = async () => {
+    await Promise.all([refetchHistory(), refetchLatest()]);
+    setDetailVersion((version) => version + 1);
+  };
 
   // 默认跟随最新可用报告；用户手动点历史日期后，不强行跳回最新。
   useEffect(() => {
@@ -259,30 +242,64 @@ const ResearchPanel: React.FC = () => {
   );
   const hasSelectedDate = Boolean(selectedDate && availableDateSet.has(selectedDate));
   const selectedDateValue = hasSelectedDate && selectedDate ? dayjs(selectedDate) : null;
-  const handleSync = useCallback(async () => {
-    if (syncing) return;
-    setSyncing(true);
+  const handleCloudRefresh = useCallback(async (notify: boolean) => {
+    if (refreshInFlightRef.current) return;
+    const controller = new AbortController();
+    refreshAbortRef.current = controller;
+    refreshInFlightRef.current = true;
+    setRefreshing(true);
+    setRefreshWarning(null);
     try {
-      const result = await postResearchSync(kind, null);
-      await Promise.all([refetchHistory(), refetchLatest()]);
-      setDetailVersion((v) => v + 1);
+      const result = await requestResearchRefresh(fetch, controller.signal);
+      setRefreshState(result.state);
+      const finalState = result.state.status === 'queued' || result.state.status === 'running'
+        ? await pollResearchRefresh(fetch, { signal: controller.signal })
+        : result.state;
+      setRefreshState(finalState);
 
-      const totals = result.totals;
-      if (!result.success && totals?.failed) {
-        message.warning(`同步完成，但有 ${totals.failed} 个日期失败`);
+      if (finalState.status === 'success') {
+        if (result.dispatched || result.state.status === 'queued' || result.state.status === 'running') {
+          await refetchCurrentRef.current();
+          message.success('云端更新完成');
+        } else if (notify) {
+          message.success('当前已经是最新数据');
+        }
+      } else if (finalState.status === 'failed') {
+        const warning = finalState.lastError || '云端更新失败，继续显示上次成功数据';
+        setRefreshWarning(warning);
+        message.warning(warning);
       } else {
-        message.success(
-          totals
-            ? `同步完成：更新 ${totals.changedDates} 天，复制 ${totals.filesCopied} 个文件`
-            : '同步完成',
-        );
+        setRefreshWarning('云端暂未开始更新，继续显示已有数据');
       }
     } catch (e) {
-      message.error(e instanceof Error ? e.message : '同步失败');
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      const warning = e instanceof Error ? e.message : '云端更新失败，继续显示已有数据';
+      setRefreshWarning(warning);
+      message.warning(warning);
     } finally {
-      setSyncing(false);
+      if (refreshAbortRef.current === controller) {
+        refreshAbortRef.current = null;
+        refreshInFlightRef.current = false;
+        setRefreshing(false);
+      }
     }
-  }, [kind, refetchHistory, refetchLatest, syncing]);
+  }, []);
+
+  useEffect(() => {
+    void handleCloudRefresh(false);
+    return () => {
+      const controller = refreshAbortRef.current;
+      if (controller) {
+        controller.abort();
+        refreshAbortRef.current = null;
+        refreshInFlightRef.current = false;
+      }
+    };
+  }, [handleCloudRefresh]);
+
+  const cloudUpdating = refreshing
+    || refreshState?.status === 'queued'
+    || refreshState?.status === 'running';
 
   const detailContent = historyLoading ? (
     <div style={{ textAlign: 'center', padding: 80 }}>
@@ -353,11 +370,24 @@ const ResearchPanel: React.FC = () => {
               共 {activeHistory?.dates.length || 0} 天
             </Text>
           </Space>
-          <Tooltip title="刷新最近 14 天本地产物">
-            <Button size="small" icon={<SyncOutlined />} onClick={handleSync} loading={syncing}>
-              刷新
+          <Tooltip title="检查云端更新">
+            <Button
+              size="small"
+              icon={<SyncOutlined />}
+              onClick={() => void handleCloudRefresh(true)}
+              loading={cloudUpdating}
+            >
+              检查更新
             </Button>
           </Tooltip>
+          {cloudUpdating && (
+            <Text className="research-workspace__cloud-status">云端更新中</Text>
+          )}
+          {!cloudUpdating && refreshWarning && (
+            <Text type="warning" className="research-workspace__cloud-status">
+              更新失败，已保留旧数据
+            </Text>
+          )}
           <Text style={{ fontSize: 12, color: colors.secondaryText, whiteSpace: 'nowrap' }}>
             更新时间：{updatedAt}
           </Text>
@@ -380,11 +410,11 @@ const ResearchDetail: React.FC<{ kind: ResearchKind; date: string }> = ({ kind, 
   const { data, loading, error } = useResearchSummary(kind, date);
   const [filePreview, setFilePreview] = useState<ResearchFile | null>(null);
 
-  if (loading) {
+  if (loading && !data) {
     return <div style={{ textAlign: 'center', padding: 80 }}><Spin /></div>;
   }
 
-  if (error || !data) {
+  if (!data) {
     return <Empty description={error || '数据加载失败'} style={{ marginTop: 80 }} />;
   }
 
@@ -424,6 +454,11 @@ const ResearchDetail: React.FC<{ kind: ResearchKind; date: string }> = ({ kind, 
 
   return (
     <div className={`cninfo-workbench research-workbench--${kind}`}>
+      {error && (
+        <div className="research-workspace__cached-warning">
+          云端读取失败，正在展示上次成功数据
+        </div>
+      )}
       <ResearchBriefing
         kind={kind}
         date={date}
