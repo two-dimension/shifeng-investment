@@ -1,0 +1,44 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shifeng-investment",
+  "account_id": "52cbddae6581d30606b9f55a9e74aa70",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-08-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "secrets": {
+    "required": ["GITHUB_DISPATCH_TOKEN", "RESEARCH_PUBLISH_TOKEN"]
+  },
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "RESEARCH_DB",
+      "database_name": "shifeng-research",
+      "database_id": "16d21c18-ac94-48fc-a4c6-7d566c5510d7",
+      "migrations_dir": "worker/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "RESEARCH_REPORTS",
+      "bucket_name": "shifeng-research-reports"
+    }
+  ],
+  "vars": {
+    "GITHUB_OWNER": "raywang99131",
+    "GITHUB_REPO": "shifeng-investment",
+    "LEGACY_API_ORIGIN": ""
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "dev": {
+    "port": 8788,
+    "ip": "0.0.0.0"
+  }
+}

@@ -42,6 +42,20 @@
   gap: 12px;
 }
 
+.research-workspace__cloud-status {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.research-workspace__cached-warning {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  color: #d48806;
+  background: rgba(250, 173, 20, 0.1);
+  border: 1px solid rgba(250, 173, 20, 0.35);
+  border-radius: 6px;
+}
+
 .research-workspace__body {
   min-height: 600px;
 }

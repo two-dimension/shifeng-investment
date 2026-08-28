@@ -34,6 +34,7 @@ server/data/funds.json
 server/data/news.json
 server/data/macd_cache.json
 server/data/price-tracking/
+server/data/python-venv/
 server/data/quant/
 server/data/research/
 server/data/tmt-margin/
@@ -48,8 +49,15 @@ server/public/reports/
 server/price_tracking/*.xlsx*
 server/price_tracking/*.csv
 .playwright-cli/
+.wrangler/
+.dev.vars*
+!.dev.vars.example
 .worktrees/
 .superpowers/
+automation/research-tasks/.venv/
+automation/research-tasks/**/.cache_pdfs/
+cloud-research-manifest.json
+server/.cloud-research-migration-checkpoint.json
 output/
 state/
 tmp/

@@ -14,8 +14,20 @@
     "backfill:ice-cds-screenshot": "node server/scripts/backfill_ice_cds_screenshot.mjs",
     "init:ice-cds-workbook": "node server/scripts/init_ice_cds_workbook.mjs",
     "verify:ice-cds-workbook": "node server/scripts/verify_ice_cds_workbook.mjs",
+    "test:quant": "node scripts/test_quant_strategy.mjs",
+    "quant:migrate": "node scripts/quant_migrate_kline_cache.mjs",
+    "quant:backfill": "node scripts/quant_backfill.mjs",
+    "quant:loop": "node --max-old-space-size=8192 --input-type=module -e \"import('./server/lib/quantStrategy.js').then(async ({ runQuantIteration }) => console.log(JSON.stringify(await runQuantIteration(), null, 2)))\"",
     "check:earnings-copy": "node scripts/check-earnings-copy.mjs",
     "sync:online": "bash scripts/sync-online.sh",
+    "cf:typegen": "wrangler types --env-file .dev.vars.example --strict-vars false",
+    "test:worker": "vitest run --config vitest.config.ts",
+    "cf:migrate:local": "wrangler d1 migrations apply RESEARCH_DB --local",
+    "cf:migrate:remote": "wrangler d1 migrations apply RESEARCH_DB --remote",
+    "deploy:cloud": "npm run build && wrangler deploy",
+    "research:cloud-run": "node server/scripts/cloud_research_runner.mjs",
+    "research:cloud-publish": "node server/scripts/publish_cloud_research.mjs",
+    "research:cloud-migrate": "node server/scripts/migrate_research_history.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -40,6 +52,7 @@
     "xlsx-js-style": "^1.2.0"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.22.0",
     "@eslint/js": "^9.39.4",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
@@ -51,6 +64,9 @@
     "globals": "^17.4.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
-    "vite": "^8.0.4"
+    "vite": "^8.0.4",
+    "vitest": "4.1.11",
+    "wrangler": "4.127.0",
+    "yaml": "^2.8.1"
   }
 }

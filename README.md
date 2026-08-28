@@ -1,5 +1,11 @@
 # 石锋资产投研平台
 
+## 公告监控云端版
+
+公告研判、业绩预告、业绩报告和风险提示已经支持 GitHub Actions + Cloudflare Worker/D1/R2。网站打开时先显示缓存，再检查云端更新；电脑关机也不影响公告监控和定时任务。
+
+完整部署、历史数据迁移和回滚方法见 [docs/cloud-research-deployment.md](docs/cloud-research-deployment.md)。原来的 Named Tunnel 只用于尚未云化的旧接口。
+
 ## AI 投资看板配置
 
 AI 看板位于 `/ai-dashboard`，沿用网站现有访问边界，不再要求单独输入访问口令。看板已停止读取飞书；增长、价格、融资、官网模型卡、算力租赁等板块由服务端从登记过的公开网页读取，每条记录保留来源、口径、数据日期和同步状态。

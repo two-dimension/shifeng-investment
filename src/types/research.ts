@@ -2,6 +2,24 @@
 
 export type ResearchKind = 'cninfo' | 'earnings' | 'earnings-report' | 'risk';
 
+export type ResearchRefreshStatus = 'idle' | 'queued' | 'running' | 'success' | 'failed';
+
+export interface ResearchRefreshState {
+  scope: 'all';
+  jobId: string | null;
+  status: ResearchRefreshStatus;
+  requestedAt: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  lastSuccessAt: string | null;
+  lastError: string | null;
+}
+
+export interface ResearchRefreshRequestResult {
+  dispatched: boolean;
+  state: ResearchRefreshState;
+}
+
 export interface ResearchTopEntry {
   rank: number;
   code: string;

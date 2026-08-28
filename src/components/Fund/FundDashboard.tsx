@@ -268,7 +268,7 @@ const fetchAnomalyEvidence = async () => {
 
 const getThemeKeywords = (fundName: string) => {
   const stripped = fundName.replace(/^(美股|日股|韩国|韩股|港股|A股)/, '');
-  const baseKeywords = [fundName, stripped, ...stripped.split(/[/\s-]+/)].filter((word) => word.length >= 2);
+  const baseKeywords = [fundName, stripped, ...stripped.split(/[\/\s-]+/)].filter((word) => word.length >= 2);
   const aliasKeywords = themeAliasMap
     .filter((item) => normalize(fundName).includes(normalize(item.keyword)) || normalize(stripped).includes(normalize(item.keyword)))
     .flatMap((item) => item.aliases);

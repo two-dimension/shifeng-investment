@@ -116,29 +116,27 @@ const MarketTemperature: React.FC<MarketTemperatureProps> = ({ market, refreshKe
   });
 
   const selectedCodes = selectedByMarket[market] || defaultCodes[market];
-  const selectedCodesKey = selectedCodes.join(',');
 
   useEffect(() => {
     let cancelled = false;
-    const loadQuotes = async () => {
-      await Promise.resolve();
-      if (cancelled) return;
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/market-indices?market=${market}&codes=${encodeURIComponent(selectedCodesKey)}`);
-        const data = await response.json();
-        if (!cancelled) setQuotes(Array.isArray(data.indices) ? data.indices : []);
-      } catch {
+    setLoading(true);
+    fetch(`/api/market-indices?market=${market}&codes=${encodeURIComponent(selectedCodes.join(','))}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (!cancelled) {
+          setQuotes(Array.isArray(data.indices) ? data.indices : []);
+        }
+      })
+      .catch(() => {
         if (!cancelled) setQuotes([]);
-      } finally {
+      })
+      .finally(() => {
         if (!cancelled) setLoading(false);
-      }
-    };
-    void loadQuotes();
+      });
     return () => {
       cancelled = true;
     };
-  }, [market, selectedCodesKey, refreshKey]);
+  }, [market, selectedCodes.join(','), refreshKey]);
 
   const updateSelectedCodes = (nextCodes: string[]) => {
     if (nextCodes.length > 4) {
