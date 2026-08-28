@@ -108,7 +108,7 @@ git commit -m "build: configure cloud research worker"
 - Produces: `getLatestSummary(db, kind)`, `getSummary(db, kind, date)`, `listSummaryDates(db, kind)`, `putSummary(db, input)`.
 - `putSummary` consumes `{ kind, date, summary }` and forces `summary.kind`/`summary.date` to validated path values.
 
-- [ ] **Step 1: Write failing D1 tests**
+- [x] **Step 1: Write failing D1 tests**
 
 Using `cloudflare:test` `env.RESEARCH_DB`, cover:
 
@@ -120,17 +120,17 @@ expect(await listSummaryDates(env.RESEARCH_DB, 'cninfo')).toEqual(['2026-08-28']
 
 Also assert an older date sorts second, malformed JSON rows return a controlled error, and invalid kinds/dates are rejected before SQL.
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run: `npm run test:worker -- worker/research-store.test.ts`
 
 Expected: FAIL because the contract and store functions are missing.
 
-- [ ] **Step 3: Implement prepared-statement storage**
+- [x] **Step 3: Implement prepared-statement storage**
 
 Use bound prepared statements only. `putSummary` writes `generated_at`, numeric `total_count`, and `JSON.stringify(summary)` with `ON CONFLICT(kind,date) DO UPDATE`; reads parse `summary_json` and never expose SQL metadata.
 
-- [ ] **Step 4: Run tests and typecheck**
+- [x] **Step 4: Run tests and typecheck**
 
 Run:
 
@@ -141,7 +141,7 @@ npx tsc -p tsconfig.worker.json --noEmit
 
 Expected: PASS with no `any` or double casts.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add worker/research-contract.ts worker/research-store.ts worker/research-store.test.ts
