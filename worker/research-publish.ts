@@ -7,6 +7,7 @@ import {
   researchObjectKey,
 } from './research-files'
 import { putSummary } from './research-store'
+import { handleInternalRefreshStateRequest } from './research-refresh'
 
 export const MAX_SUMMARY_BYTES = 1024 * 1024
 export const MAX_REPORT_BYTES = 20 * 1024 * 1024
@@ -220,7 +221,13 @@ async function downloadFile(
 export async function handleResearchPublishRequest(
   request: Request,
   env: ResearchPublishEnv,
+  now: Date = new Date(),
 ): Promise<Response | null> {
+  const refreshStateResponse = await handleInternalRefreshStateRequest(request, env, now)
+  if (refreshStateResponse !== null) {
+    return refreshStateResponse
+  }
+
   const segments = routeSegments(new URL(request.url))
   if (segments === null) {
     return jsonResponse({ error: 'Invalid request path' }, 400)

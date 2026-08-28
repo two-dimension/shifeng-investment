@@ -216,7 +216,7 @@ git commit -m "feat: publish research data to D1 and R2"
 - Produces internal route `POST /api/research/internal/refresh-state` with body `{ jobId, status: 'running'|'success'|'failed', error?: string }`.
 - `RefreshState` is `{ scope: 'all'; jobId: string | null; status: 'idle'|'queued'|'running'|'success'|'failed'; requestedAt: string | null; startedAt: string | null; finishedAt: string | null; lastSuccessAt: string | null; lastError: string | null }`.
 
-- [ ] **Step 1: Write failing state-machine tests**
+- [x] **Step 1: Write failing state-machine tests**
 
 Cover fresh cache (no fetch), stale cache (one dispatch), two simultaneous requests (one dispatch), queued/running reuse, 45-minute abandoned lock recovery, dispatch HTTP failure, success timestamp, failure retaining summaries, and authenticated internal transitions.
 
@@ -229,23 +229,23 @@ Use a mocked dispatch fetch and assert exact body:
 }
 ```
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run: `npm run test:worker -- worker/research-refresh.test.ts`
 
 Expected: FAIL because `requestRefresh` is missing.
 
-- [ ] **Step 3: Implement the atomic lock and dispatch**
+- [x] **Step 3: Implement the atomic lock and dispatch**
 
 Claim the lock with one conditional D1 `UPDATE` whose `WHERE` rejects fresh data and active locks; only the request with `meta.changes === 1` dispatches. Generate IDs with `crypto.randomUUID()`. Await the dispatch in `ctx.waitUntil()` and always write `failed` if GitHub returns non-2xx or throws.
 
-- [ ] **Step 4: Run focused and full Worker tests**
+- [x] **Step 4: Run focused and full Worker tests**
 
 Run: `npm run test:worker -- worker/research-refresh.test.ts && npm run test:worker`
 
 Expected: PASS; dispatch mock called exactly once in the concurrency test.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add worker/research-refresh.ts worker/research-refresh.test.ts worker/research-publish.ts
