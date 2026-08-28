@@ -128,6 +128,22 @@ async function uploadSummary({ baseUrl, token, summary, fetchImpl, retryDelay })
   });
 }
 
+export async function uploadResearchFile(options) {
+  return uploadFile({
+    fetchImpl: fetch,
+    retryDelay: defaultRetryDelay,
+    ...options,
+  });
+}
+
+export async function uploadResearchSummary(options) {
+  return uploadSummary({
+    fetchImpl: fetch,
+    retryDelay: defaultRetryDelay,
+    ...options,
+  });
+}
+
 async function mapWithConcurrency(items, limit, mapper) {
   let nextIndex = 0;
   async function worker() {

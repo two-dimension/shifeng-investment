@@ -527,21 +527,21 @@ git commit -m "feat: refresh research cache from the cloud"
 - Migration is resumable and idempotent; deterministic order is kind → date → filename.
 - Deployment doc includes D1 migration, R2, Worker/GitHub secrets, optional legacy Tunnel origin, deploy, history migration, workflow merge, smoke test and rollback.
 
-- [ ] **Step 1: Write failing migration tests**
+- [x] **Step 1: Write failing migration tests**
 
 Use a temporary fixture with two summaries and three files. Assert deterministic manifest, URL rewrite, skip/resume after one uploaded file, invalid JSON rejection, missing file warning, and no token in logs.
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run: `node --test server/scripts/migrate_research_history.test.js`
 
 Expected: FAIL because migration functions are missing.
 
-- [ ] **Step 3: Implement resumable history upload**
+- [x] **Step 3: Implement resumable history upload**
 
 Reuse the Task 7 publisher primitives. Keep a local ignored checkpoint containing uploaded object keys and summary keys; re-running skips completed uploads and safely upserts summaries.
 
-- [ ] **Step 4: Write exact deployment and rollback steps**
+- [x] **Step 4: Write exact deployment and rollback steps**
 
 Document:
 
@@ -555,7 +555,7 @@ node server/scripts/migrate_research_history.mjs
 
 GitHub repository secrets must be created through repository Settings. The workflow must reach default branch before Worker dispatch is enabled. For rollback, restore the main DNS hostname to the existing named Tunnel; do not delete D1/R2 data.
 
-- [ ] **Step 5: Run the complete local verification suite**
+- [x] **Step 5: Run the complete local verification suite**
 
 Run:
 

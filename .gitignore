@@ -57,6 +57,7 @@ server/price_tracking/*.csv
 automation/research-tasks/.venv/
 automation/research-tasks/**/.cache_pdfs/
 cloud-research-manifest.json
+server/.cloud-research-migration-checkpoint.json
 output/
 state/
 tmp/
