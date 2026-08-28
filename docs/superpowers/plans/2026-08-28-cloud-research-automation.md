@@ -381,29 +381,29 @@ git commit -m "feat: vendor portable research automation tasks"
 - Runner writes `cloud-research-manifest.json` with `{ jobId, generatedAt, summaries[], files[] }`.
 - Publisher consumes that manifest plus `CLOUD_RESEARCH_BASE_URL` and `RESEARCH_PUBLISH_TOKEN` from environment.
 
-- [ ] **Step 1: Write failing run-plan and manifest tests**
+- [x] **Step 1: Write failing run-plan and manifest tests**
 
 Use temporary fake task scripts. Assert command order, target/previous dates, `--no-mail`, output isolation, one summary per ready kind, report URL rewriting to `/api/research/files/...`, and no donor-directory dependency.
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run: `node --test server/scripts/cloud_research_runner.test.js`
 
 Expected: FAIL because runner exports do not exist.
 
-- [ ] **Step 3: Implement the runner**
+- [x] **Step 3: Implement the runner**
 
 Spawn commands with argument arrays and inherited stdout; never build a shell string. Abort remaining publication if a task exits nonzero, but keep its logs. Normalize via existing `syncResearch({ kind: 'all', date: targetDate, force: true })`; include only summaries for which the sync result succeeded and `isPublishableResearchSummary(summary)` holds.
 
-- [ ] **Step 4: Write failing publisher tests**
+- [x] **Step 4: Write failing publisher tests**
 
 Mock `fetch` and assert state sequence `running → files → summaries → success`; on any upload failure assert a final `failed` state call and no `success` call. Assert the token appears only in the Authorization header.
 
-- [ ] **Step 5: Implement bounded uploads**
+- [x] **Step 5: Implement bounded uploads**
 
 Use `fs.createReadStream()` with Node `fetch` duplex mode for files, `Promise.all` with concurrency 3, retry `429/5xx` three times, and JSON summaries after all file uploads. Mark success only after every required request returns 2xx.
 
-- [ ] **Step 6: Run focused tests**
+- [x] **Step 6: Run focused tests**
 
 Run:
 
@@ -414,7 +414,7 @@ npm run build
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add server/scripts/cloud_research_runner.mjs server/scripts/cloud_research_runner.test.js server/scripts/publish_cloud_research.mjs server/scripts/publish_cloud_research.test.js package.json

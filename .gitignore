@@ -55,6 +55,8 @@ server/price_tracking/*.csv
 .worktrees/
 .superpowers/
 automation/research-tasks/.venv/
+automation/research-tasks/**/.cache_pdfs/
+cloud-research-manifest.json
 output/
 state/
 tmp/
